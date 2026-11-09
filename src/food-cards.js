@@ -1,0 +1,1664 @@
+// Food diary and saved foods cards, for the ZPMyFitnessCards integration.
+//
+// custom:zp-food-diary-card   one person's day, meal by meal: add, change,
+//                             delete and copy food
+// custom:zp-foods-card        the house's saved foods, per 100 g
+//
+// Both talk to the integration over its websocket commands, and redraw when
+// its zp_my_fitness/subscribe events say something changed.
+//
+// Diary config:
+//   person  a person's name; defaults to the person linked to the logged-in user
+//   title   optional heading; defaults to "Food diary"
+//   locale  optional language code; defaults to Home Assistant's language
+//
+// Saved foods config:
+//   title, locale  as above
+
+const STRINGS = {
+  en: {
+    title_diary: "Food diary",
+    title_foods: "Saved foods",
+    today: "Today",
+    yesterday: "Yesterday",
+    previous_day: "Previous day",
+    next_day: "Next day",
+    pick_day: "Pick a day",
+    goal: "Goal",
+    food: "Food",
+    remaining: "Remaining",
+    over: "Over",
+    kcal: "kcal",
+    protein: "Protein",
+    carbs: "Carbs",
+    fat: "Fat",
+    fibre: "Fibre",
+    sugar: "Sugar",
+    saturated_fat: "Saturated fat",
+    salt: "Salt",
+    breakfast: "Breakfast",
+    lunch: "Lunch",
+    dinner: "Dinner",
+    snacks: "Snacks",
+    nothing_logged: "Nothing logged yet",
+    add_food: "Add food",
+    copy: "Copy",
+    copy_title: "Copy into {meal} from another day",
+    copy_from_day: "From day",
+    copy_from_meal: "From meal",
+    nothing_to_copy: "Nothing to copy: that meal is empty.",
+    loading: "Loading…",
+    error_failed: "Something went wrong: {message}",
+    unknown_person: "No person named {name}. Add them in Settings, Devices & services, ZPMyFitnessCards.",
+    no_person: "No person to show. Set person: on the card, or link your user to a person in ZPMyFitnessCards.",
+    search_placeholder: "Search saved foods",
+    results: "Saved foods",
+    recent: "Recent",
+    no_results: "No saved food matches “{query}”.",
+    no_recent: "Nothing logged recently. Search your saved foods, or add a new one.",
+    per_100g_value: "{kcal} kcal per 100 g",
+    per_100g: "Per 100 g",
+    tab_search: "Saved foods",
+    tab_quick: "Quick add",
+    tab_new: "New food",
+    add_to_meal: "Add to {meal}",
+    grams: "Grams",
+    meal: "Meal",
+    name: "Name",
+    optional: "optional",
+    add: "Add",
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    yes_delete: "Yes, delete",
+    really_delete: "Delete {name}?",
+    edit_entry: "Edit",
+    save_and_choose: "Save and choose",
+    save_food: "Save food",
+    barcode: "Barcode",
+    portions: "Portions",
+    portion_name: "Portion name",
+    add_portion: "Add portion",
+    remove: "Remove",
+    foods_empty: "No saved foods yet. Add the foods you eat often.",
+    error_required: "Fill in the name, and the kcal, protein, carbs and fat per 100 g.",
+    error_portion: "Give each portion a name and a weight in grams.",
+    error_barcode_taken: "Another saved food has this barcode.",
+    error_amount: "Enter an amount above 0.",
+    error_quick: "Fill in a name and the kcal.",
+  },
+  de: {
+    title_diary: "Ernährungstagebuch",
+    title_foods: "Gespeicherte Lebensmittel",
+    today: "Heute",
+    yesterday: "Gestern",
+    previous_day: "Vorheriger Tag",
+    next_day: "Nächster Tag",
+    pick_day: "Tag wählen",
+    goal: "Ziel",
+    food: "Essen",
+    remaining: "Übrig",
+    over: "Darüber",
+    kcal: "kcal",
+    protein: "Eiweiß",
+    carbs: "Kohlenhydrate",
+    fat: "Fett",
+    fibre: "Ballaststoffe",
+    sugar: "Zucker",
+    saturated_fat: "Gesättigte Fettsäuren",
+    salt: "Salz",
+    breakfast: "Frühstück",
+    lunch: "Mittagessen",
+    dinner: "Abendessen",
+    snacks: "Snacks",
+    nothing_logged: "Noch nichts eingetragen",
+    add_food: "Lebensmittel hinzufügen",
+    copy: "Kopieren",
+    copy_title: "Von einem anderen Tag in {meal} kopieren",
+    copy_from_day: "Von Tag",
+    copy_from_meal: "Von Mahlzeit",
+    nothing_to_copy: "Nichts zu kopieren: Diese Mahlzeit ist leer.",
+    loading: "Wird geladen…",
+    error_failed: "Etwas ist schiefgelaufen: {message}",
+    unknown_person: "Keine Person namens {name}. Füge sie unter Einstellungen, Geräte & Dienste, ZPMyFitnessCards hinzu.",
+    no_person: "Keine Person zum Anzeigen. Setze person: in der Karte oder verknüpfe deinen Benutzer mit einer Person in ZPMyFitnessCards.",
+    search_placeholder: "Gespeicherte Lebensmittel suchen",
+    results: "Gespeicherte Lebensmittel",
+    recent: "Zuletzt",
+    no_results: "Kein gespeichertes Lebensmittel passt zu „{query}“.",
+    no_recent: "Zuletzt nichts eingetragen. Suche in deinen gespeicherten Lebensmitteln oder füge ein neues hinzu.",
+    per_100g_value: "{kcal} kcal pro 100 g",
+    per_100g: "Pro 100 g",
+    tab_search: "Gespeichert",
+    tab_quick: "Schnell eintragen",
+    tab_new: "Neues Lebensmittel",
+    add_to_meal: "Zu {meal} hinzufügen",
+    grams: "Gramm",
+    meal: "Mahlzeit",
+    name: "Name",
+    optional: "optional",
+    add: "Hinzufügen",
+    save: "Speichern",
+    cancel: "Abbrechen",
+    delete: "Löschen",
+    yes_delete: "Ja, löschen",
+    really_delete: "{name} löschen?",
+    edit_entry: "Bearbeiten",
+    save_and_choose: "Speichern und auswählen",
+    save_food: "Lebensmittel speichern",
+    barcode: "Barcode",
+    portions: "Portionen",
+    portion_name: "Portionsname",
+    add_portion: "Portion hinzufügen",
+    remove: "Entfernen",
+    foods_empty: "Noch keine gespeicherten Lebensmittel. Füge die hinzu, die du oft isst.",
+    error_required: "Gib den Namen sowie kcal, Eiweiß, Kohlenhydrate und Fett pro 100 g ein.",
+    error_portion: "Gib jeder Portion einen Namen und ein Gewicht in Gramm.",
+    error_barcode_taken: "Ein anderes gespeichertes Lebensmittel hat diesen Barcode.",
+    error_amount: "Gib eine Menge über 0 ein.",
+    error_quick: "Gib einen Namen und die kcal ein.",
+  },
+  es: {
+    title_diary: "Diario de comidas",
+    title_foods: "Alimentos guardados",
+    today: "Hoy",
+    yesterday: "Ayer",
+    previous_day: "Día anterior",
+    next_day: "Día siguiente",
+    pick_day: "Elegir un día",
+    goal: "Objetivo",
+    food: "Comida",
+    remaining: "Restante",
+    over: "Exceso",
+    kcal: "kcal",
+    protein: "Proteínas",
+    carbs: "Carbohidratos",
+    fat: "Grasas",
+    fibre: "Fibra",
+    sugar: "Azúcar",
+    saturated_fat: "Grasas saturadas",
+    salt: "Sal",
+    breakfast: "Desayuno",
+    lunch: "Almuerzo",
+    dinner: "Cena",
+    snacks: "Tentempiés",
+    nothing_logged: "Aún no hay nada registrado",
+    add_food: "Añadir alimento",
+    copy: "Copiar",
+    copy_title: "Copiar a {meal} desde otro día",
+    copy_from_day: "Desde el día",
+    copy_from_meal: "Desde la comida",
+    nothing_to_copy: "No hay nada que copiar: esa comida está vacía.",
+    loading: "Cargando…",
+    error_failed: "Algo salió mal: {message}",
+    unknown_person: "No hay ninguna persona llamada {name}. Añádela en Ajustes, Dispositivos y servicios, ZPMyFitnessCards.",
+    no_person: "No hay ninguna persona que mostrar. Indica person: en la tarjeta o vincula tu usuario a una persona en ZPMyFitnessCards.",
+    search_placeholder: "Buscar alimentos guardados",
+    results: "Alimentos guardados",
+    recent: "Recientes",
+    no_results: "Ningún alimento guardado coincide con «{query}».",
+    no_recent: "Nada registrado últimamente. Busca en tus alimentos guardados o añade uno nuevo.",
+    per_100g_value: "{kcal} kcal por 100 g",
+    per_100g: "Por 100 g",
+    tab_search: "Guardados",
+    tab_quick: "Añadir rápido",
+    tab_new: "Nuevo alimento",
+    add_to_meal: "Añadir a {meal}",
+    grams: "Gramos",
+    meal: "Comida",
+    name: "Nombre",
+    optional: "opcional",
+    add: "Añadir",
+    save: "Guardar",
+    cancel: "Cancelar",
+    delete: "Eliminar",
+    yes_delete: "Sí, eliminar",
+    really_delete: "¿Eliminar {name}?",
+    edit_entry: "Editar",
+    save_and_choose: "Guardar y elegir",
+    save_food: "Guardar alimento",
+    barcode: "Código de barras",
+    portions: "Raciones",
+    portion_name: "Nombre de la ración",
+    add_portion: "Añadir ración",
+    remove: "Quitar",
+    foods_empty: "Aún no hay alimentos guardados. Añade los que comes a menudo.",
+    error_required: "Rellena el nombre y las kcal, proteínas, carbohidratos y grasas por 100 g.",
+    error_portion: "Pon a cada ración un nombre y un peso en gramos.",
+    error_barcode_taken: "Otro alimento guardado tiene este código de barras.",
+    error_amount: "Introduce una cantidad mayor que 0.",
+    error_quick: "Rellena un nombre y las kcal.",
+  },
+  fr: {
+    title_diary: "Journal alimentaire",
+    title_foods: "Aliments enregistrés",
+    today: "Aujourd’hui",
+    yesterday: "Hier",
+    previous_day: "Jour précédent",
+    next_day: "Jour suivant",
+    pick_day: "Choisir un jour",
+    goal: "Objectif",
+    food: "Aliments",
+    remaining: "Restant",
+    over: "Dépassement",
+    kcal: "kcal",
+    protein: "Protéines",
+    carbs: "Glucides",
+    fat: "Lipides",
+    fibre: "Fibres",
+    sugar: "Sucres",
+    saturated_fat: "Graisses saturées",
+    salt: "Sel",
+    breakfast: "Petit-déjeuner",
+    lunch: "Déjeuner",
+    dinner: "Dîner",
+    snacks: "En-cas",
+    nothing_logged: "Rien d’enregistré pour l’instant",
+    add_food: "Ajouter un aliment",
+    copy: "Copier",
+    copy_title: "Copier dans le repas « {meal} » depuis un autre jour",
+    copy_from_day: "Depuis le jour",
+    copy_from_meal: "Depuis le repas",
+    nothing_to_copy: "Rien à copier : ce repas est vide.",
+    loading: "Chargement…",
+    error_failed: "Une erreur s’est produite : {message}",
+    unknown_person: "Aucune personne nommée {name}. Ajoutez-la dans Paramètres, Appareils et services, ZPMyFitnessCards.",
+    no_person: "Aucune personne à afficher. Indiquez person: sur la carte ou liez votre utilisateur à une personne dans ZPMyFitnessCards.",
+    search_placeholder: "Rechercher dans les aliments enregistrés",
+    results: "Aliments enregistrés",
+    recent: "Récents",
+    no_results: "Aucun aliment enregistré ne correspond à « {query} ».",
+    no_recent: "Rien d’enregistré récemment. Cherchez dans vos aliments enregistrés ou ajoutez-en un.",
+    per_100g_value: "{kcal} kcal pour 100 g",
+    per_100g: "Pour 100 g",
+    tab_search: "Enregistrés",
+    tab_quick: "Ajout rapide",
+    tab_new: "Nouvel aliment",
+    add_to_meal: "Ajouter au repas : {meal}",
+    grams: "Grammes",
+    meal: "Repas",
+    name: "Nom",
+    optional: "facultatif",
+    add: "Ajouter",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    delete: "Supprimer",
+    yes_delete: "Oui, supprimer",
+    really_delete: "Supprimer {name} ?",
+    edit_entry: "Modifier",
+    save_and_choose: "Enregistrer et choisir",
+    save_food: "Enregistrer l’aliment",
+    barcode: "Code-barres",
+    portions: "Portions",
+    portion_name: "Nom de la portion",
+    add_portion: "Ajouter une portion",
+    remove: "Retirer",
+    foods_empty: "Aucun aliment enregistré pour l’instant. Ajoutez ceux que vous mangez souvent.",
+    error_required: "Indiquez le nom, ainsi que les kcal, protéines, glucides et lipides pour 100 g.",
+    error_portion: "Donnez à chaque portion un nom et un poids en grammes.",
+    error_barcode_taken: "Un autre aliment enregistré a ce code-barres.",
+    error_amount: "Saisissez une quantité supérieure à 0.",
+    error_quick: "Indiquez un nom et les kcal.",
+  },
+  it: {
+    title_diary: "Diario alimentare",
+    title_foods: "Alimenti salvati",
+    today: "Oggi",
+    yesterday: "Ieri",
+    previous_day: "Giorno precedente",
+    next_day: "Giorno successivo",
+    pick_day: "Scegli un giorno",
+    goal: "Obiettivo",
+    food: "Cibo",
+    remaining: "Rimanenti",
+    over: "In eccesso",
+    kcal: "kcal",
+    protein: "Proteine",
+    carbs: "Carboidrati",
+    fat: "Grassi",
+    fibre: "Fibre",
+    sugar: "Zuccheri",
+    saturated_fat: "Grassi saturi",
+    salt: "Sale",
+    breakfast: "Colazione",
+    lunch: "Pranzo",
+    dinner: "Cena",
+    snacks: "Spuntini",
+    nothing_logged: "Ancora niente registrato",
+    add_food: "Aggiungi alimento",
+    copy: "Copia",
+    copy_title: "Copia in {meal} da un altro giorno",
+    copy_from_day: "Dal giorno",
+    copy_from_meal: "Dal pasto",
+    nothing_to_copy: "Niente da copiare: quel pasto è vuoto.",
+    loading: "Caricamento…",
+    error_failed: "Qualcosa è andato storto: {message}",
+    unknown_person: "Nessuna persona di nome {name}. Aggiungila in Impostazioni, Dispositivi e servizi, ZPMyFitnessCards.",
+    no_person: "Nessuna persona da mostrare. Imposta person: sulla scheda, oppure collega il tuo utente a una persona in ZPMyFitnessCards.",
+    search_placeholder: "Cerca tra gli alimenti salvati",
+    results: "Alimenti salvati",
+    recent: "Recenti",
+    no_results: "Nessun alimento salvato corrisponde a «{query}».",
+    no_recent: "Niente registrato di recente. Cerca tra gli alimenti salvati o aggiungine uno nuovo.",
+    per_100g_value: "{kcal} kcal per 100 g",
+    per_100g: "Per 100 g",
+    tab_search: "Salvati",
+    tab_quick: "Aggiunta rapida",
+    tab_new: "Nuovo alimento",
+    add_to_meal: "Aggiungi a {meal}",
+    grams: "Grammi",
+    meal: "Pasto",
+    name: "Nome",
+    optional: "facoltativo",
+    add: "Aggiungi",
+    save: "Salva",
+    cancel: "Annulla",
+    delete: "Elimina",
+    yes_delete: "Sì, elimina",
+    really_delete: "Eliminare {name}?",
+    edit_entry: "Modifica",
+    save_and_choose: "Salva e scegli",
+    save_food: "Salva alimento",
+    barcode: "Codice a barre",
+    portions: "Porzioni",
+    portion_name: "Nome della porzione",
+    add_portion: "Aggiungi porzione",
+    remove: "Rimuovi",
+    foods_empty: "Ancora nessun alimento salvato. Aggiungi quelli che mangi spesso.",
+    error_required: "Inserisci il nome, e kcal, proteine, carboidrati e grassi per 100 g.",
+    error_portion: "Dai a ogni porzione un nome e un peso in grammi.",
+    error_barcode_taken: "Un altro alimento salvato ha questo codice a barre.",
+    error_amount: "Inserisci una quantità maggiore di 0.",
+    error_quick: "Inserisci un nome e le kcal.",
+  },
+  nl: {
+    title_diary: "Voedingsdagboek",
+    title_foods: "Opgeslagen voeding",
+    today: "Vandaag",
+    yesterday: "Gisteren",
+    previous_day: "Vorige dag",
+    next_day: "Volgende dag",
+    pick_day: "Kies een dag",
+    goal: "Doel",
+    food: "Voeding",
+    remaining: "Over",
+    over: "Te veel",
+    kcal: "kcal",
+    protein: "Eiwit",
+    carbs: "Koolhydraten",
+    fat: "Vet",
+    fibre: "Vezels",
+    sugar: "Suiker",
+    saturated_fat: "Verzadigd vet",
+    salt: "Zout",
+    breakfast: "Ontbijt",
+    lunch: "Lunch",
+    dinner: "Avondeten",
+    snacks: "Tussendoortjes",
+    nothing_logged: "Nog niets vastgelegd",
+    add_food: "Voeding toevoegen",
+    copy: "Kopiëren",
+    copy_title: "Naar {meal} kopiëren van een andere dag",
+    copy_from_day: "Van dag",
+    copy_from_meal: "Van maaltijd",
+    nothing_to_copy: "Niets te kopiëren: die maaltijd is leeg.",
+    loading: "Laden…",
+    error_failed: "Er ging iets mis: {message}",
+    unknown_person: "Geen persoon met de naam {name}. Voeg die toe via Instellingen, Apparaten en diensten, ZPMyFitnessCards.",
+    no_person: "Geen persoon om te tonen. Stel person: in op de kaart, of koppel je gebruiker aan een persoon in ZPMyFitnessCards.",
+    search_placeholder: "Zoek in opgeslagen voeding",
+    results: "Opgeslagen voeding",
+    recent: "Recent",
+    no_results: "Geen opgeslagen voeding past bij ‘{query}’.",
+    no_recent: "Onlangs niets vastgelegd. Zoek in je opgeslagen voeding of voeg iets nieuws toe.",
+    per_100g_value: "{kcal} kcal per 100 g",
+    per_100g: "Per 100 g",
+    tab_search: "Opgeslagen",
+    tab_quick: "Snel toevoegen",
+    tab_new: "Nieuwe voeding",
+    add_to_meal: "Toevoegen aan {meal}",
+    grams: "Gram",
+    meal: "Maaltijd",
+    name: "Naam",
+    optional: "optioneel",
+    add: "Toevoegen",
+    save: "Opslaan",
+    cancel: "Annuleren",
+    delete: "Verwijderen",
+    yes_delete: "Ja, verwijderen",
+    really_delete: "{name} verwijderen?",
+    edit_entry: "Bewerken",
+    save_and_choose: "Opslaan en kiezen",
+    save_food: "Voeding opslaan",
+    barcode: "Streepjescode",
+    portions: "Porties",
+    portion_name: "Naam van de portie",
+    add_portion: "Portie toevoegen",
+    remove: "Verwijderen",
+    foods_empty: "Nog geen opgeslagen voeding. Voeg toe wat je vaak eet.",
+    error_required: "Vul de naam in, en de kcal, eiwit, koolhydraten en vet per 100 g.",
+    error_portion: "Geef elke portie een naam en een gewicht in gram.",
+    error_barcode_taken: "Andere opgeslagen voeding heeft deze streepjescode.",
+    error_amount: "Voer een hoeveelheid boven 0 in.",
+    error_quick: "Vul een naam en de kcal in.",
+  },
+  pl: {
+    title_diary: "Dziennik żywienia",
+    title_foods: "Zapisane produkty",
+    today: "Dzisiaj",
+    yesterday: "Wczoraj",
+    previous_day: "Poprzedni dzień",
+    next_day: "Następny dzień",
+    pick_day: "Wybierz dzień",
+    goal: "Cel",
+    food: "Jedzenie",
+    remaining: "Pozostało",
+    over: "Ponad",
+    kcal: "kcal",
+    protein: "Białko",
+    carbs: "Węglowodany",
+    fat: "Tłuszcz",
+    fibre: "Błonnik",
+    sugar: "Cukier",
+    saturated_fat: "Tłuszcze nasycone",
+    salt: "Sól",
+    breakfast: "Śniadanie",
+    lunch: "Obiad",
+    dinner: "Kolacja",
+    snacks: "Przekąski",
+    nothing_logged: "Jeszcze nic nie zapisano",
+    add_food: "Dodaj produkt",
+    copy: "Kopiuj",
+    copy_title: "Kopiuj do: {meal} z innego dnia",
+    copy_from_day: "Z dnia",
+    copy_from_meal: "Z posiłku",
+    nothing_to_copy: "Nie ma czego kopiować: ten posiłek jest pusty.",
+    loading: "Ładowanie…",
+    error_failed: "Coś poszło nie tak: {message}",
+    unknown_person: "Brak osoby o imieniu {name}. Dodaj ją w Ustawienia, Urządzenia oraz usługi, ZPMyFitnessCards.",
+    no_person: "Brak osoby do pokazania. Ustaw person: w karcie albo powiąż swojego użytkownika z osobą w ZPMyFitnessCards.",
+    search_placeholder: "Szukaj w zapisanych produktach",
+    results: "Zapisane produkty",
+    recent: "Ostatnie",
+    no_results: "Żaden zapisany produkt nie pasuje do „{query}”.",
+    no_recent: "Ostatnio nic nie zapisano. Poszukaj w zapisanych produktach albo dodaj nowy.",
+    per_100g_value: "{kcal} kcal na 100 g",
+    per_100g: "Na 100 g",
+    tab_search: "Zapisane",
+    tab_quick: "Szybkie dodanie",
+    tab_new: "Nowy produkt",
+    add_to_meal: "Dodaj do: {meal}",
+    grams: "Gramy",
+    meal: "Posiłek",
+    name: "Nazwa",
+    optional: "opcjonalnie",
+    add: "Dodaj",
+    save: "Zapisz",
+    cancel: "Anuluj",
+    delete: "Usuń",
+    yes_delete: "Tak, usuń",
+    really_delete: "Usunąć {name}?",
+    edit_entry: "Edytuj",
+    save_and_choose: "Zapisz i wybierz",
+    save_food: "Zapisz produkt",
+    barcode: "Kod kreskowy",
+    portions: "Porcje",
+    portion_name: "Nazwa porcji",
+    add_portion: "Dodaj porcję",
+    remove: "Usuń",
+    foods_empty: "Brak zapisanych produktów. Dodaj te, które jesz często.",
+    error_required: "Wpisz nazwę oraz kcal, białko, węglowodany i tłuszcz na 100 g.",
+    error_portion: "Nadaj każdej porcji nazwę i wagę w gramach.",
+    error_barcode_taken: "Inny zapisany produkt ma ten kod kreskowy.",
+    error_amount: "Wpisz ilość większą od 0.",
+    error_quick: "Wpisz nazwę i kcal.",
+  },
+  pt: {
+    title_diary: "Diário alimentar",
+    title_foods: "Alimentos guardados",
+    today: "Hoje",
+    yesterday: "Ontem",
+    previous_day: "Dia anterior",
+    next_day: "Dia seguinte",
+    pick_day: "Escolher um dia",
+    goal: "Objetivo",
+    food: "Alimentos",
+    remaining: "Restante",
+    over: "Excesso",
+    kcal: "kcal",
+    protein: "Proteína",
+    carbs: "Hidratos",
+    fat: "Gordura",
+    fibre: "Fibra",
+    sugar: "Açúcar",
+    saturated_fat: "Gordura saturada",
+    salt: "Sal",
+    breakfast: "Pequeno-almoço",
+    lunch: "Almoço",
+    dinner: "Jantar",
+    snacks: "Lanches",
+    nothing_logged: "Ainda nada registado",
+    add_food: "Adicionar alimento",
+    copy: "Copiar",
+    copy_title: "Copiar para {meal} de outro dia",
+    copy_from_day: "Do dia",
+    copy_from_meal: "Da refeição",
+    nothing_to_copy: "Nada para copiar: essa refeição está vazia.",
+    loading: "A carregar…",
+    error_failed: "Algo correu mal: {message}",
+    unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Definições, Dispositivos e serviços, ZPMyFitnessCards.",
+    no_person: "Não há nenhuma pessoa para mostrar. Defina person: no cartão ou associe o seu utilizador a uma pessoa no ZPMyFitnessCards.",
+    search_placeholder: "Pesquisar alimentos guardados",
+    results: "Alimentos guardados",
+    recent: "Recentes",
+    no_results: "Nenhum alimento guardado corresponde a «{query}».",
+    no_recent: "Nada registado recentemente. Pesquise nos alimentos guardados ou adicione um novo.",
+    per_100g_value: "{kcal} kcal por 100 g",
+    per_100g: "Por 100 g",
+    tab_search: "Guardados",
+    tab_quick: "Adição rápida",
+    tab_new: "Novo alimento",
+    add_to_meal: "Adicionar a {meal}",
+    grams: "Gramas",
+    meal: "Refeição",
+    name: "Nome",
+    optional: "opcional",
+    add: "Adicionar",
+    save: "Guardar",
+    cancel: "Cancelar",
+    delete: "Eliminar",
+    yes_delete: "Sim, eliminar",
+    really_delete: "Eliminar {name}?",
+    edit_entry: "Editar",
+    save_and_choose: "Guardar e escolher",
+    save_food: "Guardar alimento",
+    barcode: "Código de barras",
+    portions: "Porções",
+    portion_name: "Nome da porção",
+    add_portion: "Adicionar porção",
+    remove: "Remover",
+    foods_empty: "Ainda não há alimentos guardados. Adicione os que come com frequência.",
+    error_required: "Preencha o nome, e as kcal, proteína, hidratos e gordura por 100 g.",
+    error_portion: "Dê a cada porção um nome e um peso em gramas.",
+    error_barcode_taken: "Outro alimento guardado tem este código de barras.",
+    error_amount: "Introduza uma quantidade acima de 0.",
+    error_quick: "Preencha um nome e as kcal.",
+  },
+  "pt-BR": {
+    title_foods: "Alimentos salvos",
+    nothing_logged: "Ainda nada registrado",
+    loading: "Carregando…",
+    error_failed: "Algo deu errado: {message}",
+    carbs: "Carboidratos",
+    breakfast: "Café da manhã",
+    unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Configurações, Dispositivos e serviços, ZPMyFitnessCards.",
+    no_person: "Não há nenhuma pessoa para mostrar. Defina person: no card ou vincule seu usuário a uma pessoa no ZPMyFitnessCards.",
+    search_placeholder: "Pesquisar alimentos salvos",
+    results: "Alimentos salvos",
+    no_results: "Nenhum alimento salvo corresponde a “{query}”.",
+    no_recent: "Nada registrado recentemente. Pesquise nos alimentos salvos ou adicione um novo.",
+    tab_search: "Salvos",
+    save: "Salvar",
+    delete: "Excluir",
+    yes_delete: "Sim, excluir",
+    really_delete: "Excluir {name}?",
+    save_and_choose: "Salvar e escolher",
+    save_food: "Salvar alimento",
+    foods_empty: "Ainda não há alimentos salvos. Adicione os que você come com frequência.",
+    error_required: "Preencha o nome, e as kcal, proteína, carboidratos e gordura por 100 g.",
+    error_barcode_taken: "Outro alimento salvo tem este código de barras.",
+    error_amount: "Digite uma quantidade acima de 0.",
+  },
+  sv: {
+    title_diary: "Matdagbok",
+    title_foods: "Sparad mat",
+    today: "I dag",
+    yesterday: "I går",
+    previous_day: "Föregående dag",
+    next_day: "Nästa dag",
+    pick_day: "Välj en dag",
+    goal: "Mål",
+    food: "Mat",
+    remaining: "Kvar",
+    over: "Över",
+    kcal: "kcal",
+    protein: "Protein",
+    carbs: "Kolhydrater",
+    fat: "Fett",
+    fibre: "Fibrer",
+    sugar: "Socker",
+    saturated_fat: "Mättat fett",
+    salt: "Salt",
+    breakfast: "Frukost",
+    lunch: "Lunch",
+    dinner: "Middag",
+    snacks: "Mellanmål",
+    nothing_logged: "Inget loggat än",
+    add_food: "Lägg till mat",
+    copy: "Kopiera",
+    copy_title: "Kopiera till {meal} från en annan dag",
+    copy_from_day: "Från dag",
+    copy_from_meal: "Från måltid",
+    nothing_to_copy: "Inget att kopiera: den måltiden är tom.",
+    loading: "Laddar…",
+    error_failed: "Något gick fel: {message}",
+    unknown_person: "Ingen person som heter {name}. Lägg till personen under Inställningar, Enheter och tjänster, ZPMyFitnessCards.",
+    no_person: "Ingen person att visa. Ange person: på kortet, eller koppla din användare till en person i ZPMyFitnessCards.",
+    search_placeholder: "Sök i sparad mat",
+    results: "Sparad mat",
+    recent: "Senaste",
+    no_results: "Ingen sparad mat matchar ”{query}”.",
+    no_recent: "Inget loggat nyligen. Sök i din sparade mat eller lägg till ny.",
+    per_100g_value: "{kcal} kcal per 100 g",
+    per_100g: "Per 100 g",
+    tab_search: "Sparad",
+    tab_quick: "Snabbinmatning",
+    tab_new: "Ny mat",
+    add_to_meal: "Lägg till i {meal}",
+    grams: "Gram",
+    meal: "Måltid",
+    name: "Namn",
+    optional: "valfritt",
+    add: "Lägg till",
+    save: "Spara",
+    cancel: "Avbryt",
+    delete: "Ta bort",
+    yes_delete: "Ja, ta bort",
+    really_delete: "Ta bort {name}?",
+    edit_entry: "Redigera",
+    save_and_choose: "Spara och välj",
+    save_food: "Spara mat",
+    barcode: "Streckkod",
+    portions: "Portioner",
+    portion_name: "Portionens namn",
+    add_portion: "Lägg till portion",
+    remove: "Ta bort",
+    foods_empty: "Ingen sparad mat än. Lägg till det du äter ofta.",
+    error_required: "Fyll i namnet, och kcal, protein, kolhydrater och fett per 100 g.",
+    error_portion: "Ge varje portion ett namn och en vikt i gram.",
+    error_barcode_taken: "En annan sparad mat har den här streckkoden.",
+    error_amount: "Ange en mängd över 0.",
+    error_quick: "Fyll i ett namn och kcal.",
+  },
+  "zh-Hans": {
+    title_diary: "饮食日记",
+    title_foods: "已保存的食物",
+    today: "今天",
+    yesterday: "昨天",
+    previous_day: "前一天",
+    next_day: "后一天",
+    pick_day: "选择日期",
+    goal: "目标",
+    food: "已吃",
+    remaining: "剩余",
+    over: "超出",
+    kcal: "千卡",
+    protein: "蛋白质",
+    carbs: "碳水化合物",
+    fat: "脂肪",
+    fibre: "膳食纤维",
+    sugar: "糖",
+    saturated_fat: "饱和脂肪",
+    salt: "盐",
+    breakfast: "早餐",
+    lunch: "午餐",
+    dinner: "晚餐",
+    snacks: "零食",
+    nothing_logged: "尚无记录",
+    add_food: "添加食物",
+    copy: "复制",
+    copy_title: "从其他日期复制到{meal}",
+    copy_from_day: "来源日期",
+    copy_from_meal: "来源餐次",
+    nothing_to_copy: "没有可复制的内容：该餐为空。",
+    loading: "正在加载…",
+    error_failed: "出现问题：{message}",
+    unknown_person: "没有名为 {name} 的人。请在“设置 > 设备与服务 > ZPMyFitnessCards”中添加。",
+    no_person: "没有可显示的人员。请在卡片中设置 person:，或在 ZPMyFitnessCards 中将你的用户关联到某个人员。",
+    search_placeholder: "搜索已保存的食物",
+    results: "已保存的食物",
+    recent: "最近",
+    no_results: "没有与“{query}”匹配的已保存食物。",
+    no_recent: "最近没有记录。请搜索已保存的食物，或添加新食物。",
+    per_100g_value: "每 100 克 {kcal} 千卡",
+    per_100g: "每 100 克",
+    tab_search: "已保存",
+    tab_quick: "快速添加",
+    tab_new: "新食物",
+    add_to_meal: "添加到{meal}",
+    grams: "克",
+    meal: "餐次",
+    name: "名称",
+    optional: "可选",
+    add: "添加",
+    save: "保存",
+    cancel: "取消",
+    delete: "删除",
+    yes_delete: "确认删除",
+    really_delete: "删除 {name}？",
+    edit_entry: "编辑",
+    save_and_choose: "保存并选择",
+    save_food: "保存食物",
+    barcode: "条形码",
+    portions: "份量",
+    portion_name: "份量名称",
+    add_portion: "添加份量",
+    remove: "移除",
+    foods_empty: "尚无已保存的食物。请添加你常吃的食物。",
+    error_required: "请填写名称，以及每 100 克的千卡、蛋白质、碳水化合物和脂肪。",
+    error_portion: "请为每个份量填写名称和克数。",
+    error_barcode_taken: "另一种已保存的食物使用了此条形码。",
+    error_amount: "请输入大于 0 的数量。",
+    error_quick: "请填写名称和千卡。",
+  },
+};
+
+// The strings for `locale`: the exact language, then its base language
+// (pt-BR falls back to pt for keys it does not override, and any Chinese to
+// zh-Hans), then English.
+function translate(locale) {
+  const base = locale.split("-")[0];
+  const exact = Object.keys(STRINGS).find((k) => k.toLowerCase() === locale.toLowerCase());
+  const zh = base === "zh" ? STRINGS["zh-Hans"] : undefined;
+  return { ...STRINGS.en, ...STRINGS[base], ...zh, ...(exact && STRINGS[exact]) };
+}
+
+const fill = (text, values) => text.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? "");
+
+const esc = (s) =>
+  String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+const MEALS = ["breakfast", "lunch", "dinner", "snacks"];
+const MACROS = ["protein", "carbs", "fat"];
+const OPTIONAL = ["fibre", "sugar", "saturated_fat", "salt"];
+const NUTRIENTS = ["kcal", ...MACROS, ...OPTIONAL];
+
+// How long to wait before asking a reloading integration again, in ms.
+const RETRY_MS = 2000;
+const SEARCH_DELAY_MS = 250;
+
+// Dates are ISO days ("2026-11-09") in Home Assistant's time zone.
+
+function todayIn(timeZone, now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+function shiftDay(day, days) {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+function dayLabel(day, today, locale, t) {
+  if (day === today) return t.today;
+  if (day === shiftDay(today, -1)) return t.yesterday;
+  const [y, m, d] = day.split("-").map(Number);
+  const sameYear = day.slice(0, 4) === today.slice(0, 4);
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+const number = (value, locale, digits = 0) =>
+  new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value);
+
+// A food's nutrients for `grams`; missing optional values stay null.
+function scaled(food, grams) {
+  return Object.fromEntries(NUTRIENTS.map((n) => [n, food[n] == null ? null : (food[n] * grams) / 100]));
+}
+
+function totals(entries) {
+  const sums = Object.fromEntries(NUTRIENTS.map((n) => [n, 0]));
+  for (const e of entries) for (const n of NUTRIENTS) sums[n] += e[n] ?? 0;
+  return sums;
+}
+
+// The person a card shows: by name if the config gives one, else the person
+// linked to the logged-in user.
+function findPerson(people, config, hass) {
+  if (config.person) {
+    const wanted = config.person.trim().toLowerCase();
+    return people.find((p) => p.name.toLowerCase() === wanted) ?? null;
+  }
+  const linked = Object.values(hass.states).find(
+    (s) => s.entity_id.startsWith("person.") && s.attributes.user_id === hass.user?.id,
+  );
+  return (linked && people.find((p) => p.person_entity === linked.entity_id)) ?? null;
+}
+
+const optionList = (values, labels, selected) =>
+  values.map((v) => `<option value="${esc(v)}"${v === selected ? " selected" : ""}>${esc(labels[v] ?? v)}</option>`).join("");
+
+const numberValue = (input) => (input && input.value.trim() !== "" ? Number(input.value) : null);
+
+const STYLE = `
+  :host { display: block; }
+  ha-card { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  [hidden] { display: none !important; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .title { font-size: var(--ha-font-size-l, 1.25rem); font-weight: var(--ha-font-weight-medium, 500); }
+  .sub { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); }
+  .nav { display: flex; align-items: center; gap: 4px; }
+  .nav .label { min-width: 6.5em; text-align: center; font-weight: var(--ha-font-weight-medium, 500); }
+  button { font: inherit; cursor: pointer; border-radius: 8px; color: var(--primary-text-color); background: none; border: 0; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .icon { width: 32px; height: 32px; font-size: 1.1rem; line-height: 1; }
+  .icon:hover:not(:disabled), .row:hover { background: var(--secondary-background-color); }
+  .text { color: var(--primary-color); padding: 6px 4px; font-weight: var(--ha-font-weight-medium, 500); }
+  .fill { background: var(--primary-color); color: var(--text-primary-color); padding: 9px 14px; font-weight: var(--ha-font-weight-medium, 500); }
+  .danger { background: var(--error-color); color: var(--text-primary-color); padding: 9px 14px; }
+  input, select { font: inherit; color: var(--primary-text-color); background: var(--secondary-background-color);
+    border: 1px solid var(--divider-color); border-radius: 6px; padding: 8px 10px; min-width: 0; box-sizing: border-box; }
+  input[type=date] { padding: 4px 6px; }
+  /* Just the calendar button: the label beside it already shows the day. */
+  .nav input[type=date] { width: 34px; padding: 4px; color: transparent; background: none; border: 0; cursor: pointer; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+  .error { color: var(--error-color); }
+  .muted { color: var(--secondary-text-color); }
+  .num { font-variant-numeric: tabular-nums; }
+  .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
+`;
+
+// Shared by the diary's "New food" tab and the saved foods card.
+function foodFormHTML(food, t) {
+  const field = (key, label, value, extra = "") =>
+    `<label>${esc(label)}<input data-field="${key}" ${extra} value="${value == null ? "" : esc(value)}"></label>`;
+  const nutrient = (n) =>
+    field(n, `${t[n]} (${n === "kcal" ? t.kcal : "g"})`, food[n], `type="number" min="0" step="any" inputmode="decimal"`);
+  const portions = (food.portions ?? []).map(
+    (p, i) => `<div class="portion" data-index="${i}">
+      <input data-portion="name" placeholder="${esc(t.portion_name)}" value="${esc(p.name ?? "")}" aria-label="${esc(t.portion_name)}">
+      <input data-portion="grams" type="number" min="0" step="any" inputmode="decimal" placeholder="g" value="${p.grams ?? ""}" aria-label="${esc(t.grams)}">
+      <button type="button" class="text" data-action="remove-portion" data-index="${i}">${esc(t.remove)}</button>
+    </div>`,
+  );
+  return `<div class="foodform">
+    <div class="grid">
+      ${field("name", t.name, food.name)}
+      ${field("barcode", `${t.barcode} (${t.optional})`, food.barcode, `inputmode="numeric"`)}
+    </div>
+    <div class="sub">${esc(t.per_100g)}</div>
+    <div class="grid">${["kcal", ...MACROS].map(nutrient).join("")}</div>
+    <div class="sub">${esc(t.optional)}</div>
+    <div class="grid">${OPTIONAL.map(nutrient).join("")}</div>
+    <div class="sub">${esc(t.portions)}</div>
+    <div class="portions">${portions.join("")}</div>
+    <div><button type="button" class="text" data-action="add-portion">+ ${esc(t.add_portion)}</button></div>
+  </div>`;
+}
+
+// The food a filled-in food form describes, and an error key or null.
+function readFoodForm(root) {
+  const get = (key) => root.querySelector(`.foodform [data-field="${key}"]`);
+  const food = { name: get("name").value.trim(), barcode: get("barcode").value.trim() || null };
+  for (const n of NUTRIENTS) food[n] = numberValue(get(n));
+  food.portions = [...root.querySelectorAll(".foodform .portion")].map((row) => ({
+    name: row.querySelector('[data-portion="name"]').value.trim(),
+    grams: numberValue(row.querySelector('[data-portion="grams"]')),
+  }));
+  if (!food.name || ["kcal", ...MACROS].some((n) => food[n] == null || food[n] < 0)) return { food, error: "error_required" };
+  if (OPTIONAL.some((n) => food[n] != null && food[n] < 0)) return { food, error: "error_required" };
+  const filled = food.portions.filter((p) => p.name || p.grams != null);
+  if (filled.some((p) => !p.name || !(p.grams > 0))) return { food, error: "error_portion" };
+  return { food: { ...food, portions: filled }, error: null };
+}
+
+// Base for both cards: config, language, loading and live updates.
+class FitnessCard extends HTMLElement {
+  setConfig(config) {
+    if (!config || typeof config !== "object") throw new Error("Invalid configuration");
+    for (const key of ["person", "title", "locale"]) {
+      if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key}: must be text`);
+    }
+    this._config = config;
+    if (this._card) this._render();
+  }
+
+  set hass(hass) {
+    const first = !this._hass;
+    this._hass = hass;
+    if (first && this._config) {
+      this._build();
+      this._start();
+    }
+  }
+
+  get _t() {
+    return translate(this._locale);
+  }
+
+  get _locale() {
+    return this._config.locale || this._hass?.locale?.language || "en";
+  }
+
+  get _today() {
+    return todayIn(this._hass.config?.time_zone || "UTC");
+  }
+
+  connectedCallback() {
+    if (this._hass && this._card && !this._unsubscribe) this._subscribe();
+  }
+
+  disconnectedCallback() {
+    const unsubscribe = this._unsubscribe;
+    this._unsubscribe = null;
+    unsubscribe?.then((stop) => stop?.()).catch(() => {});
+    clearTimeout(this._retry);
+  }
+
+  _build() {
+    const root = this.attachShadow({ mode: "open" });
+    root.innerHTML = `<style>${STYLE}${this.constructor.style}</style><ha-card></ha-card>`;
+    this._card = root.querySelector("ha-card");
+    root.addEventListener("click", (e) => this._onEvent(e, "click"));
+    root.addEventListener("input", (e) => this._onEvent(e, "input"));
+    root.addEventListener("change", (e) => this._onEvent(e, "change"));
+  }
+
+  _onEvent(event, kind) {
+    const target = event.target.closest?.("[data-action]");
+    const handler = target && this.constructor.actions[`${kind}:${target.dataset.action}`];
+    if (handler) handler.call(this, target, event);
+  }
+
+  _call(message) {
+    return this._hass.callWS(message);
+  }
+
+  // Load what the card needs. While the integration reloads, it answers
+  // not_loaded, so try again shortly.
+  async _start() {
+    clearTimeout(this._retry);
+    try {
+      await this._load();
+      this._failure = null;
+      if (!this._unsubscribe) this._subscribe();
+    } catch (err) {
+      this._failure = err?.code === "not_loaded" ? null : err;
+      this._retry = setTimeout(() => this._start(), RETRY_MS);
+    }
+    this._render();
+  }
+
+  _subscribe() {
+    this._unsubscribe = this._hass.connection
+      .subscribeMessage((event) => this._changed(event), { type: "zp_my_fitness/subscribe" })
+      .catch(() => {
+        this._unsubscribe = null;
+      });
+  }
+
+  _showError(err, key = "error_failed") {
+    if (!this._panel) return;
+    this._panel.error = fill(this._t[key], { message: err?.message ?? "" });
+    this._renderPanel();
+  }
+
+  // Send a command; on failure show its error in the open panel.
+  async _send(message, errorKey) {
+    try {
+      return { ok: true, result: await this._call(message) };
+    } catch (err) {
+      this._showError(err, errorKey?.(err) ?? "error_failed");
+      return { ok: false };
+    }
+  }
+}
+
+const barcodeError = (err) => (err?.code === "barcode_taken" ? "error_barcode_taken" : "error_failed");
+
+class FoodDiaryCard extends FitnessCard {
+  static style = `
+    .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
+    .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
+    .summary small, .macro small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
+    .body { display: flex; flex-direction: column; gap: 14px; }
+    .summary .op { color: var(--secondary-text-color); font-size: 1.3rem; align-self: start; }
+    .summary .left b { color: var(--success-color, var(--green-color)); }
+    .summary .over b { color: var(--error-color); }
+    .macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .macro { display: flex; flex-direction: column; gap: 4px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .bar { height: 6px; border-radius: 3px; background: var(--divider-color); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 3px; }
+    .protein i { background: var(--pink-color, var(--accent-color)); }
+    .carbs i { background: var(--amber-color, var(--warning-color)); }
+    .fat i { background: var(--deep-purple-color, var(--primary-color)); }
+    .macro.over i { background: var(--error-color); }
+    .meal { border-top: 1px solid var(--divider-color); padding-top: 10px; display: flex; flex-direction: column; gap: 2px; }
+    .mealhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: var(--ha-font-weight-medium, 500); }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 6px 4px; }
+    .row .amount { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); margin-left: 6px; }
+    .mealactions { display: flex; gap: 12px; }
+    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--divider-color); }
+    .tabs button { padding: 8px 10px; border-radius: 6px 6px 0 0; color: var(--secondary-text-color); }
+    .tabs button[aria-selected="true"] { color: var(--primary-color); box-shadow: inset 0 -2px 0 var(--primary-color); }
+    .results { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
+    .results .row small { color: var(--secondary-text-color); }
+    .results .row[aria-pressed="true"] { background: var(--secondary-background-color); }
+    .picked { display: flex; flex-direction: column; gap: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .preview { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; gap: 4px;
+      background: var(--secondary-background-color); border-radius: 8px; padding: 8px 4px; }
+    .preview small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
+  `;
+
+  static getStubConfig() {
+    return {};
+  }
+
+  static getConfigForm() {
+    return {
+      schema: [
+        { name: "person", selector: { text: {} } },
+        { name: "title", selector: { text: {} } },
+        { name: "locale", selector: { text: {} } },
+      ],
+      computeLabel: (s) => ({ person: "Person (empty: the logged-in user's)", title: "Title", locale: "Language" })[s.name],
+    };
+  }
+
+  getCardSize() {
+    return 8;
+  }
+
+  async _load() {
+    const people = await this._call({ type: "zp_my_fitness/people" });
+    this._person = findPerson(people, this._config, this._hass);
+    this._day ??= this._today;
+    this._data = this._person ? await this._fetchDay() : null;
+  }
+
+  _fetchDay() {
+    return this._call({ type: "zp_my_fitness/day", person: this._person.id, day: this._day });
+  }
+
+  async _reloadDay() {
+    try {
+      this._data = await this._fetchDay();
+      this._renderBody();
+    } catch {
+      this._start();
+    }
+  }
+
+  _changed(event) {
+    if (event.person === null) {
+      if (this._panel?.kind === "add" && this._panel.tab === "search") this._search();
+    } else if (this._person && event.person === this._person.id) {
+      this._reloadDay();
+    }
+  }
+
+  _render() {
+    if (!this._card) return;
+    const t = this._t;
+    const title = `<div class="title">${esc(this._config.title || t.title_diary)}</div>`;
+    if (!this._person) {
+      let message = t.loading;
+      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
+      else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
+      this._card.innerHTML = `${title}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
+      return;
+    }
+    this._card.innerHTML = `<div class="head"></div><div class="body"></div><div class="panel" hidden></div>`;
+    this._renderHead();
+    this._renderBody();
+    this._renderPanel();
+  }
+
+  _renderHead() {
+    const t = this._t;
+    const today = this._today;
+    this._card.querySelector(".head").innerHTML = `
+      <div><div class="title">${esc(this._config.title || t.title_diary)}</div><div class="sub person">${esc(this._person.name)}</div></div>
+      <div class="nav">
+        <button class="icon" data-action="prev" aria-label="${esc(t.previous_day)}">‹</button>
+        <span class="label">${esc(dayLabel(this._day, today, this._locale, t))}</span>
+        <button class="icon" data-action="next" aria-label="${esc(t.next_day)}"${this._day >= today ? " disabled" : ""}>›</button>
+        <input type="date" data-action="pick-day" value="${this._day}" max="${today}" aria-label="${esc(t.pick_day)}">
+      </div>`;
+  }
+
+  _renderBody() {
+    const body = this._card?.querySelector(".body");
+    if (body && this._data) body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale);
+  }
+
+  _renderPanel() {
+    const panel = this._card?.querySelector(".panel");
+    if (!panel) return;
+    const p = this._panel;
+    panel.hidden = !p;
+    if (!p) {
+      panel.innerHTML = "";
+      return;
+    }
+    const t = this._t;
+    const error = p.error ? `<div class="error">${esc(p.error)}</div>` : "";
+    if (p.kind === "edit") panel.innerHTML = editPanelHTML(p, this._locale, t) + error;
+    else if (p.kind === "copy") panel.innerHTML = copyPanelHTML(p, this._today, t) + error;
+    else panel.innerHTML = addPanelHTML(p, t) + error;
+    if (p.kind === "add" && p.tab === "search") {
+      this._renderResults();
+      this._renderPicked();
+    }
+  }
+
+  _renderResults() {
+    const box = this._card.querySelector(".results");
+    const p = this._panel;
+    if (!box || !p) return;
+    const t = this._t;
+    const query = p.query.trim();
+    const foods = p.results ?? [];
+    if (!foods.length) {
+      const empty = p.results === undefined ? t.loading : query ? fill(t.no_results, { query }) : t.no_recent;
+      box.innerHTML = `<div class="muted">${esc(empty)}</div>`;
+      return;
+    }
+    box.innerHTML =
+      `<div class="sub">${esc(query ? t.results : t.recent)}</div>` +
+      foods
+        .map(
+          (f) => `<button class="row" data-action="choose" data-id="${f.id}" aria-pressed="${p.food?.id === f.id}">
+            <span>${esc(f.name)}</span><small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, this._locale) }))}</small></button>`,
+        )
+        .join("");
+  }
+
+  _renderPicked() {
+    const box = this._card.querySelector(".picked");
+    const p = this._panel;
+    if (!box) return;
+    if (!p.food) {
+      box.innerHTML = "";
+      return;
+    }
+    const t = this._t;
+    const portions = (p.food.portions ?? [])
+      .map((q) => `<button data-action="portion" data-grams="${q.grams}">${esc(q.name)} · ${number(q.grams, this._locale, 1)} g</button>`)
+      .join("");
+    box.innerHTML = `<div><b>${esc(p.food.name)}</b></div>
+      <div class="grid">
+        <label>${esc(t.grams)}<input data-action="grams" data-field="grams" type="number" min="0" step="any" inputmode="decimal" value="${p.grams ?? ""}"></label>
+        <label>${esc(t.meal)}<select data-action="meal" data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
+      </div>
+      ${portions ? `<div class="chips">${portions}</div>` : ""}
+      <div class="preview num"></div>
+      <div class="actions"><button class="fill" data-action="add-entry">${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</button></div>`;
+    this._renderPreview();
+  }
+
+  _renderPreview() {
+    const box = this._card.querySelector(".preview");
+    const p = this._panel;
+    if (!box || !p?.food) return;
+    box.innerHTML = previewHTML(p.food, p.grams, this._locale, this._t);
+    this._card.querySelector('[data-action="add-entry"]').disabled = !(p.grams > 0);
+  }
+
+  _openPanel(panel) {
+    this._panel = panel;
+    this._renderPanel();
+    if (panel.kind === "add" && panel.tab === "search") this._search();
+    const first = this._card.querySelector(".panel input:not([type=date]), .panel select");
+    first?.focus?.();
+  }
+
+  _closePanel() {
+    this._panel = null;
+    this._renderPanel();
+  }
+
+  async _search() {
+    const p = this._panel;
+    const query = p.query.trim();
+    try {
+      const results = query
+        ? await this._call({ type: "zp_my_fitness/food/search", query })
+        : await this._call({ type: "zp_my_fitness/food/recent", person: this._person.id });
+      if (this._panel === p && p.query.trim() === query) {
+        p.results = results;
+        this._renderResults();
+      }
+    } catch (err) {
+      this._showError(err);
+    }
+  }
+
+  _field(key) {
+    return this._card.querySelector(`.panel [data-field="${key}"]`);
+  }
+
+  async _goTo(day) {
+    if (day > this._today) return;
+    this._day = day;
+    this._panel = null;
+    this._renderHead();
+    this._renderPanel();
+    await this._reloadDay();
+  }
+
+  static actions = {
+    "click:prev"() {
+      this._goTo(shiftDay(this._day, -1));
+    },
+    "click:next"() {
+      this._goTo(shiftDay(this._day, 1));
+    },
+    "change:pick-day"(el) {
+      if (el.value) this._goTo(el.value);
+    },
+    "click:add"(el) {
+      this._openPanel({ kind: "add", meal: el.dataset.meal, tab: "search", query: "" });
+    },
+    "click:copy"(el) {
+      this._openPanel({ kind: "copy", meal: el.dataset.meal, fromDay: shiftDay(this._day, -1), fromMeal: el.dataset.meal });
+    },
+    "click:entry"(el) {
+      const entry = this._data.entries.find((e) => String(e.id) === el.dataset.id);
+      if (entry) this._openPanel({ kind: "edit", entry });
+    },
+    "click:close"() {
+      this._closePanel();
+    },
+    "click:tab"(el) {
+      const p = this._panel;
+      p.tab = el.dataset.tab;
+      p.error = null;
+      this._renderPanel();
+      if (p.tab === "search") this._search();
+    },
+    "input:query"(el) {
+      this._panel.query = el.value;
+      clearTimeout(this._searchTimer);
+      this._searchTimer = setTimeout(() => this._search(), SEARCH_DELAY_MS);
+    },
+    "click:choose"(el) {
+      const p = this._panel;
+      p.food = p.results.find((f) => String(f.id) === el.dataset.id);
+      p.grams = p.food.portions?.[0]?.grams ?? 100;
+      this._renderResults();
+      this._renderPicked();
+      this._field("grams")?.focus?.();
+    },
+    "input:grams"(el) {
+      this._panel.grams = numberValue(el);
+      this._renderPreview();
+    },
+    "change:meal"(el) {
+      this._panel.meal = el.value;
+      this._renderPicked();
+    },
+    "click:portion"(el) {
+      this._panel.grams = Number(el.dataset.grams);
+      this._renderPicked();
+    },
+    async "click:add-entry"() {
+      const p = this._panel;
+      if (!(p.grams > 0)) return this._showError(null, "error_amount");
+      const sent = await this._send({
+        type: "zp_my_fitness/entry/add",
+        person: this._person.id,
+        day: this._day,
+        meal: p.meal,
+        food_id: p.food.id,
+        grams: p.grams,
+      });
+      if (sent.ok) this._closePanel();
+    },
+    async "click:quick-add"() {
+      const name = this._field("name").value.trim();
+      const kcal = numberValue(this._field("kcal"));
+      if (!name || kcal == null || kcal < 0) return this._showError(null, "error_quick");
+      const macros = Object.fromEntries(MACROS.map((m) => [m, numberValue(this._field(m))]));
+      const sent = await this._send({
+        type: "zp_my_fitness/entry/add",
+        person: this._person.id,
+        day: this._day,
+        meal: this._field("meal").value,
+        name,
+        kcal,
+        ...macros,
+      });
+      if (sent.ok) this._closePanel();
+    },
+    "click:add-portion"() {
+      const p = this._panel;
+      p.newFood = readFoodForm(this._card).food;
+      p.newFood.portions.push({ name: "", grams: null });
+      this._renderPanel();
+    },
+    "click:remove-portion"(el) {
+      const p = this._panel;
+      p.newFood = readFoodForm(this._card).food;
+      p.newFood.portions.splice(Number(el.dataset.index), 1);
+      this._renderPanel();
+    },
+    async "click:save-new-food"() {
+      const p = this._panel;
+      const { food, error } = readFoodForm(this._card);
+      p.newFood = food;
+      if (error) return this._showError(null, error);
+      const sent = await this._send({ type: "zp_my_fitness/food/add", ...food }, barcodeError);
+      if (!sent.ok) return;
+      const saved = sent.result;
+      Object.assign(p, { tab: "search", query: saved.name, results: [saved], food: saved, grams: saved.portions[0]?.grams ?? 100, newFood: null, error: null });
+      this._renderPanel();
+    },
+    async "click:save-edit"() {
+      const p = this._panel;
+      const field = p.entry.grams != null ? "grams" : "kcal";
+      const amount = numberValue(this._field(field));
+      if (amount == null || amount <= 0) return this._showError(null, "error_amount");
+      const sent = await this._send({ type: "zp_my_fitness/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
+      if (sent.ok) this._closePanel();
+    },
+    "click:delete-entry"() {
+      this._panel.confirming = true;
+      this._renderPanel();
+    },
+    async "click:really-delete"() {
+      const sent = await this._send({ type: "zp_my_fitness/entry/delete", entry_id: this._panel.entry.id });
+      if (sent.ok) this._closePanel();
+    },
+    async "click:do-copy"() {
+      const sent = await this._send({
+        type: "zp_my_fitness/meal/copy",
+        person: this._person.id,
+        from_day: this._field("from_day").value,
+        from_meal: this._field("from_meal").value,
+        to_day: this._day,
+        to_meal: this._panel.meal,
+      });
+      if (!sent.ok) return;
+      if (sent.result.length) this._closePanel();
+      else this._showError(null, "nothing_to_copy");
+    },
+  };
+}
+
+// The summary and meals of one day, from zp_my_fitness/day.
+function diaryBodyHTML(data, t, locale) {
+  const sums = totals(data.entries);
+  const goals = data.goals;
+  let summary;
+  if (goals) {
+    const left = goals.kcal - sums.kcal;
+    summary = `<div class="summary num">
+        <div><b>${number(goals.kcal, locale)}</b><small>${esc(t.goal)}</small></div><span class="op">−</span>
+        <div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div><span class="op">=</span>
+        <div class="${left < 0 ? "over" : "left"}"><b>${number(Math.abs(left), locale)}</b><small>${esc(left < 0 ? t.over : t.remaining)}</small></div>
+      </div>
+      <div class="macros num">${MACROS.map((m) => {
+        const share = goals[m] > 0 ? sums[m] / goals[m] : 0;
+        return `<div class="macro ${m}${share > 1 ? " over" : ""}"><small>${esc(t[m])}</small>
+          <div class="bar"><i style="width:${Math.min(share, 1) * 100}%"></i></div>
+          <span>${number(sums[m], locale)} / ${number(goals[m], locale)} g</span></div>`;
+      }).join("")}</div>`;
+  } else {
+    summary = `<div class="summary num"><div></div><span></span><div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div></div>`;
+  }
+  const meals = MEALS.map((meal) => {
+    const entries = data.entries.filter((e) => e.meal === meal);
+    const rows = entries
+      .map(
+        (e) => `<button class="row" data-action="entry" data-id="${e.id}">
+          <span>${esc(e.name)}${e.grams != null ? `<span class="amount num">${number(e.grams, locale, 1)} g</span>` : ""}</span>
+          <span class="num">${number(e.kcal, locale)}</span></button>`,
+      )
+      .join("");
+    return `<div class="meal" data-meal="${meal}">
+      <div class="mealhead"><span>${esc(t[meal])}</span><span class="sub num">${entries.length ? `${number(totals(entries).kcal, locale)} ${esc(t.kcal)}` : ""}</span></div>
+      ${rows || `<div class="muted">${esc(t.nothing_logged)}</div>`}
+      <div class="mealactions">
+        <button class="text" data-action="add" data-meal="${meal}">+ ${esc(t.add_food)}</button>
+        <button class="text" data-action="copy" data-meal="${meal}">${esc(t.copy)}</button>
+      </div></div>`;
+  }).join("");
+  return summary + meals;
+}
+
+function previewHTML(food, grams, locale, t) {
+  const values = grams > 0 ? scaled(food, grams) : null;
+  return ["kcal", ...MACROS]
+    .map((n) => `<div><b>${values ? number(values[n], locale, n === "kcal" ? 0 : 1) : "–"}</b><small>${esc(n === "kcal" ? t.kcal : `${t[n]} (g)`)}</small></div>`)
+    .join("");
+}
+
+function addPanelHTML(p, t) {
+  const tabs = ["search", "quick", "new"]
+    .map((tab) => `<button data-action="tab" data-tab="${tab}" role="tab" aria-selected="${p.tab === tab}">${esc(t[`tab_${tab}`])}</button>`)
+    .join("");
+  const cancel = `<button class="text" data-action="close">${esc(t.cancel)}</button>`;
+  let content;
+  if (p.tab === "search") {
+    content = `<input type="search" data-action="query" value="${esc(p.query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">
+      <div class="results"></div><div class="picked"></div>`;
+  } else if (p.tab === "quick") {
+    const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" type="number" min="0" step="any" inputmode="decimal"></label>`;
+    content = `<div class="grid"><label>${esc(t.name)}<input data-field="name"></label>${n("kcal", t.kcal)}</div>
+      <div class="grid">${MACROS.map((m) => n(m, `${t[m]} (g, ${t.optional})`)).join("")}</div>
+      <label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
+      <div class="actions">${cancel}<button class="fill" data-action="quick-add">${esc(t.add)}</button></div>`;
+  } else {
+    content = `${foodFormHTML(p.newFood ?? {}, t)}
+      <div class="actions">${cancel}<button class="fill" data-action="save-new-food">${esc(t.save_and_choose)}</button></div>`;
+  }
+  return `<div class="mealhead"><span>${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</span>${cancel}</div>
+    <div class="tabs" role="tablist">${tabs}</div>${content}`;
+}
+
+function editPanelHTML(p, locale, t) {
+  const e = p.entry;
+  const amount =
+    e.grams != null
+      ? `<label>${esc(t.grams)}<input data-field="grams" type="number" min="0" step="any" inputmode="decimal" value="${e.grams}"></label>`
+      : `<label>${esc(t.kcal)}<input data-field="kcal" type="number" min="0" step="any" inputmode="decimal" value="${e.kcal}"></label>`;
+  const buttons = p.confirming
+    ? `<span class="error">${esc(fill(t.really_delete, { name: e.name }))}</span>
+       <button class="text" data-action="close">${esc(t.cancel)}</button><button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
+    : `<button class="text" data-action="delete-entry">${esc(t.delete)}</button><button class="text" data-action="close">${esc(t.cancel)}</button>
+       <button class="fill" data-action="save-edit">${esc(t.save)}</button>`;
+  return `<div class="mealhead"><span>${esc(t.edit_entry)}: ${esc(e.name)}</span><span class="sub num">${number(e.kcal, locale)} ${esc(t.kcal)}</span></div>
+    <div class="grid">${amount}<label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, e.meal)}</select></label></div>
+    <div class="actions">${buttons}</div>`;
+}
+
+function copyPanelHTML(p, today, t) {
+  return `<div class="mealhead"><span>${esc(fill(t.copy_title, { meal: t[p.meal] }))}</span></div>
+    <div class="grid">
+      <label>${esc(t.copy_from_day)}<input data-field="from_day" type="date" value="${p.fromDay}" max="${today}"></label>
+      <label>${esc(t.copy_from_meal)}<select data-field="from_meal">${optionList(MEALS, t, p.fromMeal)}</select></label>
+    </div>
+    <div class="actions"><button class="text" data-action="close">${esc(t.cancel)}</button><button class="fill" data-action="do-copy">${esc(t.copy)}</button></div>`;
+}
+
+class FoodsCard extends FitnessCard {
+  static style = `
+    .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }
+    .row small { color: var(--secondary-text-color); }
+    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+  `;
+
+  static getStubConfig() {
+    return {};
+  }
+
+  static getConfigForm() {
+    return {
+      schema: [
+        { name: "title", selector: { text: {} } },
+        { name: "locale", selector: { text: {} } },
+      ],
+      computeLabel: (s) => ({ title: "Title", locale: "Language" })[s.name],
+    };
+  }
+
+  getCardSize() {
+    return 6;
+  }
+
+  async _load() {
+    this._query ??= "";
+    this._foods = await this._call({ type: "zp_my_fitness/food/search", query: this._query.trim(), limit: 100 });
+  }
+
+  _changed(event) {
+    if (event.person === null) this._refresh();
+  }
+
+  async _refresh() {
+    try {
+      await this._load();
+      this._renderList();
+    } catch {
+      this._start();
+    }
+  }
+
+  _render() {
+    if (!this._card) return;
+    const t = this._t;
+    const title = `<div class="title">${esc(this._config.title || t.title_foods)}</div>`;
+    if (!this._foods) {
+      const message = this._failure ? fill(t.error_failed, { message: this._failure.message ?? "" }) : t.loading;
+      this._card.innerHTML = `${title}<div class="${this._failure ? "error" : "muted"}">${esc(message)}</div>`;
+      return;
+    }
+    this._card.innerHTML = `<div class="head">${title}<button class="fill" data-action="new">+ ${esc(t.add_food)}</button></div>
+      <input type="search" data-action="query" value="${esc(this._query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">
+      <div class="panel" hidden></div><div class="list"></div>`;
+    this._renderList();
+    this._renderPanel();
+  }
+
+  _renderList() {
+    const list = this._card?.querySelector(".list");
+    if (list) list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t);
+  }
+
+  _renderPanel() {
+    const panel = this._card?.querySelector(".panel");
+    if (!panel) return;
+    const p = this._panel;
+    panel.hidden = !p;
+    if (!p) {
+      panel.innerHTML = "";
+      return;
+    }
+    const t = this._t;
+    const buttons = p.confirming
+      ? `<span class="error">${esc(fill(t.really_delete, { name: p.food.name }))}</span>
+         <button class="text" data-action="close">${esc(t.cancel)}</button><button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
+      : `${p.food.id ? `<button class="text" data-action="delete">${esc(t.delete)}</button>` : ""}
+         <button class="text" data-action="close">${esc(t.cancel)}</button><button class="fill" data-action="save">${esc(t.save_food)}</button>`;
+    panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${foodFormHTML(p.food, t)}
+      ${p.error ? `<div class="error">${esc(p.error)}</div>` : ""}<div class="actions">${buttons}</div>`;
+  }
+
+  // Keep what has been typed, and the food being edited, across a redraw.
+  _keepForm() {
+    this._panel.food = { ...readFoodForm(this._card).food, id: this._panel.food.id };
+  }
+
+  static actions = {
+    "click:new"() {
+      this._panel = { food: { portions: [] } };
+      this._renderPanel();
+      this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
+    },
+    "click:edit"(el) {
+      const food = this._foods.find((f) => String(f.id) === el.dataset.id);
+      this._panel = { food: JSON.parse(JSON.stringify(food)) };
+      this._renderPanel();
+    },
+    "click:close"() {
+      this._panel = null;
+      this._renderPanel();
+    },
+    "input:query"(el) {
+      this._query = el.value;
+      clearTimeout(this._searchTimer);
+      this._searchTimer = setTimeout(() => this._refresh(), SEARCH_DELAY_MS);
+    },
+    "click:add-portion"() {
+      this._keepForm();
+      this._panel.food.portions.push({ name: "", grams: null });
+      this._renderPanel();
+    },
+    "click:remove-portion"(el) {
+      this._keepForm();
+      this._panel.food.portions.splice(Number(el.dataset.index), 1);
+      this._renderPanel();
+    },
+    async "click:save"() {
+      const id = this._panel.food.id;
+      const { food, error } = readFoodForm(this._card);
+      this._panel.food = { ...food, id };
+      if (error) return this._showError(null, error);
+      const message = id ? { type: "zp_my_fitness/food/update", food_id: id, ...food } : { type: "zp_my_fitness/food/add", ...food };
+      const sent = await this._send(message, barcodeError);
+      if (sent.ok) {
+        this._panel = null;
+        this._renderPanel();
+      }
+    },
+    "click:delete"() {
+      this._panel.confirming = true;
+      this._renderPanel();
+    },
+    async "click:really-delete"() {
+      const sent = await this._send({ type: "zp_my_fitness/food/delete", food_id: this._panel.food.id });
+      if (sent.ok) {
+        this._panel = null;
+        this._renderPanel();
+      }
+    },
+  };
+}
+
+function foodsListHTML(foods, query, locale, t) {
+  if (!foods.length) {
+    return `<div class="muted">${esc(query.trim() ? fill(t.no_results, { query: query.trim() }) : t.foods_empty)}</div>`;
+  }
+  return foods
+    .map(
+      (f) => `<button class="row" data-action="edit" data-id="${f.id}"><span>${esc(f.name)}${f.barcode ? ` <small>${esc(f.barcode)}</small>` : ""}</span>
+        <small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, locale) }))}</small></button>`,
+    )
+    .join("");
+}
+
+// Home Assistant's frontend replaces window.customElements with its own
+// registry as it boots, and only finds cards defined there. The integration
+// loads this file alongside the frontend, so wait for the frontend's own
+// <home-assistant> element, which it defines once that registry is in place.
+customElements.whenDefined("home-assistant").then(() => {
+  window.customElements.define("zp-food-diary-card", FoodDiaryCard);
+  window.customElements.define("zp-foods-card", FoodsCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push(
+    {
+      type: "zp-food-diary-card",
+      name: "Food diary",
+      description: "One person's food for a day, meal by meal, from ZPMyFitnessCards",
+      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#food-diary-card",
+    },
+    {
+      type: "zp-foods-card",
+      name: "Saved foods",
+      description: "The foods saved in ZPMyFitnessCards, per 100 g",
+      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#saved-foods-card",
+    },
+  );
+});

@@ -22,6 +22,6 @@ test("the bundle defines every card", async () => {
   await mod.link(() => {});
   await mod.evaluate();
   await new Promise((r) => setImmediate(r));
-  assert.deepEqual(defined.sort(), ["zp-food-diary-card"]);
-  assert.deepEqual(Array.from(ctx.window.customCards, (c) => c.type).sort(), ["zp-food-diary-card"]);
+  assert.deepEqual(defined.sort(), ["zp-food-diary-card", "zp-foods-card"]);
+  assert.deepEqual(Array.from(ctx.window.customCards, (c) => c.type).sort(), ["zp-food-diary-card", "zp-foods-card"]);
 });

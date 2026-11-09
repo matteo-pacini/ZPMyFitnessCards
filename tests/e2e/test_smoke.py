@@ -13,6 +13,10 @@ def person_id(home: Home, name: str) -> str:
     return next(p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == name)
 
 
+def state(home: Home, entity_id: str) -> float:
+    return float(home.api("GET", f"/api/states/{entity_id}")["state"])
+
+
 def eventually(home: Home, entity_id: str, value: float, seconds: float = 10) -> dict:
     """The entity's state once it equals `value`. Sensors refresh just after a write."""
     deadline = time.monotonic() + seconds
@@ -43,6 +47,10 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
             "fat": 6.9,
         }
     )
+    # Other tests log food for Matteo too, so compare with what was there.
+    calories = state(home, "sensor.matteo_calories_today")
+    breakfast = state(home, "sensor.matteo_breakfast_calories")
+    debora = state(home, "sensor.debora_calories_today")
     home.ws(
         {
             "type": "zp_my_fitness/entry/add",
@@ -55,11 +63,11 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
     )
     home.ws({"type": "zp_my_fitness/weight/set", "person": matteo, "day": today, "kg": 68.5})
 
-    assert eventually(home, "sensor.matteo_calories_today", 389)
-    assert eventually(home, "sensor.matteo_breakfast_calories", 389)
+    assert eventually(home, "sensor.matteo_calories_today", calories + 389)
+    assert eventually(home, "sensor.matteo_breakfast_calories", breakfast + 389)
     weight = eventually(home, "sensor.matteo_weight", 68.5)
     assert weight["attributes"]["overweight_from_kg"] == 68.1
-    assert eventually(home, "sensor.debora_calories_today", 0)
+    assert state(home, "sensor.debora_calories_today") == debora
 
 
 def test_the_food_diary_card_shows_its_person(home: Home, page: Page) -> None:

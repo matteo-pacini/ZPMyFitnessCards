@@ -12,7 +12,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const SOURCES = ["food-diary-card.js"];
+const SOURCES = ["food-cards.js"];
 const root = path.join(__dirname, "..");
 const out = path.join(root, "custom_components", "zp_my_fitness", "frontend", "zp-my-fitness-cards.js");
 

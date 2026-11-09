@@ -4,7 +4,7 @@ A food diary and weight tracking for everyone in your home, inside Home Assistan
 
 ZPMyFitnessCards is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
 
-It is in early development. The integration, its database and its sensors work; the cards to log food and weight come next.
+It is in early development. The integration, its sensors and the food diary and saved foods cards work; the weight, trends and summary cards come next.
 
 ## Install
 
@@ -52,6 +52,21 @@ Postgres needs the psycopg2 driver. If your recorder already runs on Postgres wi
 
 ### Food diary card
 
+One person's day, meal by meal: the calorie goal, what they have eaten and what is left, protein, carbs and fat against their goals, and each meal's entries.
+
+![Food diary](images/food-diary.png)
+
+- **Add food** under a meal opens three tabs. **Saved foods** searches your saved foods, or lists the ones you logged recently; choose one, then type the grams or tap a portion. **Quick add** logs a name and calories without saving a food. **New food** saves a food and logs it.
+- Tap an entry to change its grams or meal, or to delete it.
+- **Copy** fills a meal from any meal on another day.
+- The arrows and the calendar move between days. Future days are not allowed.
+
+![Adding food](images/food-diary-add.png)
+
+It follows Home Assistant's theme, light or dark, and its language.
+
+![Food diary in dark mode](images/food-diary-dark.png)
+
 ```yaml
 type: custom:zp-food-diary-card
 person: Debora
@@ -59,8 +74,26 @@ person: Debora
 
 | Option | Description |
 | --- | --- |
-| `person` | Required. The name of a person added to the integration. |
+| `person` | Optional. The name of a person added to the integration. Without it, the card shows the person linked to whoever is logged in. |
+| `title` | Optional. Replaces "Food diary". |
 | `locale` | Optional. A language code such as `it` or `pt-BR`. Defaults to Home Assistant's language. |
+
+### Saved foods card
+
+The foods everyone in the house shares, with their values per 100 g. Search them, add new ones, and tap one to change or delete it. A food can have a barcode, the optional fibre, sugar, saturated fat and salt, and portions such as "Slice, 36 g", which the diary offers as shortcuts. Changing a food leaves entries already logged from it as they were.
+
+![Saved foods](images/saved-foods.png)
+
+```yaml
+type: custom:zp-foods-card
+```
+
+| Option | Description |
+| --- | --- |
+| `title` | Optional. Replaces "Saved foods". |
+| `locale` | Optional. As for the food diary card. |
+
+Both cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
 
 ## Development
 
@@ -69,6 +102,7 @@ See [AGENTS.md](AGENTS.md) for the layout and commands. Everything runs in the N
 ```sh
 nix develop
 pytest && scripts/e2e
+scripts/screenshots   # retake the images in images/
 ```
 
 ## Licence

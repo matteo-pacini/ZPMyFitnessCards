@@ -1,7 +1,7 @@
 // Loads a card script for the tests. The cards are browser scripts, so each
 // runs in a vm context with just enough DOM stubbed for its elements to be
-// defined, constructed and rendered. Rendered markup is left as a string on
-// el.shadowRoot.innerHTML.
+// defined and configured. Interaction is covered by the end-to-end tests in
+// a real browser; these cover the pure functions and the markup they build.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -9,14 +9,10 @@ const vm = require("node:vm");
 
 // Loads `file`, and resolves once its cards are defined.
 async function load(file) {
-  const ctx = vm.createContext({});
+  const ctx = vm.createContext({ Intl, setTimeout, clearTimeout });
   vm.runInContext(
     `
-    class HTMLElement {
-      attachShadow() {
-        return (this.shadowRoot = { innerHTML: "" });
-      }
-    }
+    class HTMLElement {}
     var customElements = {
       defined: {},
       define(name, cls) {
@@ -36,30 +32,14 @@ async function load(file) {
 module.exports = {
   load,
 
-  // A Home Assistant connection whose zp_my_fitness/people command answers
-  // `people`. Each message sent is kept on `sent`.
-  hass: ({ people = [], language = "en" } = {}) => {
-    const sent = [];
-    return {
-      sent,
-      locale: { language },
-      connection: {
-        sendMessagePromise: async (msg) => {
-          sent.push(msg);
-          return people;
-        },
-      },
-    };
-  },
+  // Values built inside the vm have that realm's prototypes, which deepEqual
+  // rejects; a JSON round trip brings them into this one.
+  plain: (v) => JSON.parse(JSON.stringify(v)),
 
-  // Lets pending promise callbacks run.
-  settle: () => new Promise((r) => setImmediate(r)),
-
-  // Visible text of rendered markup, without the stylesheet: tags dropped,
-  // the entities esc() writes decoded, whitespace collapsed.
+  // Visible text of rendered markup: tags dropped, the entities esc() writes
+  // decoded, whitespace collapsed.
   text: (html) =>
     html
-      .replace(/<style>[\s\S]*?<\/style>/, "")
       .replace(/<[^>]*>/g, " ")
       .replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" })[e])
       .replace(/\s+/g, " ")

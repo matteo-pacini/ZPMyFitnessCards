@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Takes the README screenshots into images/, from a brand-new Home Assistant
+# with sample data. Run in the Nix dev shell, then commit the images.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec pytest -p no:homeassistant tests/e2e/screenshots.py -k sqlite -q "$@"
