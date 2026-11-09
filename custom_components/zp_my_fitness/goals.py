@@ -1,0 +1,87 @@
+"""Calorie, macro and weight maths. Pure functions, no Home Assistant."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+
+# Multipliers of the resting burn for each activity level.
+ACTIVITY = {
+    "sedentary": 1.2,
+    "light": 1.375,
+    "moderate": 1.55,
+    "active": 1.725,
+    "very_active": 1.9,
+}
+
+# Weekly change in kg for each pace.
+PACES = {
+    "lose_0_75": -0.75,
+    "lose_0_5": -0.5,
+    "lose_0_25": -0.25,
+    "maintain": 0.0,
+}
+
+# The usual estimate of the energy in 1 kg of body fat.
+KCAL_PER_KG = 7700
+
+KCAL_PER_GRAM = {"protein": 4, "carbs": 4, "fat": 9}
+
+# Upper limits of the adult BMI bands: below 18.5 underweight, then healthy,
+# then overweight from 25, then obese from 30.
+BMI_BANDS = (("underweight", 18.5), ("healthy", 25.0), ("overweight", 30.0))
+
+
+@dataclass(frozen=True)
+class Goals:
+    """One day's targets."""
+
+    kcal: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+def age_on(birth: date, day: date) -> int:
+    """Whole years from `birth` to `day`."""
+    return day.year - birth.year - ((day.month, day.day) < (birth.month, birth.day))
+
+
+def daily_burn(sex: str, weight_kg: float, height_cm: float, age: int, activity: str) -> float:
+    """Estimated kcal burnt a day: Mifflin-St Jeor times the activity level."""
+    resting = 10 * weight_kg + 6.25 * height_cm - 5 * age + (5 if sex == "male" else -161)
+    return resting * ACTIVITY[activity]
+
+
+def suggested_calories(burn: float, pace: str) -> float:
+    """The daily kcal that changes weight at `pace`."""
+    return burn + PACES[pace] * KCAL_PER_KG / 7
+
+
+def macro_grams(kcal: float, protein_pct: float, carbs_pct: float, fat_pct: float) -> Goals:
+    """Split `kcal` into grams of each macro by percentage of energy."""
+    return Goals(
+        kcal=kcal,
+        protein=kcal * protein_pct / 100 / KCAL_PER_GRAM["protein"],
+        carbs=kcal * carbs_pct / 100 / KCAL_PER_GRAM["carbs"],
+        fat=kcal * fat_pct / 100 / KCAL_PER_GRAM["fat"],
+    )
+
+
+def band_limits(height_cm: float) -> dict[str, float]:
+    """The weights in kg where each BMI band ends, for this height."""
+    square = (height_cm / 100) ** 2
+    return {
+        "underweight_below_kg": round(18.5 * square, 1),
+        "overweight_from_kg": round(25.0 * square, 1),
+        "obese_from_kg": round(30.0 * square, 1),
+    }
+
+
+def bmi_band(weight_kg: float, height_cm: float) -> str:
+    """The BMI band this weight falls in."""
+    bmi = weight_kg / (height_cm / 100) ** 2
+    for band, upper in BMI_BANDS:
+        if bmi < upper:
+            return band
+    return "obese"

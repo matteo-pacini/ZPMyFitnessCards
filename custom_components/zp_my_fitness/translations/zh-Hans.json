@@ -1,0 +1,195 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards 已设置。请用“添加人员”添加人员。"
+    },
+    "step": {
+      "user": {
+        "description": "设置 ZPMyFitnessCards。之后请用“添加人员”逐个添加人员。"
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "abort": {
+        "erased": "已删除此人的所有食物、体重和目标。",
+        "not_loaded": "ZPMyFitnessCards 未加载。请重新加载后再试。",
+        "reconfigure_successful": "已保存。"
+      },
+      "entry_type": "人员",
+      "error": {
+        "birth_date_future": "出生日期必须早于今天。",
+        "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",
+        "name_empty": "请输入名称。",
+        "name_taken": "已有其他人使用此名称。",
+        "not_confirmed": "请勾选复选框以确认。",
+        "start_date_future": "开始日期不能晚于今天。"
+      },
+      "initiate_flow": {
+        "reconfigure": "更改人员",
+        "user": "添加人员"
+      },
+      "step": {
+        "edit": {
+          "data": {
+            "activity": "活动水平",
+            "birth_date": "出生日期",
+            "calorie_goal": "热量目标",
+            "carbs_pct": "碳水化合物",
+            "fat_pct": "脂肪",
+            "goal_weight_kg": "目标体重",
+            "height_cm": "身高",
+            "name": "名称",
+            "pace": "每周进度",
+            "person_entity": "Home Assistant 人员",
+            "protein_pct": "蛋白质",
+            "sex": "性别",
+            "start_date": "开始日期",
+            "start_weight_kg": "初始体重"
+          },
+          "data_description": {
+            "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。",
+            "carbs_pct": "热量目标中来自碳水化合物的比例。",
+            "fat_pct": "热量目标中来自脂肪的比例。",
+            "name": "显示在卡片和传感器名称中。不得与其他任何人的名称相同。",
+            "person_entity": "可选。未设置人员的卡片会显示与当前登录用户关联的人员。",
+            "protein_pct": "热量目标中来自蛋白质的比例。蛋白质、碳水化合物和脂肪合计必须为 100%。",
+            "sex": "与年龄、身高和体重一起用于估算每日消耗的热量。"
+          },
+          "title": "更改人员"
+        },
+        "erase": {
+          "data": {
+            "confirm": "是，全部删除"
+          },
+          "description": "删除为 {name} 记录的所有食物、体重和目标。此操作无法撤销。{name} 会保留，并从头开始。",
+          "title": "删除所有数据"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "更改信息",
+            "erase": "删除所有数据"
+          },
+          "title": "更改人员"
+        },
+        "user": {
+          "data": {
+            "activity": "活动水平",
+            "birth_date": "出生日期",
+            "calorie_goal": "热量目标",
+            "carbs_pct": "碳水化合物",
+            "fat_pct": "脂肪",
+            "goal_weight_kg": "目标体重",
+            "height_cm": "身高",
+            "name": "名称",
+            "pace": "每周进度",
+            "person_entity": "Home Assistant 人员",
+            "protein_pct": "蛋白质",
+            "sex": "性别",
+            "start_date": "开始日期",
+            "start_weight_kg": "初始体重"
+          },
+          "data_description": {
+            "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。",
+            "carbs_pct": "热量目标中来自碳水化合物的比例。",
+            "fat_pct": "热量目标中来自脂肪的比例。",
+            "name": "显示在卡片和传感器名称中。不得与其他任何人的名称相同。",
+            "person_entity": "可选。未设置人员的卡片会显示与当前登录用户关联的人员。",
+            "protein_pct": "热量目标中来自蛋白质的比例。蛋白质、碳水化合物和脂肪合计必须为 100%。",
+            "sex": "与年龄、身高和体重一起用于估算每日消耗的热量。"
+          },
+          "title": "添加人员"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": {
+        "name": "早餐热量"
+      },
+      "calorie_goal": {
+        "name": "热量目标"
+      },
+      "calories_remaining": {
+        "name": "剩余热量"
+      },
+      "calories_today": {
+        "name": "今日热量"
+      },
+      "carbs_goal": {
+        "name": "碳水化合物目标"
+      },
+      "carbs_today": {
+        "name": "今日碳水化合物"
+      },
+      "daily_burn": {
+        "name": "每日消耗"
+      },
+      "dinner_calories": {
+        "name": "晚餐热量"
+      },
+      "fat_goal": {
+        "name": "脂肪目标"
+      },
+      "fat_today": {
+        "name": "今日脂肪"
+      },
+      "fibre_today": {
+        "name": "今日膳食纤维"
+      },
+      "lunch_calories": {
+        "name": "午餐热量"
+      },
+      "protein_goal": {
+        "name": "蛋白质目标"
+      },
+      "protein_today": {
+        "name": "今日蛋白质"
+      },
+      "salt_today": {
+        "name": "今日盐"
+      },
+      "saturated_fat_today": {
+        "name": "今日饱和脂肪"
+      },
+      "snacks_calories": {
+        "name": "零食热量"
+      },
+      "sugar_today": {
+        "name": "今日糖"
+      },
+      "weight": {
+        "name": "体重"
+      },
+      "weight_change": {
+        "name": "体重变化"
+      }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "活跃：每周 6 到 7 天高强度运动",
+        "light": "轻度：每周运动 1 到 3 天",
+        "moderate": "中度：每周运动 3 到 5 天",
+        "sedentary": "久坐：很少或不运动",
+        "very_active": "非常活跃：体力劳动或每天训练两次"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "每周减重 0.25 千克",
+        "lose_0_5": "每周减重 0.5 千克",
+        "lose_0_75": "每周减重 0.75 千克",
+        "maintain": "保持体重"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "女",
+        "male": "男"
+      }
+    }
+  }
+}

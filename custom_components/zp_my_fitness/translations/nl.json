@@ -1,0 +1,195 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards is al ingesteld. Voeg personen toe met ‘Persoon toevoegen’."
+    },
+    "step": {
+      "user": {
+        "description": "Stelt ZPMyFitnessCards in. Voeg daarna elke persoon toe met ‘Persoon toevoegen’."
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "abort": {
+        "erased": "Alle voeding, gewichten en doelen van deze persoon zijn verwijderd.",
+        "not_loaded": "ZPMyFitnessCards is niet geladen. Laad het opnieuw en probeer het nog eens.",
+        "reconfigure_successful": "Opgeslagen."
+      },
+      "entry_type": "Persoon",
+      "error": {
+        "birth_date_future": "De geboortedatum moet in het verleden liggen.",
+        "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",
+        "name_empty": "Voer een naam in.",
+        "name_taken": "Iemand anders heeft deze naam al.",
+        "not_confirmed": "Vink het vakje aan om te bevestigen.",
+        "start_date_future": "De startdatum mag niet in de toekomst liggen."
+      },
+      "initiate_flow": {
+        "reconfigure": "Persoon wijzigen",
+        "user": "Persoon toevoegen"
+      },
+      "step": {
+        "edit": {
+          "data": {
+            "activity": "Activiteitsniveau",
+            "birth_date": "Geboortedatum",
+            "calorie_goal": "Caloriedoel",
+            "carbs_pct": "Koolhydraten",
+            "fat_pct": "Vet",
+            "goal_weight_kg": "Streefgewicht",
+            "height_cm": "Lengte",
+            "name": "Naam",
+            "pace": "Tempo per week",
+            "person_entity": "Home Assistant-persoon",
+            "protein_pct": "Eiwit",
+            "sex": "Geslacht",
+            "start_date": "Startdatum",
+            "start_weight_kg": "Startgewicht"
+          },
+          "data_description": {
+            "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan.",
+            "carbs_pct": "Deel van het caloriedoel uit koolhydraten.",
+            "fat_pct": "Deel van het caloriedoel uit vet.",
+            "name": "Staat op de kaarten en in de namen van de sensoren. Moet verschillen van de naam van ieder ander.",
+            "person_entity": "Optioneel. Kaarten zonder ingestelde persoon tonen de persoon die gekoppeld is aan wie is ingelogd.",
+            "protein_pct": "Deel van het caloriedoel uit eiwit. Eiwit, koolhydraten en vet moeten samen 100% zijn.",
+            "sex": "Wordt samen met leeftijd, lengte en gewicht gebruikt om het dagelijkse verbruik te schatten."
+          },
+          "title": "Persoon wijzigen"
+        },
+        "erase": {
+          "data": {
+            "confirm": "Ja, alles verwijderen"
+          },
+          "description": "Verwijdert alle voeding, gewichten en doelen die voor {name} zijn vastgelegd. Dit kan niet ongedaan worden gemaakt. {name} blijft bestaan en begint opnieuw.",
+          "title": "Alle gegevens verwijderen"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "Gegevens wijzigen",
+            "erase": "Alle gegevens verwijderen"
+          },
+          "title": "Persoon wijzigen"
+        },
+        "user": {
+          "data": {
+            "activity": "Activiteitsniveau",
+            "birth_date": "Geboortedatum",
+            "calorie_goal": "Caloriedoel",
+            "carbs_pct": "Koolhydraten",
+            "fat_pct": "Vet",
+            "goal_weight_kg": "Streefgewicht",
+            "height_cm": "Lengte",
+            "name": "Naam",
+            "pace": "Tempo per week",
+            "person_entity": "Home Assistant-persoon",
+            "protein_pct": "Eiwit",
+            "sex": "Geslacht",
+            "start_date": "Startdatum",
+            "start_weight_kg": "Startgewicht"
+          },
+          "data_description": {
+            "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan.",
+            "carbs_pct": "Deel van het caloriedoel uit koolhydraten.",
+            "fat_pct": "Deel van het caloriedoel uit vet.",
+            "name": "Staat op de kaarten en in de namen van de sensoren. Moet verschillen van de naam van ieder ander.",
+            "person_entity": "Optioneel. Kaarten zonder ingestelde persoon tonen de persoon die gekoppeld is aan wie is ingelogd.",
+            "protein_pct": "Deel van het caloriedoel uit eiwit. Eiwit, koolhydraten en vet moeten samen 100% zijn.",
+            "sex": "Wordt samen met leeftijd, lengte en gewicht gebruikt om het dagelijkse verbruik te schatten."
+          },
+          "title": "Persoon toevoegen"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": {
+        "name": "Calorieën ontbijt"
+      },
+      "calorie_goal": {
+        "name": "Caloriedoel"
+      },
+      "calories_remaining": {
+        "name": "Resterende calorieën"
+      },
+      "calories_today": {
+        "name": "Calorieën vandaag"
+      },
+      "carbs_goal": {
+        "name": "Koolhydratendoel"
+      },
+      "carbs_today": {
+        "name": "Koolhydraten vandaag"
+      },
+      "daily_burn": {
+        "name": "Dagelijks verbruik"
+      },
+      "dinner_calories": {
+        "name": "Calorieën avondeten"
+      },
+      "fat_goal": {
+        "name": "Vetdoel"
+      },
+      "fat_today": {
+        "name": "Vet vandaag"
+      },
+      "fibre_today": {
+        "name": "Vezels vandaag"
+      },
+      "lunch_calories": {
+        "name": "Calorieën lunch"
+      },
+      "protein_goal": {
+        "name": "Eiwitdoel"
+      },
+      "protein_today": {
+        "name": "Eiwit vandaag"
+      },
+      "salt_today": {
+        "name": "Zout vandaag"
+      },
+      "saturated_fat_today": {
+        "name": "Verzadigd vet vandaag"
+      },
+      "snacks_calories": {
+        "name": "Calorieën tussendoortjes"
+      },
+      "sugar_today": {
+        "name": "Suiker vandaag"
+      },
+      "weight": {
+        "name": "Gewicht"
+      },
+      "weight_change": {
+        "name": "Gewichtsverandering"
+      }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "Actief: zware training 6 tot 7 dagen per week",
+        "light": "Licht: training 1 tot 3 dagen per week",
+        "moderate": "Gemiddeld: training 3 tot 5 dagen per week",
+        "sedentary": "Zittend: weinig of geen beweging",
+        "very_active": "Zeer actief: lichamelijk werk of twee keer per dag training"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "0,25 kg per week afvallen",
+        "lose_0_5": "0,5 kg per week afvallen",
+        "lose_0_75": "0,75 kg per week afvallen",
+        "maintain": "Gewicht behouden"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "Vrouw",
+        "male": "Man"
+      }
+    }
+  }
+}

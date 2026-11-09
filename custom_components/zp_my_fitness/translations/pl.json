@@ -1,0 +1,195 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards jest już skonfigurowany. Dodawaj osoby przyciskiem „Dodaj osobę”."
+    },
+    "step": {
+      "user": {
+        "description": "Konfiguruje ZPMyFitnessCards. Następnie dodaj każdą osobę przyciskiem „Dodaj osobę”."
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "abort": {
+        "erased": "Usunięto wszystkie posiłki, pomiary wagi i cele tej osoby.",
+        "not_loaded": "ZPMyFitnessCards nie jest załadowany. Załaduj go ponownie i spróbuj jeszcze raz.",
+        "reconfigure_successful": "Zapisano."
+      },
+      "entry_type": "Osoba",
+      "error": {
+        "birth_date_future": "Data urodzenia musi być w przeszłości.",
+        "macros_not_100": "Białko, węglowodany i tłuszcz muszą razem dawać 100%.",
+        "name_empty": "Wpisz imię.",
+        "name_taken": "Inna osoba ma już to imię.",
+        "not_confirmed": "Zaznacz pole, aby potwierdzić.",
+        "start_date_future": "Data rozpoczęcia nie może być w przyszłości."
+      },
+      "initiate_flow": {
+        "reconfigure": "Zmień osobę",
+        "user": "Dodaj osobę"
+      },
+      "step": {
+        "edit": {
+          "data": {
+            "activity": "Poziom aktywności",
+            "birth_date": "Data urodzenia",
+            "calorie_goal": "Cel kaloryczny",
+            "carbs_pct": "Węglowodany",
+            "fat_pct": "Tłuszcz",
+            "goal_weight_kg": "Waga docelowa",
+            "height_cm": "Wzrost",
+            "name": "Imię",
+            "pace": "Tempo tygodniowe",
+            "person_entity": "Osoba w Home Assistant",
+            "protein_pct": "Białko",
+            "sex": "Płeć",
+            "start_date": "Data rozpoczęcia",
+            "start_weight_kg": "Waga początkowa"
+          },
+          "data_description": {
+            "calorie_goal": "Zostaw puste, aby użyć celu wyliczonego z powyższych danych. Zmienia się z każdym nowym pomiarem wagi.",
+            "carbs_pct": "Część celu kalorycznego z węglowodanów.",
+            "fat_pct": "Część celu kalorycznego z tłuszczu.",
+            "name": "Widoczne na kartach i w nazwach czujników. Musi różnić się od imienia każdej innej osoby.",
+            "person_entity": "Opcjonalne. Karty bez wybranej osoby pokazują osobę powiązaną z zalogowanym użytkownikiem.",
+            "protein_pct": "Część celu kalorycznego z białka. Białko, węglowodany i tłuszcz muszą razem dawać 100%.",
+            "sex": "Używane razem z wiekiem, wzrostem i wagą do oszacowania dziennego spalania kalorii."
+          },
+          "title": "Zmień osobę"
+        },
+        "erase": {
+          "data": {
+            "confirm": "Tak, usuń wszystko"
+          },
+          "description": "Usuwa wszystkie posiłki, pomiary wagi i cele zapisane dla: {name}. Tego nie można cofnąć. {name} pozostaje i zaczyna od nowa.",
+          "title": "Usuń wszystkie dane"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "Zmień dane",
+            "erase": "Usuń wszystkie dane"
+          },
+          "title": "Zmień osobę"
+        },
+        "user": {
+          "data": {
+            "activity": "Poziom aktywności",
+            "birth_date": "Data urodzenia",
+            "calorie_goal": "Cel kaloryczny",
+            "carbs_pct": "Węglowodany",
+            "fat_pct": "Tłuszcz",
+            "goal_weight_kg": "Waga docelowa",
+            "height_cm": "Wzrost",
+            "name": "Imię",
+            "pace": "Tempo tygodniowe",
+            "person_entity": "Osoba w Home Assistant",
+            "protein_pct": "Białko",
+            "sex": "Płeć",
+            "start_date": "Data rozpoczęcia",
+            "start_weight_kg": "Waga początkowa"
+          },
+          "data_description": {
+            "calorie_goal": "Zostaw puste, aby użyć celu wyliczonego z powyższych danych. Zmienia się z każdym nowym pomiarem wagi.",
+            "carbs_pct": "Część celu kalorycznego z węglowodanów.",
+            "fat_pct": "Część celu kalorycznego z tłuszczu.",
+            "name": "Widoczne na kartach i w nazwach czujników. Musi różnić się od imienia każdej innej osoby.",
+            "person_entity": "Opcjonalne. Karty bez wybranej osoby pokazują osobę powiązaną z zalogowanym użytkownikiem.",
+            "protein_pct": "Część celu kalorycznego z białka. Białko, węglowodany i tłuszcz muszą razem dawać 100%.",
+            "sex": "Używane razem z wiekiem, wzrostem i wagą do oszacowania dziennego spalania kalorii."
+          },
+          "title": "Dodaj osobę"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": {
+        "name": "Kalorie śniadanie"
+      },
+      "calorie_goal": {
+        "name": "Cel kaloryczny"
+      },
+      "calories_remaining": {
+        "name": "Pozostałe kalorie"
+      },
+      "calories_today": {
+        "name": "Kalorie dzisiaj"
+      },
+      "carbs_goal": {
+        "name": "Cel węglowodanów"
+      },
+      "carbs_today": {
+        "name": "Węglowodany dzisiaj"
+      },
+      "daily_burn": {
+        "name": "Dzienne spalanie"
+      },
+      "dinner_calories": {
+        "name": "Kalorie kolacja"
+      },
+      "fat_goal": {
+        "name": "Cel tłuszczu"
+      },
+      "fat_today": {
+        "name": "Tłuszcz dzisiaj"
+      },
+      "fibre_today": {
+        "name": "Błonnik dzisiaj"
+      },
+      "lunch_calories": {
+        "name": "Kalorie obiad"
+      },
+      "protein_goal": {
+        "name": "Cel białka"
+      },
+      "protein_today": {
+        "name": "Białko dzisiaj"
+      },
+      "salt_today": {
+        "name": "Sól dzisiaj"
+      },
+      "saturated_fat_today": {
+        "name": "Tłuszcze nasycone dzisiaj"
+      },
+      "snacks_calories": {
+        "name": "Kalorie przekąski"
+      },
+      "sugar_today": {
+        "name": "Cukier dzisiaj"
+      },
+      "weight": {
+        "name": "Waga"
+      },
+      "weight_change": {
+        "name": "Zmiana wagi"
+      }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "Aktywny: intensywny trening 6–7 dni w tygodniu",
+        "light": "Lekki: trening 1–3 dni w tygodniu",
+        "moderate": "Umiarkowany: trening 3–5 dni w tygodniu",
+        "sedentary": "Siedzący: mało lub brak ruchu",
+        "very_active": "Bardzo aktywny: praca fizyczna lub trening dwa razy dziennie"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "Chudnij 0,25 kg tygodniowo",
+        "lose_0_5": "Chudnij 0,5 kg tygodniowo",
+        "lose_0_75": "Chudnij 0,75 kg tygodniowo",
+        "maintain": "Utrzymaj wagę"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "Kobieta",
+        "male": "Mężczyzna"
+      }
+    }
+  }
+}

@@ -11,24 +11,144 @@
   },
   "config_subentries": {
     "person": {
+      "abort": {
+        "erased": "Deleted all of this person's food, weights and goals.",
+        "not_loaded": "ZPMyFitnessCards is not loaded. Reload it, then try again.",
+        "reconfigure_successful": "Saved."
+      },
       "entry_type": "Person",
       "error": {
+        "birth_date_future": "The birth date must be in the past.",
+        "macros_not_100": "Protein, carbs and fat must add up to 100%.",
         "name_empty": "Enter a name.",
-        "name_taken": "Another person already has this name."
+        "name_taken": "Another person already has this name.",
+        "not_confirmed": "Tick the box to confirm.",
+        "start_date_future": "The start date cannot be in the future."
       },
       "initiate_flow": {
+        "reconfigure": "Change person",
         "user": "Add person"
       },
       "step": {
-        "user": {
+        "edit": {
           "data": {
-            "name": "Name"
+            "activity": "Activity level",
+            "birth_date": "Birth date",
+            "calorie_goal": "Calorie goal",
+            "carbs_pct": "Carbs",
+            "fat_pct": "Fat",
+            "goal_weight_kg": "Goal weight",
+            "height_cm": "Height",
+            "name": "Name",
+            "pace": "Weekly pace",
+            "person_entity": "Home Assistant person",
+            "protein_pct": "Protein",
+            "sex": "Sex",
+            "start_date": "Start date",
+            "start_weight_kg": "Starting weight"
           },
           "data_description": {
-            "name": "Shown on the cards. It must differ from every other person's name."
+            "calorie_goal": "Leave empty to use the goal worked out from the details above. It follows each new weight.",
+            "carbs_pct": "Share of the calorie goal from carbs.",
+            "fat_pct": "Share of the calorie goal from fat.",
+            "name": "Shown on the cards and in the sensors' names. It must differ from every other person's name.",
+            "person_entity": "Optional. Cards with no person set show the person linked to whoever is logged in.",
+            "protein_pct": "Share of the calorie goal from protein. Protein, carbs and fat must add up to 100%.",
+            "sex": "Used with age, height and weight to estimate the calories burnt a day."
+          },
+          "title": "Change person"
+        },
+        "erase": {
+          "data": {
+            "confirm": "Yes, delete it all"
+          },
+          "description": "Deletes every food entry, weight and goal logged for {name}. This cannot be undone. {name} stays, starting again from nothing.",
+          "title": "Delete all data"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "Change details",
+            "erase": "Delete all data"
+          },
+          "title": "Change person"
+        },
+        "user": {
+          "data": {
+            "activity": "Activity level",
+            "birth_date": "Birth date",
+            "calorie_goal": "Calorie goal",
+            "carbs_pct": "Carbs",
+            "fat_pct": "Fat",
+            "goal_weight_kg": "Goal weight",
+            "height_cm": "Height",
+            "name": "Name",
+            "pace": "Weekly pace",
+            "person_entity": "Home Assistant person",
+            "protein_pct": "Protein",
+            "sex": "Sex",
+            "start_date": "Start date",
+            "start_weight_kg": "Starting weight"
+          },
+          "data_description": {
+            "calorie_goal": "Leave empty to use the goal worked out from the details above. It follows each new weight.",
+            "carbs_pct": "Share of the calorie goal from carbs.",
+            "fat_pct": "Share of the calorie goal from fat.",
+            "name": "Shown on the cards and in the sensors' names. It must differ from every other person's name.",
+            "person_entity": "Optional. Cards with no person set show the person linked to whoever is logged in.",
+            "protein_pct": "Share of the calorie goal from protein. Protein, carbs and fat must add up to 100%.",
+            "sex": "Used with age, height and weight to estimate the calories burnt a day."
           },
           "title": "Add person"
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": { "name": "Breakfast calories" },
+      "calorie_goal": { "name": "Calorie goal" },
+      "calories_remaining": { "name": "Calories remaining" },
+      "calories_today": { "name": "Calories today" },
+      "carbs_goal": { "name": "Carbs goal" },
+      "carbs_today": { "name": "Carbs today" },
+      "daily_burn": { "name": "Daily burn" },
+      "dinner_calories": { "name": "Dinner calories" },
+      "fat_goal": { "name": "Fat goal" },
+      "fat_today": { "name": "Fat today" },
+      "fibre_today": { "name": "Fibre today" },
+      "lunch_calories": { "name": "Lunch calories" },
+      "protein_goal": { "name": "Protein goal" },
+      "protein_today": { "name": "Protein today" },
+      "salt_today": { "name": "Salt today" },
+      "saturated_fat_today": { "name": "Saturated fat today" },
+      "snacks_calories": { "name": "Snacks calories" },
+      "sugar_today": { "name": "Sugar today" },
+      "weight": { "name": "Weight" },
+      "weight_change": { "name": "Weight change" }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "Active: hard exercise 6 to 7 days a week",
+        "light": "Light: exercise 1 to 3 days a week",
+        "moderate": "Moderate: exercise 3 to 5 days a week",
+        "sedentary": "Sedentary: little or no exercise",
+        "very_active": "Very active: physical job or training twice a day"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "Lose 0.25 kg a week",
+        "lose_0_5": "Lose 0.5 kg a week",
+        "lose_0_75": "Lose 0.75 kg a week",
+        "maintain": "Keep my weight"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "Female",
+        "male": "Male"
       }
     }
   }

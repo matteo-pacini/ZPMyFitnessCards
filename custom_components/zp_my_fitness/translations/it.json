@@ -1,0 +1,195 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards è già configurato. Aggiungi le persone con «Aggiungi persona»."
+    },
+    "step": {
+      "user": {
+        "description": "Configura ZPMyFitnessCards. Poi aggiungi ogni persona con «Aggiungi persona»."
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "abort": {
+        "erased": "Eliminati tutti gli alimenti, i pesi e gli obiettivi di questa persona.",
+        "not_loaded": "ZPMyFitnessCards non è caricato. Ricaricalo e riprova.",
+        "reconfigure_successful": "Salvato."
+      },
+      "entry_type": "Persona",
+      "error": {
+        "birth_date_future": "La data di nascita deve essere nel passato.",
+        "macros_not_100": "Proteine, carboidrati e grassi devono sommare al 100%.",
+        "name_empty": "Inserisci un nome.",
+        "name_taken": "Un'altra persona ha già questo nome.",
+        "not_confirmed": "Spunta la casella per confermare.",
+        "start_date_future": "La data di inizio non può essere nel futuro."
+      },
+      "initiate_flow": {
+        "reconfigure": "Modifica persona",
+        "user": "Aggiungi persona"
+      },
+      "step": {
+        "edit": {
+          "data": {
+            "activity": "Livello di attività",
+            "birth_date": "Data di nascita",
+            "calorie_goal": "Obiettivo calorico",
+            "carbs_pct": "Carboidrati",
+            "fat_pct": "Grassi",
+            "goal_weight_kg": "Peso obiettivo",
+            "height_cm": "Altezza",
+            "name": "Nome",
+            "pace": "Ritmo settimanale",
+            "person_entity": "Persona di Home Assistant",
+            "protein_pct": "Proteine",
+            "sex": "Sesso",
+            "start_date": "Data di inizio",
+            "start_weight_kg": "Peso iniziale"
+          },
+          "data_description": {
+            "calorie_goal": "Lascia vuoto per usare l'obiettivo calcolato dai dati sopra. Si aggiorna a ogni nuovo peso.",
+            "carbs_pct": "Quota dell'obiettivo calorico dai carboidrati.",
+            "fat_pct": "Quota dell'obiettivo calorico dai grassi.",
+            "name": "Appare sulle schede e nei nomi dei sensori. Deve essere diverso dal nome di ogni altra persona.",
+            "person_entity": "Facoltativo. Le schede senza una persona impostata mostrano la persona collegata a chi ha effettuato l'accesso.",
+            "protein_pct": "Quota dell'obiettivo calorico dalle proteine. Proteine, carboidrati e grassi devono sommare al 100%.",
+            "sex": "Usato con età, altezza e peso per stimare le calorie bruciate al giorno."
+          },
+          "title": "Modifica persona"
+        },
+        "erase": {
+          "data": {
+            "confirm": "Sì, elimina tutto"
+          },
+          "description": "Elimina tutti gli alimenti, i pesi e gli obiettivi registrati per {name}. Non si può annullare. {name} resta e ricomincia da zero.",
+          "title": "Elimina tutti i dati"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "Modifica i dati",
+            "erase": "Elimina tutti i dati"
+          },
+          "title": "Modifica persona"
+        },
+        "user": {
+          "data": {
+            "activity": "Livello di attività",
+            "birth_date": "Data di nascita",
+            "calorie_goal": "Obiettivo calorico",
+            "carbs_pct": "Carboidrati",
+            "fat_pct": "Grassi",
+            "goal_weight_kg": "Peso obiettivo",
+            "height_cm": "Altezza",
+            "name": "Nome",
+            "pace": "Ritmo settimanale",
+            "person_entity": "Persona di Home Assistant",
+            "protein_pct": "Proteine",
+            "sex": "Sesso",
+            "start_date": "Data di inizio",
+            "start_weight_kg": "Peso iniziale"
+          },
+          "data_description": {
+            "calorie_goal": "Lascia vuoto per usare l'obiettivo calcolato dai dati sopra. Si aggiorna a ogni nuovo peso.",
+            "carbs_pct": "Quota dell'obiettivo calorico dai carboidrati.",
+            "fat_pct": "Quota dell'obiettivo calorico dai grassi.",
+            "name": "Appare sulle schede e nei nomi dei sensori. Deve essere diverso dal nome di ogni altra persona.",
+            "person_entity": "Facoltativo. Le schede senza una persona impostata mostrano la persona collegata a chi ha effettuato l'accesso.",
+            "protein_pct": "Quota dell'obiettivo calorico dalle proteine. Proteine, carboidrati e grassi devono sommare al 100%.",
+            "sex": "Usato con età, altezza e peso per stimare le calorie bruciate al giorno."
+          },
+          "title": "Aggiungi persona"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": {
+        "name": "Calorie colazione"
+      },
+      "calorie_goal": {
+        "name": "Obiettivo calorico"
+      },
+      "calories_remaining": {
+        "name": "Calorie rimanenti"
+      },
+      "calories_today": {
+        "name": "Calorie di oggi"
+      },
+      "carbs_goal": {
+        "name": "Obiettivo carboidrati"
+      },
+      "carbs_today": {
+        "name": "Carboidrati di oggi"
+      },
+      "daily_burn": {
+        "name": "Consumo giornaliero"
+      },
+      "dinner_calories": {
+        "name": "Calorie cena"
+      },
+      "fat_goal": {
+        "name": "Obiettivo grassi"
+      },
+      "fat_today": {
+        "name": "Grassi di oggi"
+      },
+      "fibre_today": {
+        "name": "Fibre di oggi"
+      },
+      "lunch_calories": {
+        "name": "Calorie pranzo"
+      },
+      "protein_goal": {
+        "name": "Obiettivo proteine"
+      },
+      "protein_today": {
+        "name": "Proteine di oggi"
+      },
+      "salt_today": {
+        "name": "Sale di oggi"
+      },
+      "saturated_fat_today": {
+        "name": "Grassi saturi di oggi"
+      },
+      "snacks_calories": {
+        "name": "Calorie spuntini"
+      },
+      "sugar_today": {
+        "name": "Zuccheri di oggi"
+      },
+      "weight": {
+        "name": "Peso"
+      },
+      "weight_change": {
+        "name": "Variazione di peso"
+      }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "Attivo: allenamento intenso 6-7 giorni a settimana",
+        "light": "Leggero: allenamento 1-3 giorni a settimana",
+        "moderate": "Moderato: allenamento 3-5 giorni a settimana",
+        "sedentary": "Sedentario: poco o nessun esercizio",
+        "very_active": "Molto attivo: lavoro fisico o allenamento due volte al giorno"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "Perdere 0,25 kg a settimana",
+        "lose_0_5": "Perdere 0,5 kg a settimana",
+        "lose_0_75": "Perdere 0,75 kg a settimana",
+        "maintain": "Mantenere il peso"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "Femmina",
+        "male": "Maschio"
+      }
+    }
+  }
+}

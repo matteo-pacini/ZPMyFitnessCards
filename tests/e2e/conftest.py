@@ -37,6 +37,21 @@ OWNER = {"name": "Test Owner", "username": "owner", "password": "test-password-e
 
 PEOPLE = ["Matteo", "Debora"]
 
+# The person form, as filled in for each of PEOPLE.
+PERSON_FORM = {
+    "sex": "female",
+    "birth_date": "1996-03-15",
+    "height_cm": 165,
+    "start_weight_kg": 70,
+    "start_date": "2026-11-01",
+    "goal_weight_kg": 62,
+    "activity": "moderate",
+    "pace": "lose_0_5",
+    "protein_pct": 20,
+    "carbs_pct": 50,
+    "fat_pct": 30,
+}
+
 CONFIGURATION = """\
 homeassistant:
   name: Test home
@@ -183,10 +198,21 @@ def _add_integration(home: Home) -> str:
         done = home.api(
             "POST",
             f"/api/config/config_entries/subentries/flow/{flow['flow_id']}",
-            {"name": name},
+            {"name": name, **PERSON_FORM},
         )
         assert done["type"] == "create_entry", done
-    return entry_id
+    # Adding a person reloads the entry in the background. Wait until the
+    # reloaded entry answers with everyone.
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        try:
+            people = home.ws({"type": "zp_my_fitness/people"})
+        except AssertionError:
+            people = []
+        if sorted(p["name"] for p in people) == sorted(PEOPLE):
+            return entry_id
+        time.sleep(0.2)
+    raise TimeoutError("ZPMyFitnessCards did not finish loading its people")
 
 
 @pytest.fixture(scope="session")

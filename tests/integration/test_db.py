@@ -1,0 +1,137 @@
+"""The SQLite database, without Home Assistant."""
+
+import sqlite3
+from pathlib import Path
+
+import pytest
+
+from custom_components.zp_my_fitness.db import MIGRATIONS, Database
+from custom_components.zp_my_fitness.goals import Goals
+
+OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
+
+
+@pytest.fixture
+def db(tmp_path: Path) -> Database:
+    database = Database(tmp_path / "test.db")
+    database.open()
+    yield database
+    database.close()
+
+
+def entry(day: str, meal: str = "breakfast", kcal: float = 100, **more) -> dict:
+    return {"day": day, "meal": meal, "name": "Food", "kcal": kcal, **more}
+
+
+def test_creates_the_latest_schema_and_reopens_without_migrating(tmp_path: Path) -> None:
+    first = Database(tmp_path / "test.db")
+    first.open()
+    assert first.schema_version() == len(MIGRATIONS)
+    first.add_food(OATS)
+    first.close()
+    again = Database(tmp_path / "test.db")
+    again.open()
+    assert again.schema_version() == len(MIGRATIONS)
+    assert again.search_foods("oats", 10)[0]["name"] == "Porridge oats"
+    again.close()
+
+
+def test_foods_search_by_name_or_barcode(db: Database) -> None:
+    db.add_food({**OATS, "barcode": "123", "portions": [{"name": "Bowl", "grams": 40}]})
+    db.add_food({"name": "100% rye", "kcal": 250, "protein": 8, "carbs": 48, "fat": 1.7})
+    assert [f["name"] for f in db.search_foods("OAT", 10)] == ["Porridge oats"]
+    assert [f["name"] for f in db.search_foods("123", 10)] == ["Porridge oats"]
+    # % and _ match themselves, not any text.
+    assert [f["name"] for f in db.search_foods("0%", 10)] == ["100% rye"]
+    assert db.food_by_barcode("123")["portions"] == [{"name": "Bowl", "grams": 40}]
+
+
+def test_a_barcode_belongs_to_one_food(db: Database) -> None:
+    db.add_food({**OATS, "barcode": "123"})
+    with pytest.raises(sqlite3.IntegrityError):
+        db.add_food({**OATS, "name": "Other", "barcode": "123"})
+
+
+def test_updates_and_deletes_foods(db: Database) -> None:
+    food = db.add_food(OATS)
+    assert db.update_food(food["id"], {"kcal": 380})["kcal"] == 380
+    assert db.update_food(999, {"kcal": 1}) is None
+    assert db.delete_food(food["id"])
+    assert not db.delete_food(food["id"])
+
+
+def test_deleting_a_food_keeps_its_entries(db: Database) -> None:
+    food = db.add_food(OATS)
+    logged = db.add_entry("p", entry("2026-11-09", food_id=food["id"], kcal=233))
+    db.delete_food(food["id"])
+    kept = db.entry(logged["id"])
+    assert kept["food_id"] is None
+    assert kept["kcal"] == 233
+
+
+def test_recent_foods_are_the_person_s_newest_first(db: Database) -> None:
+    oats = db.add_food(OATS)
+    rye = db.add_food({**OATS, "name": "Rye"})
+    db.add_entry("p", entry("2026-11-08", food_id=oats["id"]))
+    db.add_entry("p", entry("2026-11-09", food_id=rye["id"]))
+    db.add_entry("other", entry("2026-11-09", food_id=oats["id"]))
+    assert [f["name"] for f in db.recent_foods("p", 10)] == ["Rye", "Porridge oats"]
+
+
+def test_meal_totals_by_day_and_meal(db: Database) -> None:
+    db.add_entry("p", entry("2026-11-08", kcal=100, protein=10))
+    db.add_entry("p", entry("2026-11-09", kcal=200, protein=None))
+    db.add_entry("p", entry("2026-11-09", kcal=50, protein=5))
+    db.add_entry("p", entry("2026-11-09", "dinner", kcal=700))
+    db.add_entry("other", entry("2026-11-09", kcal=999))
+    totals = db.meal_totals("p", "2026-11-09", "2026-11-09")
+    assert totals["2026-11-09"]["breakfast"]["kcal"] == 250
+    # Missing values count as 0.
+    assert totals["2026-11-09"]["breakfast"]["protein"] == 5
+    assert totals["2026-11-09"]["dinner"]["kcal"] == 700
+    assert "2026-11-08" not in totals
+
+
+def test_one_weight_a_day_the_last_wins(db: Database) -> None:
+    db.set_weight("p", "2026-11-08", 70.4)
+    db.set_weight("p", "2026-11-09", 70.2)
+    db.set_weight("p", "2026-11-09", 69.9)
+    assert db.weights("p", "2026-11-01", "2026-11-30") == [
+        {"day": "2026-11-08", "kg": 70.4},
+        {"day": "2026-11-09", "kg": 69.9},
+    ]
+    assert db.latest_weight("p", "2026-11-08") == {"day": "2026-11-08", "kg": 70.4}
+    db.delete_weight("p", "2026-11-09")
+    assert db.latest_weight("p", "2026-11-09")["kg"] == 70.4
+
+
+def test_goals_hold_until_the_next_change(db: Database) -> None:
+    first, second = Goals(1800, 90, 225, 60), Goals(1700, 85, 212.5, 56.7)
+    db.set_goal("p", "2026-11-01", first)
+    db.set_goal("p", "2026-11-05", second)
+    assert db.goal_on("p", "2026-10-31") is None
+    assert db.goal_on("p", "2026-11-04") == first
+    assert db.goal_on("p", "2026-11-09") == second
+    assert db.goal_changes("p", "2026-11-04") == [("2026-11-01", first)]
+
+
+def test_remembers_removed_people_by_name(db: Database) -> None:
+    db.sync_people([("k1", "Debora"), ("k2", "Matteo")])
+    assert db.key_for_name("debora", exclude=[]) == "k1"
+    assert db.key_for_name("Debora", exclude=["k1"]) is None
+    db.sync_people([("k1", "Deb")])
+    assert db.key_for_name("Debora", exclude=[]) is None
+
+
+def test_deletes_everything_for_one_person(db: Database) -> None:
+    db.sync_people([("p", "P"), ("q", "Q")])
+    for who in ("p", "q"):
+        db.add_entry(who, entry("2026-11-09"))
+        db.set_weight(who, "2026-11-09", 70)
+        db.set_goal(who, "2026-11-09", Goals(1, 1, 1, 1))
+    db.delete_person("p")
+    assert db.day_entries("p", "2026-11-09") == []
+    assert db.latest_weight("p", "2026-11-09") is None
+    assert db.goal_on("p", "2026-11-09") is None
+    assert db.key_for_name("P", exclude=[]) is None
+    assert len(db.day_entries("q", "2026-11-09")) == 1

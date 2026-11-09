@@ -1,0 +1,195 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards är redan konfigurerat. Lägg till personer med ”Lägg till person”."
+    },
+    "step": {
+      "user": {
+        "description": "Konfigurerar ZPMyFitnessCards. Lägg sedan till varje person med ”Lägg till person”."
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "abort": {
+        "erased": "All mat, alla vikter och mål för den här personen har tagits bort.",
+        "not_loaded": "ZPMyFitnessCards är inte inläst. Läs in det igen och försök sedan på nytt.",
+        "reconfigure_successful": "Sparat."
+      },
+      "entry_type": "Person",
+      "error": {
+        "birth_date_future": "Födelsedatumet måste ligga bakåt i tiden.",
+        "macros_not_100": "Protein, kolhydrater och fett måste bli 100 % tillsammans.",
+        "name_empty": "Ange ett namn.",
+        "name_taken": "En annan person har redan det här namnet.",
+        "not_confirmed": "Kryssa i rutan för att bekräfta.",
+        "start_date_future": "Startdatumet kan inte ligga i framtiden."
+      },
+      "initiate_flow": {
+        "reconfigure": "Ändra person",
+        "user": "Lägg till person"
+      },
+      "step": {
+        "edit": {
+          "data": {
+            "activity": "Aktivitetsnivå",
+            "birth_date": "Födelsedatum",
+            "calorie_goal": "Kalorimål",
+            "carbs_pct": "Kolhydrater",
+            "fat_pct": "Fett",
+            "goal_weight_kg": "Målvikt",
+            "height_cm": "Längd",
+            "name": "Namn",
+            "pace": "Takt per vecka",
+            "person_entity": "Person i Home Assistant",
+            "protein_pct": "Protein",
+            "sex": "Kön",
+            "start_date": "Startdatum",
+            "start_weight_kg": "Startvikt"
+          },
+          "data_description": {
+            "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt.",
+            "carbs_pct": "Andel av kalorimålet från kolhydrater.",
+            "fat_pct": "Andel av kalorimålet från fett.",
+            "name": "Visas på korten och i sensorernas namn. Måste skilja sig från alla andra personers namn.",
+            "person_entity": "Valfritt. Kort utan angiven person visar personen som är kopplad till den som är inloggad.",
+            "protein_pct": "Andel av kalorimålet från protein. Protein, kolhydrater och fett måste bli 100 % tillsammans.",
+            "sex": "Används med ålder, längd och vikt för att uppskatta hur många kalorier som förbrukas per dag."
+          },
+          "title": "Ändra person"
+        },
+        "erase": {
+          "data": {
+            "confirm": "Ja, ta bort allt"
+          },
+          "description": "Tar bort all mat, alla vikter och mål som loggats för {name}. Det går inte att ångra. {name} finns kvar och börjar om från noll.",
+          "title": "Ta bort all data"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "Ändra uppgifter",
+            "erase": "Ta bort all data"
+          },
+          "title": "Ändra person"
+        },
+        "user": {
+          "data": {
+            "activity": "Aktivitetsnivå",
+            "birth_date": "Födelsedatum",
+            "calorie_goal": "Kalorimål",
+            "carbs_pct": "Kolhydrater",
+            "fat_pct": "Fett",
+            "goal_weight_kg": "Målvikt",
+            "height_cm": "Längd",
+            "name": "Namn",
+            "pace": "Takt per vecka",
+            "person_entity": "Person i Home Assistant",
+            "protein_pct": "Protein",
+            "sex": "Kön",
+            "start_date": "Startdatum",
+            "start_weight_kg": "Startvikt"
+          },
+          "data_description": {
+            "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt.",
+            "carbs_pct": "Andel av kalorimålet från kolhydrater.",
+            "fat_pct": "Andel av kalorimålet från fett.",
+            "name": "Visas på korten och i sensorernas namn. Måste skilja sig från alla andra personers namn.",
+            "person_entity": "Valfritt. Kort utan angiven person visar personen som är kopplad till den som är inloggad.",
+            "protein_pct": "Andel av kalorimålet från protein. Protein, kolhydrater och fett måste bli 100 % tillsammans.",
+            "sex": "Används med ålder, längd och vikt för att uppskatta hur många kalorier som förbrukas per dag."
+          },
+          "title": "Lägg till person"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": {
+        "name": "Kalorier frukost"
+      },
+      "calorie_goal": {
+        "name": "Kalorimål"
+      },
+      "calories_remaining": {
+        "name": "Kalorier kvar"
+      },
+      "calories_today": {
+        "name": "Kalorier i dag"
+      },
+      "carbs_goal": {
+        "name": "Kolhydratmål"
+      },
+      "carbs_today": {
+        "name": "Kolhydrater i dag"
+      },
+      "daily_burn": {
+        "name": "Daglig förbrukning"
+      },
+      "dinner_calories": {
+        "name": "Kalorier middag"
+      },
+      "fat_goal": {
+        "name": "Fettmål"
+      },
+      "fat_today": {
+        "name": "Fett i dag"
+      },
+      "fibre_today": {
+        "name": "Fibrer i dag"
+      },
+      "lunch_calories": {
+        "name": "Kalorier lunch"
+      },
+      "protein_goal": {
+        "name": "Proteinmål"
+      },
+      "protein_today": {
+        "name": "Protein i dag"
+      },
+      "salt_today": {
+        "name": "Salt i dag"
+      },
+      "saturated_fat_today": {
+        "name": "Mättat fett i dag"
+      },
+      "snacks_calories": {
+        "name": "Kalorier mellanmål"
+      },
+      "sugar_today": {
+        "name": "Socker i dag"
+      },
+      "weight": {
+        "name": "Vikt"
+      },
+      "weight_change": {
+        "name": "Viktförändring"
+      }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "Aktiv: hård träning 6–7 dagar i veckan",
+        "light": "Lätt: träning 1–3 dagar i veckan",
+        "moderate": "Måttlig: träning 3–5 dagar i veckan",
+        "sedentary": "Stillasittande: lite eller ingen träning",
+        "very_active": "Mycket aktiv: fysiskt arbete eller träning två gånger om dagen"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "Gå ner 0,25 kg i veckan",
+        "lose_0_5": "Gå ner 0,5 kg i veckan",
+        "lose_0_75": "Gå ner 0,75 kg i veckan",
+        "maintain": "Behåll vikten"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "Kvinna",
+        "male": "Man"
+      }
+    }
+  }
+}

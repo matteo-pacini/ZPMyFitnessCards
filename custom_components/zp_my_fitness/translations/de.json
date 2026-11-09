@@ -1,0 +1,195 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards ist bereits eingerichtet. Füge Personen mit „Person hinzufügen“ hinzu."
+    },
+    "step": {
+      "user": {
+        "description": "Richtet ZPMyFitnessCards ein. Füge danach jede Person mit „Person hinzufügen“ hinzu."
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "abort": {
+        "erased": "Alle Lebensmittel, Gewichte und Ziele dieser Person wurden gelöscht.",
+        "not_loaded": "ZPMyFitnessCards ist nicht geladen. Lade es neu und versuche es dann erneut.",
+        "reconfigure_successful": "Gespeichert."
+      },
+      "entry_type": "Person",
+      "error": {
+        "birth_date_future": "Das Geburtsdatum muss in der Vergangenheit liegen.",
+        "macros_not_100": "Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
+        "name_empty": "Gib einen Namen ein.",
+        "name_taken": "Eine andere Person hat bereits diesen Namen.",
+        "not_confirmed": "Setze das Häkchen zur Bestätigung.",
+        "start_date_future": "Das Startdatum darf nicht in der Zukunft liegen."
+      },
+      "initiate_flow": {
+        "reconfigure": "Person ändern",
+        "user": "Person hinzufügen"
+      },
+      "step": {
+        "edit": {
+          "data": {
+            "activity": "Aktivitätsniveau",
+            "birth_date": "Geburtsdatum",
+            "calorie_goal": "Kalorienziel",
+            "carbs_pct": "Kohlenhydrate",
+            "fat_pct": "Fett",
+            "goal_weight_kg": "Zielgewicht",
+            "height_cm": "Größe",
+            "name": "Name",
+            "pace": "Wöchentliches Tempo",
+            "person_entity": "Home-Assistant-Person",
+            "protein_pct": "Eiweiß",
+            "sex": "Geschlecht",
+            "start_date": "Startdatum",
+            "start_weight_kg": "Startgewicht"
+          },
+          "data_description": {
+            "calorie_goal": "Leer lassen, um das aus den Angaben oben berechnete Ziel zu verwenden. Es passt sich jedem neuen Gewicht an.",
+            "carbs_pct": "Anteil des Kalorienziels aus Kohlenhydraten.",
+            "fat_pct": "Anteil des Kalorienziels aus Fett.",
+            "name": "Wird auf den Karten und in den Sensornamen angezeigt. Er muss sich von den Namen aller anderen Personen unterscheiden.",
+            "person_entity": "Optional. Karten ohne festgelegte Person zeigen die Person, die mit dem angemeldeten Benutzer verknüpft ist.",
+            "protein_pct": "Anteil des Kalorienziels aus Eiweiß. Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
+            "sex": "Wird mit Alter, Größe und Gewicht verwendet, um den täglichen Kalorienverbrauch zu schätzen."
+          },
+          "title": "Person ändern"
+        },
+        "erase": {
+          "data": {
+            "confirm": "Ja, alles löschen"
+          },
+          "description": "Löscht alle für {name} erfassten Lebensmittel, Gewichte und Ziele. Das kann nicht rückgängig gemacht werden. {name} bleibt bestehen und beginnt wieder bei null.",
+          "title": "Alle Daten löschen"
+        },
+        "reconfigure": {
+          "menu_options": {
+            "edit": "Angaben ändern",
+            "erase": "Alle Daten löschen"
+          },
+          "title": "Person ändern"
+        },
+        "user": {
+          "data": {
+            "activity": "Aktivitätsniveau",
+            "birth_date": "Geburtsdatum",
+            "calorie_goal": "Kalorienziel",
+            "carbs_pct": "Kohlenhydrate",
+            "fat_pct": "Fett",
+            "goal_weight_kg": "Zielgewicht",
+            "height_cm": "Größe",
+            "name": "Name",
+            "pace": "Wöchentliches Tempo",
+            "person_entity": "Home-Assistant-Person",
+            "protein_pct": "Eiweiß",
+            "sex": "Geschlecht",
+            "start_date": "Startdatum",
+            "start_weight_kg": "Startgewicht"
+          },
+          "data_description": {
+            "calorie_goal": "Leer lassen, um das aus den Angaben oben berechnete Ziel zu verwenden. Es passt sich jedem neuen Gewicht an.",
+            "carbs_pct": "Anteil des Kalorienziels aus Kohlenhydraten.",
+            "fat_pct": "Anteil des Kalorienziels aus Fett.",
+            "name": "Wird auf den Karten und in den Sensornamen angezeigt. Er muss sich von den Namen aller anderen Personen unterscheiden.",
+            "person_entity": "Optional. Karten ohne festgelegte Person zeigen die Person, die mit dem angemeldeten Benutzer verknüpft ist.",
+            "protein_pct": "Anteil des Kalorienziels aus Eiweiß. Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
+            "sex": "Wird mit Alter, Größe und Gewicht verwendet, um den täglichen Kalorienverbrauch zu schätzen."
+          },
+          "title": "Person hinzufügen"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "breakfast_calories": {
+        "name": "Kalorien Frühstück"
+      },
+      "calorie_goal": {
+        "name": "Kalorienziel"
+      },
+      "calories_remaining": {
+        "name": "Verbleibende Kalorien"
+      },
+      "calories_today": {
+        "name": "Kalorien heute"
+      },
+      "carbs_goal": {
+        "name": "Kohlenhydratziel"
+      },
+      "carbs_today": {
+        "name": "Kohlenhydrate heute"
+      },
+      "daily_burn": {
+        "name": "Täglicher Verbrauch"
+      },
+      "dinner_calories": {
+        "name": "Kalorien Abendessen"
+      },
+      "fat_goal": {
+        "name": "Fettziel"
+      },
+      "fat_today": {
+        "name": "Fett heute"
+      },
+      "fibre_today": {
+        "name": "Ballaststoffe heute"
+      },
+      "lunch_calories": {
+        "name": "Kalorien Mittagessen"
+      },
+      "protein_goal": {
+        "name": "Eiweißziel"
+      },
+      "protein_today": {
+        "name": "Eiweiß heute"
+      },
+      "salt_today": {
+        "name": "Salz heute"
+      },
+      "saturated_fat_today": {
+        "name": "Gesättigte Fettsäuren heute"
+      },
+      "snacks_calories": {
+        "name": "Kalorien Snacks"
+      },
+      "sugar_today": {
+        "name": "Zucker heute"
+      },
+      "weight": {
+        "name": "Gewicht"
+      },
+      "weight_change": {
+        "name": "Gewichtsveränderung"
+      }
+    }
+  },
+  "selector": {
+    "activity": {
+      "options": {
+        "active": "Aktiv: intensives Training an 6 bis 7 Tagen pro Woche",
+        "light": "Leicht: Training an 1 bis 3 Tagen pro Woche",
+        "moderate": "Mäßig: Training an 3 bis 5 Tagen pro Woche",
+        "sedentary": "Sitzend: wenig oder kein Training",
+        "very_active": "Sehr aktiv: körperliche Arbeit oder zweimal täglich Training"
+      }
+    },
+    "pace": {
+      "options": {
+        "lose_0_25": "0,25 kg pro Woche abnehmen",
+        "lose_0_5": "0,5 kg pro Woche abnehmen",
+        "lose_0_75": "0,75 kg pro Woche abnehmen",
+        "maintain": "Gewicht halten"
+      }
+    },
+    "sex": {
+      "options": {
+        "female": "Weiblich",
+        "male": "Männlich"
+      }
+    }
+  }
+}

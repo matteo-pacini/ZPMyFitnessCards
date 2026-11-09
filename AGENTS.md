@@ -5,6 +5,12 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
 ## Layout
 
 - `custom_components/zp_my_fitness/`: the integration. `brand/` holds its icons.
+  - `db.py`: the SQLite database, with blocking methods. `data.py` (`FitnessData`) is the only caller.
+  - `goals.py`: calorie, macro and BMI maths, with no Home Assistant code.
+  - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
+  - `websocket.py`: the commands the cards call.
+  - `config_flow.py`: the integration and its people, one config sub-entry each.
+  - `backup.py`: pauses writes while Home Assistant backs up.
 - `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
 - `src/`: one plain browser script per card. There are no imports and no npm dependencies.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
@@ -35,7 +41,12 @@ CI runs all of these through `nix develop -c`, plus hassfest and the HACS valida
 - **Shared scope.** The bundle wraps each card script in its own block and loads as a module, so it is strict code. Never rely on a name from another script, and never declare globals except `window.customCards`.
 - **Languages.** Each card has a `STRINGS` table in 11 languages: en, de, es, fr, it, nl, pl, pt, pt-BR, sv and zh-Hans. Add a key to `en` first, then to each language. The tests check keys and placeholders.
 - **Theming.** Take colours and fonts from Home Assistant theme variables, never hard-coded colours.
-- **People.** Each person is a config sub-entry. Code refers to a person by sub-entry ID, never by name, because names can change.
+- **People.** Each person is a config sub-entry. Code refers to a person by the `key` in its data, never by name or sub-entry ID. Re-adding a removed person under the same name reuses their key, which brings back their data, entities and history.
+- **Writes.** Go through `FitnessData`, never `Database` directly. It runs the query in the executor, holds the lock that backups pause on, refreshes goals, corrects the recorder's statistics for past days, and sends `SIGNAL_CHANGED` to the sensors and the cards.
+- **Schema.** `MIGRATIONS` in `db.py` upgrades a database one version at a time. Never edit a released migration; append a new one.
+- **Daily totals.** Use `state_class: total` with `last_reset` at local midnight, never `total_increasing`: deleting an entry lowers a total, which `total_increasing` would read as a meter reset.
+- **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
+- **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.
 
 ## Style
 

@@ -1,11 +1,21 @@
 """Fixtures for the integration tests."""
 
-import pytest
-from homeassistant.core import HomeAssistant
-from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from __future__ import annotations
 
-from custom_components.zp_my_fitness.const import DOMAIN
+from pathlib import Path
+from typing import Any
+
+import pytest
+from freezegun.api import FrozenDateTimeFactory
+from homeassistant.config_entries import ConfigSubentryData
+from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.typing import WebSocketGenerator
+
+from custom_components.zp_my_fitness.const import DOMAIN, SUBENTRY_PERSON
+
+# Monday 9 November 2026, midday in London.
+NOW = "2026-11-09T12:00:00+00:00"
 
 
 @pytest.fixture(autouse=True)
@@ -13,11 +23,83 @@ def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Let Home Assistant load the integration from custom_components/."""
 
 
+@pytest.fixture(autouse=True)
+async def london(hass: HomeAssistant, freezer: FrozenDateTimeFactory, tmp_path: Path) -> None:
+    """Run every test in London at NOW, with its own empty database."""
+    hass.config.config_dir = str(tmp_path)
+    await hass.config.async_set_time_zone("Europe/London")
+    freezer.move_to(NOW)
+
+
+def person(name: str = "Debora", key: str | None = None, **changes: Any) -> dict[str, Any]:
+    """A person's sub-entry data, as the form stores it."""
+    return {
+        "key": key or name.lower(),
+        "name": name,
+        "sex": "female",
+        "birth_date": "1996-03-15",
+        "height_cm": 165.0,
+        "start_weight_kg": 70.0,
+        "start_date": "2026-11-01",
+        "goal_weight_kg": 62.0,
+        "activity": "moderate",
+        "pace": "lose_0_5",
+        "protein_pct": 20.0,
+        "carbs_pct": 50.0,
+        "fat_pct": 30.0,
+        **changes,
+    }
+
+
+def mock_entry(*people: dict[str, Any]) -> MockConfigEntry:
+    """The integration's entry with these people as sub-entries."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="ZPMyFitnessCards",
+        subentries_data=[
+            ConfigSubentryData(
+                subentry_type=SUBENTRY_PERSON,
+                title=p["name"],
+                data=p,
+                unique_id=None,
+                subentry_id=f"sub_{p['key']}",
+            )
+            for p in people
+        ],
+    )
+
+
 @pytest.fixture
 async def entry(hass: HomeAssistant) -> MockConfigEntry:
-    """The integration's entry, set up, with no people yet."""
-    entry = MockConfigEntry(domain=DOMAIN, title="ZPMyFitnessCards")
+    """The integration set up with Debora (key "debora") and Matteo (key "matteo")."""
+    entry = mock_entry(
+        person(),
+        person(
+            "Matteo",
+            sex="male",
+            birth_date="1990-06-01",
+            height_cm=180.0,
+            start_weight_kg=89.0,
+            goal_weight_kg=80.0,
+            activity="light",
+        ),
+    )
     entry.add_to_hass(hass)
-    assert await async_setup_component(hass, DOMAIN, {})
+    assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     return entry
+
+
+@pytest.fixture
+async def ws(hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSocketGenerator):
+    """Send one command over the websocket API and return the reply."""
+    client = await hass_ws_client(hass)
+
+    async def call(type_: str, **fields: Any) -> dict[str, Any]:
+        await client.send_json_auto_id({"type": f"{DOMAIN}/{type_}", **fields})
+        reply = await client.receive_json()
+        await hass.async_block_till_done()
+        return reply
+
+    call.client = client
+    return call
