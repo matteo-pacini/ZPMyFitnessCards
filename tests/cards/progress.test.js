@@ -9,7 +9,7 @@ let fn;
 test.before(async () => {
   const ctx = await load("fitness-cards.js");
   fn = vm.runInContext(
-    "({ translate, niceStep, ticks, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML })",
+    "({ translate, niceStep, ticks, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
     ctx,
   );
 });
@@ -108,4 +108,39 @@ test("daily bars can be tapped to open the day; weekly ones cannot", () => {
   assert.match(daily, /data-day="2026-11-09"/);
   const weekly = fn.trendChartHTML(bars, true, "en-GB", en());
   assert.doesNotMatch(weekly, /open-day/);
+});
+
+test("rings fill by share of the goal and turn red past it", () => {
+  const full = 2 * Math.PI * ((36 - 5) / 2);
+  const half = fn.ringSVG(36, 5, 0.5, "protein");
+  assert.match(half, new RegExp(`stroke-dasharray="${(full / 2).toFixed(2)} ${full.toFixed(2)}"`));
+  const over = fn.ringSVG(36, 5, 1.4, "fat");
+  assert.match(over, /class="ring fat over"/);
+  assert.match(over, new RegExp(`stroke-dasharray="${full.toFixed(2)} `));
+});
+
+test("the summary shows what is left, the macros, the meals and the weight", () => {
+  const day = {
+    day: "2026-11-09",
+    goals: { kcal: 2000, protein: 100, carbs: 250, fat: 60 },
+    entries: [
+      { meal: "breakfast", kcal: 500, protein: 20, carbs: 60, fat: 15 },
+      { meal: "lunch", kcal: 700, protein: 40, carbs: 70, fat: 20 },
+    ],
+  };
+  const weights = [
+    { day: "2026-10-12", kg: 90.1 },
+    { day: "2026-11-09", kg: 88.6 },
+  ];
+  const shown = text(fn.summaryHTML(day, weights, MATTEO, "2026-10-11", "2026-11-09", "en-GB", en()));
+  assert.match(shown, /^800 kcal left Protein 60 \/ 100 g Carbs 130 \/ 250 g Fat 35 \/ 60 g 1,200 of 2,000 kcal/);
+  assert.match(shown, /Breakfast 500 Lunch 700 Dinner 0 Snacks 0/);
+  assert.match(shown, /88\.6 kg Overweight −1\.5 kg in 30 days$/);
+});
+
+test("with no goal yet, the summary shows the calories eaten", () => {
+  const day = { day: "2026-11-09", goals: null, entries: [{ meal: "dinner", kcal: 640 }] };
+  const shown = text(fn.summaryHTML(day, [], MATTEO, "2026-10-11", "2026-11-09", "en-GB", en()));
+  assert.match(shown, /^640 kcal Protein 0 g/);
+  assert.match(shown, /89 kg Overweight$/);
 });

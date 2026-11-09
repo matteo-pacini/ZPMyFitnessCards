@@ -11,6 +11,8 @@
 //                             the BMI bands and their goal
 // custom:zp-trends-card       one person's calories by day or week, by meal,
 //                             against their goal
+// custom:zp-summary-card      one person's day at a glance: calorie and macro
+//                             rings, meals, and weight
 //
 // They talk to the integration over its websocket commands, and redraw when
 // its zp_my_fitness/subscribe events say something changed.
@@ -19,6 +21,9 @@
 //   person  a person's name; defaults to the person linked to the logged-in user
 //   title   optional heading
 //   locale  optional language code; defaults to Home Assistant's language
+//
+// The summary card also takes:
+//   navigation_path  optional dashboard path to open when the card is tapped
 //
 // Saved foods config:
 //   title, locale  as above
@@ -119,6 +124,11 @@ const STRINGS = {
     no_data: "Nothing logged in this period.",
     week_of: "Week of {date}",
     error_weight: "Enter a weight from 20 to 400 kg.",
+    title_summary: "Today",
+    kcal_left: "kcal left",
+    kcal_over: "kcal over",
+    of_goal: "{food} of {goal} kcal",
+    change_30d: "{change} in 30 days",
   },
   de: {
     title_diary: "Ernährungstagebuch",
@@ -215,6 +225,11 @@ const STRINGS = {
     no_data: "In diesem Zeitraum nichts eingetragen.",
     week_of: "Woche ab {date}",
     error_weight: "Gib ein Gewicht von 20 bis 400 kg ein.",
+    title_summary: "Heute",
+    kcal_left: "kcal übrig",
+    kcal_over: "kcal zu viel",
+    of_goal: "{food} von {goal} kcal",
+    change_30d: "{change} in 30 Tagen",
   },
   es: {
     title_diary: "Diario de comidas",
@@ -311,6 +326,11 @@ const STRINGS = {
     no_data: "Nada registrado en este periodo.",
     week_of: "Semana del {date}",
     error_weight: "Introduce un peso de 20 a 400 kg.",
+    title_summary: "Hoy",
+    kcal_left: "kcal restantes",
+    kcal_over: "kcal de más",
+    of_goal: "{food} de {goal} kcal",
+    change_30d: "{change} en 30 días",
   },
   fr: {
     title_diary: "Journal alimentaire",
@@ -407,6 +427,11 @@ const STRINGS = {
     no_data: "Rien d’enregistré sur cette période.",
     week_of: "Semaine du {date}",
     error_weight: "Saisissez un poids entre 20 et 400 kg.",
+    title_summary: "Aujourd’hui",
+    kcal_left: "kcal restantes",
+    kcal_over: "kcal en trop",
+    of_goal: "{food} sur {goal} kcal",
+    change_30d: "{change} en 30 jours",
   },
   it: {
     title_diary: "Diario alimentare",
@@ -503,6 +528,11 @@ const STRINGS = {
     no_data: "Niente registrato in questo periodo.",
     week_of: "Settimana dal {date}",
     error_weight: "Inserisci un peso tra 20 e 400 kg.",
+    title_summary: "Oggi",
+    kcal_left: "kcal rimaste",
+    kcal_over: "kcal in eccesso",
+    of_goal: "{food} di {goal} kcal",
+    change_30d: "{change} in 30 giorni",
   },
   nl: {
     title_diary: "Voedingsdagboek",
@@ -599,6 +629,11 @@ const STRINGS = {
     no_data: "Niets vastgelegd in deze periode.",
     week_of: "Week van {date}",
     error_weight: "Voer een gewicht van 20 tot 400 kg in.",
+    title_summary: "Vandaag",
+    kcal_left: "kcal over",
+    kcal_over: "kcal te veel",
+    of_goal: "{food} van {goal} kcal",
+    change_30d: "{change} in 30 dagen",
   },
   pl: {
     title_diary: "Dziennik żywienia",
@@ -695,6 +730,11 @@ const STRINGS = {
     no_data: "Nic nie zapisano w tym okresie.",
     week_of: "Tydzień od {date}",
     error_weight: "Wpisz wagę od 20 do 400 kg.",
+    title_summary: "Dzisiaj",
+    kcal_left: "kcal zostało",
+    kcal_over: "kcal ponad cel",
+    of_goal: "{food} z {goal} kcal",
+    change_30d: "{change} w 30 dni",
   },
   pt: {
     title_diary: "Diário alimentar",
@@ -791,6 +831,11 @@ const STRINGS = {
     no_data: "Nada registado neste período.",
     week_of: "Semana de {date}",
     error_weight: "Introduza um peso entre 20 e 400 kg.",
+    title_summary: "Hoje",
+    kcal_left: "kcal restantes",
+    kcal_over: "kcal a mais",
+    of_goal: "{food} de {goal} kcal",
+    change_30d: "{change} em 30 dias",
   },
   "pt-BR": {
     title_foods: "Alimentos salvos",
@@ -919,6 +964,11 @@ const STRINGS = {
     no_data: "Inget loggat under perioden.",
     week_of: "Veckan från {date}",
     error_weight: "Ange en vikt mellan 20 och 400 kg.",
+    title_summary: "I dag",
+    kcal_left: "kcal kvar",
+    kcal_over: "kcal för mycket",
+    of_goal: "{food} av {goal} kcal",
+    change_30d: "{change} på 30 dagar",
   },
   "zh-Hans": {
     title_diary: "饮食日记",
@@ -1015,6 +1065,11 @@ const STRINGS = {
     no_data: "此期间没有记录。",
     week_of: "{date} 起的一周",
     error_weight: "请输入 20 到 400 千克之间的体重。",
+    title_summary: "今天",
+    kcal_left: "千卡剩余",
+    kcal_over: "千卡超出",
+    of_goal: "{food}/{goal} 千卡",
+    change_30d: "30 天内 {change}",
   },
 };
 
@@ -2108,7 +2163,7 @@ const CHART_STYLE = `
 `;
 
 const rangeButtons = (ranges, selected, t) =>
-  `<div class="ranges" role="group">${ranges
+  !ranges.length ? "" : `<div class="ranges" role="group">${ranges
     .map((r) => `<button data-action="range" data-range="${r}" aria-pressed="${String(r) === String(selected)}">${esc(t[`range_${r}`])}</button>`)
     .join("")}</div>`;
 
@@ -2327,6 +2382,186 @@ class TrendsCard extends PersonCard {
   };
 }
 
+// A progress ring: `share` of the goal, drawn from the top, clockwise. Past
+// the goal it fills and turns to the error colour.
+function ringSVG(size, stroke, share, cls) {
+  const r = (size - stroke) / 2;
+  const length = 2 * Math.PI * r;
+  const on = Math.min(Math.max(share, 0), 1) * length;
+  const c = size / 2;
+  return `<svg class="ring ${cls}${share > 1 ? " over" : ""}" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <circle class="track" cx="${c}" cy="${c}" r="${r}" stroke-width="${stroke}"/>
+    <circle class="fill" cx="${c}" cy="${c}" r="${r}" stroke-width="${stroke}" stroke-dasharray="${on.toFixed(2)} ${length.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>
+  </svg>`;
+}
+
+// A small line of weights over the last days, with the latest marked.
+function sparklineSVG(weights, start, today) {
+  if (weights.length < 2) return "";
+  const width = 200;
+  const height = 44;
+  const values = weights.map((w) => w.kg);
+  const low = Math.min(...values) - 0.2;
+  const high = Math.max(...values) + 0.2;
+  const span = Math.max(daysBetween(start, today), 1);
+  const x = (day) => 3 + (daysBetween(start, day) / span) * (width - 6);
+  const y = (kg) => 3 + ((high - kg) / (high - low)) * (height - 6);
+  const line = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(w.kg).toFixed(1)}`).join("");
+  const last = weights[weights.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${width} ${height}" aria-hidden="true">
+    <path class="area" d="${line}L${x(last.day).toFixed(1)},${height}L${x(weights[0].day).toFixed(1)},${height}Z"/>
+    <path class="line" d="${line}"/>
+    <circle class="dot" cx="${x(last.day).toFixed(1)}" cy="${y(last.kg).toFixed(1)}" r="3"/>
+  </svg>`;
+}
+
+// Today's summary from zp_my_fitness/day, and the last 30 days of weights.
+function summaryHTML(day, weights, person, start, today, locale, t) {
+  const sums = totals(day.entries);
+  const goals = day.goals;
+  const left = goals ? goals.kcal - sums.kcal : null;
+  const centre = goals
+    ? `<b class="num">${number(Math.abs(left), locale)}</b><small>${esc(left < 0 ? t.kcal_over : t.kcal_left)}</small>`
+    : `<b class="num">${number(sums.kcal, locale)}</b><small>${esc(t.kcal)}</small>`;
+  const minis = MACROS.map(
+    (m) => `<div class="mini">${ringSVG(36, 5, goals ? sums[m] / goals[m] : 0, m)}
+      <span><b>${esc(t[m])}</b><span class="sub num">${number(sums[m], locale)}${goals ? ` / ${number(goals[m], locale)}` : ""} g</span></span></div>`,
+  ).join("");
+  const byMeal = MEALS.map((meal) => totals(day.entries.filter((e) => e.meal === meal)).kcal);
+  const scale = Math.max(goals?.kcal ?? 0, sums.kcal) || 1;
+  const stack = byMeal.map((kcal, i) => (kcal > 0 ? `<i class="meal${i}" style="width:${((kcal / scale) * 100).toFixed(2)}%"></i>` : "")).join("");
+  const legend = MEALS.map((meal, i) => `<span><i class="meal${i}"></i>${esc(t[meal])} <span class="num">${number(byMeal[i], locale)}</span></span>`).join("");
+
+  const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
+  const band = bandOf(latest, person);
+  let change = "";
+  if (weights.length >= 2) {
+    const delta = latest - weights[0].kg;
+    const signed = `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${number(Math.abs(delta), locale, 1)} kg`;
+    change = `<small>${esc(fill(t.change_30d, { change: signed }))}</small>`;
+  }
+  return `
+    <div class="rings">
+      <div class="big">${ringSVG(132, 12, goals ? sums.kcal / goals.kcal : 0, "kcal")}<div class="centre">${centre}</div></div>
+      <div class="minis">${minis}</div>
+    </div>
+    ${goals ? `<div class="sub num">${esc(fill(t.of_goal, { food: number(sums.kcal, locale), goal: number(goals.kcal, locale) }))}</div>` : ""}
+    <div class="stack" role="img" aria-label="${esc(t.kcal)}">${stack}</div>
+    <div class="legend">${legend}</div>
+    <div class="weight">
+      <div><b class="num">${number(latest, locale, 1)} kg</b> <span class="chip ${band}">${esc(t[band])}</span>${change}</div>
+      ${sparklineSVG(weights, start, today)}
+    </div>`;
+}
+
+class SummaryCard extends PersonCard {
+  static titleKey = "title_summary";
+  static ranges = [];
+  static style = `
+    .body { display: flex; flex-direction: column; gap: 12px; }
+    .rings { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+    .big { position: relative; width: 132px; height: 132px; }
+    .big .centre { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .big b { font-size: 1.7rem; font-weight: var(--ha-font-weight-medium, 500); line-height: 1; }
+    .big small, .weight small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
+    .minis { display: flex; flex-direction: column; gap: 8px; }
+    .mini { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: center; font-size: var(--ha-font-size-s, 0.875rem); }
+    .mini b { font-weight: var(--ha-font-weight-medium, 500); display: block; }
+    .ring .track { fill: none; stroke: var(--divider-color); }
+    .ring .fill { fill: none; stroke-linecap: round; }
+    .ring.kcal .fill { stroke: var(--primary-color); }
+    .ring.protein .fill { stroke: var(--pink-color, var(--accent-color)); }
+    .ring.carbs .fill { stroke: var(--amber-color, var(--warning-color)); }
+    .ring.fat .fill { stroke: var(--deep-purple-color, var(--primary-color)); }
+    .ring.over .fill { stroke: var(--error-color); }
+    .stack { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--divider-color); }
+    .stack i { display: block; height: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .meal0 { background: var(--amber-color, var(--primary-color)); }
+    .meal1 { background: var(--light-blue-color, var(--primary-color)); }
+    .meal2 { background: var(--indigo-color, var(--primary-color)); }
+    .meal3 { background: var(--teal-color, var(--primary-color)); }
+    .weight { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; border-top: 1px solid var(--divider-color); padding-top: 12px; }
+    .weight b { font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
+    .weight small { display: block; }
+    .chip { border-radius: 12px; padding: 1px 8px; font-size: var(--ha-font-size-xs, 0.75rem); color: var(--text-primary-color); vertical-align: middle; }
+    .chip.underweight { background: var(--info-color, var(--blue-color)); }
+    .chip.healthy { background: var(--success-color, var(--green-color)); }
+    .chip.overweight { background: var(--warning-color, var(--amber-color)); }
+    .chip.obese { background: var(--error-color); }
+    .spark { width: 100%; height: auto; max-height: 64px; display: block; }
+    .spark .area { fill: var(--primary-color); fill-opacity: 0.12; }
+    .spark .line { fill: none; stroke: var(--primary-color); stroke-width: 2; }
+    .spark .dot { fill: var(--primary-color); }
+    ha-card.link { cursor: pointer; }
+  `;
+
+  static getConfigForm() {
+    const form = super.getConfigForm();
+    return {
+      schema: [...form.schema, { name: "navigation_path", selector: { text: {} } }],
+      computeLabel: (s) => (s.name === "navigation_path" ? "Open on tap (a dashboard path)" : form.computeLabel(s)),
+    };
+  }
+
+  getCardSize() {
+    return 5;
+  }
+
+  setConfig(config) {
+    if (config?.navigation_path != null && typeof config.navigation_path !== "string") {
+      throw new Error("navigation_path: must be text");
+    }
+    super.setConfig(config);
+  }
+
+  set hass(hass) {
+    super.hass = hass;
+    // Show the new day once midnight passes.
+    if (this._data && this._data.day.day !== this._today) this._refresh();
+  }
+
+  get hass() {
+    return this._hass;
+  }
+
+  async _fetch() {
+    const today = this._today;
+    const start = shiftDay(today, -29);
+    const [day, weights] = await Promise.all([
+      this._call({ type: "zp_my_fitness/day", person: this._person.id, day: today }),
+      this._call({ type: "zp_my_fitness/weights", person: this._person.id, start }),
+    ]);
+    return { day, weights, start };
+  }
+
+  _render() {
+    super._render();
+    this._card?.classList?.toggle?.("link", Boolean(this._config.navigation_path));
+  }
+
+  _renderBody() {
+    const body = this._card?.querySelector(".body");
+    if (!body || !this._data) return;
+    const { day, weights, start } = this._data;
+    body.innerHTML = summaryHTML(day, weights, this._person, start, this._today, this._locale, this._t);
+  }
+
+  static actions = {};
+
+  _build() {
+    super._build();
+    this._card.addEventListener("click", () => {
+      const path = this._config.navigation_path;
+      if (!path) return;
+      history.pushState(null, "", path);
+      window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+    });
+  }
+}
+
 // Home Assistant's frontend replaces window.customElements with its own
 // registry as it boots, and only finds cards defined there. The integration
 // loads this file alongside the frontend, so wait for the frontend's own
@@ -2336,6 +2571,7 @@ customElements.whenDefined("home-assistant").then(() => {
   window.customElements.define("zp-foods-card", FoodsCard);
   window.customElements.define("zp-weight-card", WeightCard);
   window.customElements.define("zp-trends-card", TrendsCard);
+  window.customElements.define("zp-summary-card", SummaryCard);
   window.customCards = window.customCards || [];
   window.customCards.push(
     {
@@ -2361,6 +2597,12 @@ customElements.whenDefined("home-assistant").then(() => {
       name: "Trends",
       description: "Calories by day or week, by meal, against the goal, from ZPMyFitnessCards",
       documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#trends-card",
+    },
+    {
+      type: "zp-summary-card",
+      name: "Fitness summary",
+      description: "One person's day at a glance: calories, macros, meals and weight, from ZPMyFitnessCards",
+      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#summary-card",
     },
   );
 });

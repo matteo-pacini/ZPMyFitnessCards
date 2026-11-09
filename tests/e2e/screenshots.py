@@ -77,6 +77,9 @@ def sample(home: Home) -> Home:
                 "kg": round(95 - n * 0.018 + wobble, 1),
             }
         )
+    for n, kg in enumerate((69.8, 69.6, 69.7, 69.4, 69.2, 69.3, 69.0, 68.9)):
+        day = (date.fromisoformat(today) - timedelta(days=28 - n * 4)).isoformat()
+        home.ws({"type": "zp_my_fitness/weight/set", "person": debora, "day": day, "kg": kg})
     # Four weeks of Debora's meals before today, as quick adds.
     for n in range(1, 29):
         day = (date.fromisoformat(today) - timedelta(days=n)).isoformat()
@@ -130,6 +133,7 @@ DIARY = {"type": "custom:zp-food-diary-card", "person": "Debora"}
 FOODS_CARD = {"type": "custom:zp-foods-card"}
 WEIGHT = {"type": "custom:zp-weight-card", "person": "Matteo"}
 TRENDS = {"type": "custom:zp-trends-card", "person": "Debora"}
+SUMMARY = {"type": "custom:zp-summary-card", "person": "Debora"}
 
 
 def pick_range(value: str):
@@ -154,6 +158,8 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
     shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
     shoot(sample, browser, TRENDS, "trends", setup=pick_range("30"))
     shoot(sample, browser, TRENDS, "trends-week")
+    shoot(sample, browser, SUMMARY, "summary")
+    shoot(sample, browser, SUMMARY, "summary-dark", dark=True)
     assert sorted(p.name for p in IMAGES.glob("*.png")) == sorted(
         f"{n}.png"
         for n in (
@@ -164,5 +170,7 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
             "weight",
             "trends",
             "trends-week",
+            "summary",
+            "summary-dark",
         )
     )

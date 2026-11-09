@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -271,3 +272,33 @@ def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> Non
     )
     # 90 days are weekly bars, which do not open a day.
     expect(trends.locator(".bar[data-action]")).to_have_count(0, timeout=TIMEOUT)
+
+
+def test_the_summary_card_shows_today_and_opens_its_path(home: Home, page: Page) -> None:
+    debora = person_id(home, "Debora")
+    home.ws(
+        {
+            "type": "zp_my_fitness/entry/add",
+            "person": debora,
+            "day": today(),
+            "meal": "lunch",
+            "name": "Summary soup e2e",
+            "kcal": 321,
+        }
+    )
+    eaten = sum(
+        e["kcal"]
+        for e in home.ws({"type": "zp_my_fitness/day", "person": debora, "day": today()})["entries"]
+    )
+    card = open_card(
+        home,
+        page,
+        {"type": "custom:zp-summary-card", "person": "Debora", "navigation_path": "/config"},
+    )
+    expect(card.locator(".big .centre")).to_be_visible(timeout=TIMEOUT)
+    expect(card.locator(".body")).to_contain_text(f"{round(eaten):,} of", timeout=TIMEOUT)
+    expect(card.locator(".legend")).to_contain_text("Lunch")
+    expect(card.locator(".weight")).to_contain_text("kg")
+
+    card.locator(".big").click()
+    expect(page).to_have_url(re.compile(r"/config"), timeout=TIMEOUT)

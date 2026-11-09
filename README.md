@@ -4,7 +4,7 @@ A food diary and weight tracking for everyone in your home, inside Home Assistan
 
 ZPMyFitnessCards is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
 
-It is in early development. The integration, its sensors and the food diary, saved foods, weight and trends cards work; a summary card and barcode scanning come next.
+It is in early development. The integration, its sensors and all five cards work; barcode scanning comes next.
 
 ## Install
 
@@ -119,9 +119,27 @@ type: custom:zp-trends-card
 person: Debora
 ```
 
-The weight and trends cards take the same `person`, `title` and `locale` options as the food diary card.
+### Summary card
 
-All four cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
+One person's day at a glance, for a main dashboard: a ring of the calories eaten against the goal, with what is left (or over) in the middle; rings for protein, carbs and fat; a bar splitting the day's calories by meal; and the latest weight with its BMI band, the change over 30 days and a sparkline. It moves to the new day at midnight.
+
+<img src="images/summary.png" alt="Summary" width="400">
+
+<img src="images/summary-dark.png" alt="Summary in dark mode" width="400">
+
+```yaml
+type: custom:zp-summary-card
+person: Debora
+navigation_path: /dashboard-meds/debora
+```
+
+| Option | Description |
+| --- | --- |
+| `navigation_path` | Optional. A dashboard path to open when the card is tapped, such as the dashboard with the full diary. |
+
+The weight, trends and summary cards take the same `person`, `title` and `locale` options as the food diary card.
+
+All five cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
 
 ## Development
 
