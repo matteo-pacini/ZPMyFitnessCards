@@ -1,7 +1,9 @@
 name: CI
 
+# Every pull request, and master once something lands on it.
 on:
   push:
+    branches: [master]
   pull_request:
   schedule:
     - cron: "0 0 * * *"
@@ -54,11 +56,32 @@ jobs:
       - name: Cards bundle is up to date
         run: nix develop -c node scripts/build.js --check
 
+      # Unit coverage of the cards is reported, not enforced: the end-to-end
+      # tests, which it cannot see, cover their interactions.
       - name: Card tests
-        run: nix develop -c node --experimental-vm-modules --test 'tests/cards/*.test.js'
+        shell: bash
+        run: |
+          nix develop -c node --experimental-vm-modules --experimental-test-coverage \
+            --test-coverage-include='src/**' --test 'tests/cards/*.test.js' | tee card-tests.txt
+          {
+            echo "### Card unit test coverage"
+            echo '```'
+            sed -n '/start of coverage report/,/end of coverage report/p' card-tests.txt \
+              | sed 's/^ℹ //' | cut -d'|' -f1-4
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Integration tests
         run: nix develop -c pytest --cov
+
+      - name: Integration test coverage
+        if: ${{ !cancelled() && hashFiles('.coverage') != '' }}
+        shell: bash
+        run: |
+          {
+            echo "### Integration test coverage"
+            nix develop -c coverage report --format=markdown --fail-under=0
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: End-to-end tests
         run: nix develop -c scripts/e2e

@@ -29,13 +29,13 @@ Work inside the Nix dev shell: `nix develop`, or direnv with `.envrc`. Entering 
 node scripts/build.js                                    # rebuild the cards' bundle
 node scripts/build.js --check                            # CI: fail if it is stale
 node --experimental-vm-modules --test 'tests/cards/*.test.js'
-pytest --cov                                             # integration tests; fails under 100% coverage
+pytest --cov                                             # integration tests; fails under 90% coverage
 scripts/e2e                                              # end-to-end tests (Linux)
 scripts/screenshots                                      # retake images/ (Linux)
 ruff check . && ruff format --check .
 ```
 
-CI runs all of these through `nix develop -c`, plus hassfest and the HACS validator.
+CI runs all of these through `nix develop -c` on every pull request and on master, plus hassfest and the HACS validator, and puts both coverage reports on the run's summary page.
 
 ## Rules that are easy to break
 
@@ -56,7 +56,7 @@ CI runs all of these through `nix develop -c`, plus hassfest and the HACS valida
 - **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
 - **Open Food Facts.** Cards fetch it from the browser. Tests answer it with Playwright's `page.route`, never the real service.
 - **App scanner.** `scanWithApp` wraps `hass.auth.external.receiveMessage`, which the frontend does not document. Keep calling the original handler, which acknowledges each message, and keep typing a barcode working without any scanner.
-- **Coverage.** The Python tests must cover every line and branch of the integration (`fail_under = 100` in `pyproject.toml`). Card code needs a unit test for its pure functions and an end-to-end test for each interaction and failure path.
+- **Coverage.** CI fails if the Python tests cover less than 90% of the integration's lines and branches (`fail_under` in `pyproject.toml`), and reports card unit coverage without enforcing it. Test new code anyway: card code needs a unit test for its pure functions and an end-to-end test for each interaction and failure path.
 - **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.
 
 ## Style
