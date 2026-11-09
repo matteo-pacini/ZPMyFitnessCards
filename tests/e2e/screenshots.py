@@ -112,7 +112,6 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
             "food-diary",
             "food-diary-dark",
             "food-diary-add",
-            "food-diary-phone",
             "saved-foods",
         )
     )

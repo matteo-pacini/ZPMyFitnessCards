@@ -54,18 +54,18 @@ Postgres needs the psycopg2 driver. If your recorder already runs on Postgres wi
 
 One person's day, meal by meal: the calorie goal, what they have eaten and what is left, protein, carbs and fat against their goals, and each meal's entries.
 
-![Food diary](images/food-diary.png)
+<img src="images/food-diary.png" alt="Food diary" width="400">
 
 - **Add food** under a meal opens three tabs. **Saved foods** searches your saved foods, or lists the ones you logged recently; choose one, then type the grams or tap a portion. **Quick add** logs a name and calories without saving a food. **New food** saves a food and logs it.
 - Tap an entry to change its grams or meal, or to delete it.
 - **Copy** fills a meal from any meal on another day.
 - The arrows and the calendar move between days. Future days are not allowed.
 
-![Adding food](images/food-diary-add.png)
+<img src="images/food-diary-add.png" alt="Adding food" width="400">
 
 It follows Home Assistant's theme, light or dark, and its language.
 
-![Food diary in dark mode](images/food-diary-dark.png)
+<img src="images/food-diary-dark.png" alt="Food diary in dark mode" width="400">
 
 ```yaml
 type: custom:zp-food-diary-card
@@ -82,7 +82,7 @@ person: Debora
 
 The foods everyone in the house shares, with their values per 100 g. Search them, add new ones, and tap one to change or delete it. A food can have a barcode, the optional fibre, sugar, saturated fat and salt, and portions such as "Slice, 36 g", which the diary offers as shortcuts. Changing a food leaves entries already logged from it as they were.
 
-![Saved foods](images/saved-foods.png)
+<img src="images/saved-foods.png" alt="Saved foods" width="400">
 
 ```yaml
 type: custom:zp-foods-card
