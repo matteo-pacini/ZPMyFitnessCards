@@ -14,11 +14,12 @@ from .conftest import person
 FORM = {k: v for k, v in person().items() if k != "key"}
 
 
-async def test_adds_the_integration_once(hass: HomeAssistant) -> None:
+async def test_adds_the_integration_once_on_sqlite_by_default(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     assert result["type"] is FlowResultType.FORM
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {"engine": "sqlite"}
 
     again = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     assert again["type"] is FlowResultType.ABORT
@@ -131,3 +132,33 @@ async def test_erases_a_person_s_data_after_confirming(
     assert (await ws("weights", person="debora"))["result"] == []
     # The person stays.
     assert "Debora" in _people(entry)
+
+
+async def _postgres_flow(hass: HomeAssistant, url: str) -> dict:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"engine": "postgresql"}
+    )
+    assert result["step_id"] == "postgresql"
+    return await hass.config_entries.flow.async_configure(result["flow_id"], {"db_url": url})
+
+
+async def test_adds_the_integration_on_postgres(
+    hass: HomeAssistant, postgres_database: str
+) -> None:
+    result = await _postgres_flow(hass, f" {postgres_database} ")
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == {"engine": "postgresql", "db_url": postgres_database}
+    await hass.async_block_till_done()
+    assert result["result"].runtime_data.data.db.url == postgres_database
+
+
+async def test_rejects_postgres_urls_that_do_not_work(
+    hass: HomeAssistant, postgres_server: str
+) -> None:
+    result = await _postgres_flow(hass, "mysql://user@host/db")
+    assert result["errors"] == {"db_url": "invalid_url"}
+    result = await _postgres_flow(hass, "postgresql://postgres@/nothing?host=/nonexistent")
+    assert result["errors"] == {"db_url": "cannot_connect"}
+    result = await _postgres_flow(hass, postgres_server.format(database="no_such_database"))
+    assert result["errors"] == {"db_url": "cannot_connect"}

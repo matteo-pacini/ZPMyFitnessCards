@@ -1,5 +1,6 @@
 """The integration in a brand-new Home Assistant: sensors, websocket and a card."""
 
+import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -10,6 +11,17 @@ from .conftest import PEOPLE, Home
 
 def person_id(home: Home, name: str) -> str:
     return next(p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == name)
+
+
+def eventually(home: Home, entity_id: str, value: float, seconds: float = 10) -> dict:
+    """The entity's state once it equals `value`. Sensors refresh just after a write."""
+    deadline = time.monotonic() + seconds
+    while True:
+        state = home.api("GET", f"/api/states/{entity_id}")
+        if float(state["state"]) == value or time.monotonic() > deadline:
+            assert float(state["state"]) == value, state
+            return state
+        time.sleep(0.1)
 
 
 def test_lists_the_people_added_in_setup(home: Home) -> None:
@@ -43,12 +55,11 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
     )
     home.ws({"type": "zp_my_fitness/weight/set", "person": matteo, "day": today, "kg": 68.5})
 
-    assert float(home.api("GET", "/api/states/sensor.matteo_calories_today")["state"]) == 389
-    assert float(home.api("GET", "/api/states/sensor.matteo_breakfast_calories")["state"]) == 389
-    weight = home.api("GET", "/api/states/sensor.matteo_weight")
-    assert float(weight["state"]) == 68.5
+    assert eventually(home, "sensor.matteo_calories_today", 389)
+    assert eventually(home, "sensor.matteo_breakfast_calories", 389)
+    weight = eventually(home, "sensor.matteo_weight", 68.5)
     assert weight["attributes"]["overweight_from_kg"] == 68.1
-    assert float(home.api("GET", "/api/states/sensor.debora_calories_today")["state"]) == 0
+    assert eventually(home, "sensor.debora_calories_today", 0)
 
 
 def test_the_food_diary_card_shows_its_person(home: Home, page: Page) -> None:

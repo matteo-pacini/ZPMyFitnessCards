@@ -21,6 +21,7 @@ import time
 import urllib.request
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from dataclasses import dataclass, field
 from importlib.metadata import version
 from pathlib import Path
@@ -29,6 +30,8 @@ from typing import Any
 import aiohttp
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
+
+from ..conftest import new_database
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -184,10 +187,19 @@ def _onboard(home: Home) -> None:
     home.ws({"type": "http/config/promote"})
 
 
-def _add_integration(home: Home) -> str:
-    """Add ZPMyFitnessCards and each person, as the UI's dialogs would."""
+def _add_integration(home: Home, db_url: str | None) -> str:
+    """Add ZPMyFitnessCards on SQLite, or on Postgres at `db_url`, then each person.
+
+    Everything goes through the same REST calls the UI's dialogs make.
+    """
     flow = home.api("POST", "/api/config/config_entries/flow", {"handler": "zp_my_fitness"})
-    entry = home.api("POST", f"/api/config/config_entries/flow/{flow['flow_id']}", {})
+    step = f"/api/config/config_entries/flow/{flow['flow_id']}"
+    if db_url is None:
+        entry = home.api("POST", step, {"engine": "sqlite"})
+    else:
+        home.api("POST", step, {"engine": "postgresql"})
+        entry = home.api("POST", step, {"db_url": db_url})
+    assert entry["type"] == "create_entry", entry
     entry_id = entry["result"]["entry_id"]
     for name in PEOPLE:
         flow = home.api(
@@ -215,9 +227,21 @@ def _add_integration(home: Home) -> str:
     raise TimeoutError("ZPMyFitnessCards did not finish loading its people")
 
 
-@pytest.fixture(scope="session")
-def home() -> Iterator[Home]:
-    """A brand-new, onboarded Home Assistant with the integration and two people."""
+@pytest.fixture(scope="session", params=["sqlite", "postgresql"])
+def home(request: pytest.FixtureRequest) -> Iterator[Home]:
+    """A brand-new, onboarded Home Assistant with the integration and two people.
+
+    Every test using it runs twice: with the data in SQLite, then in Postgres.
+    """
+    with ExitStack() as cleanup:
+        db_url = None
+        if request.param == "postgresql":
+            server = request.getfixturevalue("postgres_server")
+            db_url = cleanup.enter_context(new_database(server))
+        yield from _home(db_url)
+
+
+def _home(db_url: str | None) -> Iterator[Home]:
     config_dir = Path(tempfile.mkdtemp(prefix="zp-my-fitness-e2e-"))
     port = _free_port()
     (config_dir / "configuration.yaml").write_text(CONFIGURATION.format(port=port))
@@ -236,7 +260,7 @@ def home() -> Iterator[Home]:
     try:
         _wait_until_up(home, process)
         _onboard(home)
-        _add_integration(home)
+        _add_integration(home, db_url)
         yield home
     finally:
         process.terminate()

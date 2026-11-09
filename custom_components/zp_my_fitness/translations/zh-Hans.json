@@ -3,9 +3,31 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards 已设置。请用“添加人员”添加人员。"
     },
+    "error": {
+      "cannot_connect": "无法连接。请检查主机、端口、用户、密码和数据库名称。",
+      "invalid_url": "请输入以 postgresql:// 开头的 URL。",
+      "no_driver": "Home Assistant 未安装 Postgres 驱动程序（psycopg2）。"
+    },
     "step": {
+      "postgresql": {
+        "data": {
+          "db_url": "数据库 URL"
+        },
+        "data_description": {
+          "db_url": "例如 postgresql://user:password@192.168.1.10:5432/zp_my_fitness。数据库必须已存在。"
+        },
+        "description": "请为 ZPMyFitnessCards 使用单独的数据库，而不是 Home Assistant 记录器使用的数据库。",
+        "title": "Postgres 数据库"
+      },
       "user": {
-        "description": "设置 ZPMyFitnessCards。之后请用“添加人员”逐个添加人员。"
+        "data": {
+          "engine": "数据库"
+        },
+        "data_description": {
+          "engine": "SQLite 在配置文件夹中保存一个文件，Home Assistant 备份会包含它。Postgres 使用你自行运行和备份的数据库。"
+        },
+        "description": "选择 ZPMyFitnessCards 存储数据的位置。之后请用“添加人员”逐个添加人员。",
+        "title": "数据库"
       }
     }
   },
@@ -175,6 +197,12 @@
         "moderate": "中度：每周运动 3 到 5 天",
         "sedentary": "久坐：很少或不运动",
         "very_active": "非常活跃：体力劳动或每天训练两次"
+      }
+    },
+    "engine": {
+      "options": {
+        "postgresql": "Postgres",
+        "sqlite": "SQLite（推荐）"
       }
     },
     "pace": {

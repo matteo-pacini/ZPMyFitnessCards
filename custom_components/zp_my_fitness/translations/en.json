@@ -3,9 +3,31 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards is already set up. Add people to it with \"Add person\"."
     },
+    "error": {
+      "cannot_connect": "Could not connect. Check the host, port, user, password and database name.",
+      "invalid_url": "Enter a URL that starts with postgresql://.",
+      "no_driver": "Home Assistant has no Postgres driver (psycopg2) installed."
+    },
     "step": {
+      "postgresql": {
+        "data": {
+          "db_url": "Database URL"
+        },
+        "data_description": {
+          "db_url": "For example postgresql://user:password@192.168.1.10:5432/zp_my_fitness. The database must already exist."
+        },
+        "description": "Use a database of its own for ZPMyFitnessCards, not the one Home Assistant's recorder uses.",
+        "title": "Postgres database"
+      },
       "user": {
-        "description": "Sets up ZPMyFitnessCards. Afterwards, add each person with \"Add person\"."
+        "data": {
+          "engine": "Database"
+        },
+        "data_description": {
+          "engine": "SQLite keeps a file in the configuration folder, which Home Assistant backups include. Postgres uses a database you run and back up yourself."
+        },
+        "description": "Choose where ZPMyFitnessCards keeps its data. Afterwards, add each person with \"Add person\".",
+        "title": "Database"
       }
     }
   },
@@ -105,26 +127,66 @@
   },
   "entity": {
     "sensor": {
-      "breakfast_calories": { "name": "Breakfast calories" },
-      "calorie_goal": { "name": "Calorie goal" },
-      "calories_remaining": { "name": "Calories remaining" },
-      "calories_today": { "name": "Calories today" },
-      "carbs_goal": { "name": "Carbs goal" },
-      "carbs_today": { "name": "Carbs today" },
-      "daily_burn": { "name": "Daily burn" },
-      "dinner_calories": { "name": "Dinner calories" },
-      "fat_goal": { "name": "Fat goal" },
-      "fat_today": { "name": "Fat today" },
-      "fibre_today": { "name": "Fibre today" },
-      "lunch_calories": { "name": "Lunch calories" },
-      "protein_goal": { "name": "Protein goal" },
-      "protein_today": { "name": "Protein today" },
-      "salt_today": { "name": "Salt today" },
-      "saturated_fat_today": { "name": "Saturated fat today" },
-      "snacks_calories": { "name": "Snacks calories" },
-      "sugar_today": { "name": "Sugar today" },
-      "weight": { "name": "Weight" },
-      "weight_change": { "name": "Weight change" }
+      "breakfast_calories": {
+        "name": "Breakfast calories"
+      },
+      "calorie_goal": {
+        "name": "Calorie goal"
+      },
+      "calories_remaining": {
+        "name": "Calories remaining"
+      },
+      "calories_today": {
+        "name": "Calories today"
+      },
+      "carbs_goal": {
+        "name": "Carbs goal"
+      },
+      "carbs_today": {
+        "name": "Carbs today"
+      },
+      "daily_burn": {
+        "name": "Daily burn"
+      },
+      "dinner_calories": {
+        "name": "Dinner calories"
+      },
+      "fat_goal": {
+        "name": "Fat goal"
+      },
+      "fat_today": {
+        "name": "Fat today"
+      },
+      "fibre_today": {
+        "name": "Fibre today"
+      },
+      "lunch_calories": {
+        "name": "Lunch calories"
+      },
+      "protein_goal": {
+        "name": "Protein goal"
+      },
+      "protein_today": {
+        "name": "Protein today"
+      },
+      "salt_today": {
+        "name": "Salt today"
+      },
+      "saturated_fat_today": {
+        "name": "Saturated fat today"
+      },
+      "snacks_calories": {
+        "name": "Snacks calories"
+      },
+      "sugar_today": {
+        "name": "Sugar today"
+      },
+      "weight": {
+        "name": "Weight"
+      },
+      "weight_change": {
+        "name": "Weight change"
+      }
     }
   },
   "selector": {
@@ -135,6 +197,12 @@
         "moderate": "Moderate: exercise 3 to 5 days a week",
         "sedentary": "Sedentary: little or no exercise",
         "very_active": "Very active: physical job or training twice a day"
+      }
+    },
+    "engine": {
+      "options": {
+        "postgresql": "Postgres",
+        "sqlite": "SQLite (recommended)"
       }
     },
     "pace": {

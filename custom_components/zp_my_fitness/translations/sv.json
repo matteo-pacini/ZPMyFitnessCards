@@ -3,9 +3,31 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards är redan konfigurerat. Lägg till personer med ”Lägg till person”."
     },
+    "error": {
+      "cannot_connect": "Det gick inte att ansluta. Kontrollera värd, port, användare, lösenord och databasnamn.",
+      "invalid_url": "Ange en URL som börjar med postgresql://.",
+      "no_driver": "Home Assistant har ingen Postgres-drivrutin (psycopg2) installerad."
+    },
     "step": {
+      "postgresql": {
+        "data": {
+          "db_url": "Databas-URL"
+        },
+        "data_description": {
+          "db_url": "Till exempel postgresql://user:password@192.168.1.10:5432/zp_my_fitness. Databasen måste redan finnas."
+        },
+        "description": "Använd en egen databas för ZPMyFitnessCards, inte den som Home Assistants recorder använder.",
+        "title": "Postgres-databas"
+      },
       "user": {
-        "description": "Konfigurerar ZPMyFitnessCards. Lägg sedan till varje person med ”Lägg till person”."
+        "data": {
+          "engine": "Databas"
+        },
+        "data_description": {
+          "engine": "SQLite sparar en fil i konfigurationsmappen, som ingår i Home Assistants säkerhetskopior. Postgres använder en databas som du själv driver och säkerhetskopierar."
+        },
+        "description": "Välj var ZPMyFitnessCards sparar sina data. Lägg sedan till varje person med ”Lägg till person”.",
+        "title": "Databas"
       }
     }
   },
@@ -175,6 +197,12 @@
         "moderate": "Måttlig: träning 3–5 dagar i veckan",
         "sedentary": "Stillasittande: lite eller ingen träning",
         "very_active": "Mycket aktiv: fysiskt arbete eller träning två gånger om dagen"
+      }
+    },
+    "engine": {
+      "options": {
+        "postgresql": "Postgres",
+        "sqlite": "SQLite (rekommenderas)"
       }
     },
     "pace": {

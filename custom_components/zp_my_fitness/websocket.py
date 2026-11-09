@@ -8,7 +8,6 @@ per-person permissions to apply.
 
 from __future__ import annotations
 
-import sqlite3
 from collections.abc import Callable
 from dataclasses import asdict
 from datetime import date, timedelta
@@ -18,6 +17,7 @@ from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from sqlalchemy.exc import IntegrityError
 
 from .const import DOMAIN, MEALS, NUTRIENTS, REQUIRED_NUTRIENTS, SIGNAL_CHANGED
 from .data import FitnessData, Person, today
@@ -384,7 +384,7 @@ async def ws_add_food(data: FitnessData, _person: None, msg: dict) -> dict | _Er
         return _Error("invalid_format", "kcal, protein, carbs and fat are required")
     try:
         return await data.async_food_write(data.db.add_food, msg)
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return _Error(ERR_BARCODE_TAKEN, "Another food has this barcode")
 
 
@@ -403,7 +403,7 @@ async def ws_update_food(data: FitnessData, _person: None, msg: dict) -> dict | 
     changes = {k: v for k, v in msg.items() if k not in ("id", "type", "food_id")}
     try:
         food = await data.async_food_write(data.db.update_food, msg["food_id"], changes)
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         return _Error(ERR_BARCODE_TAKEN, "Another food has this barcode")
     return food or NOT_FOUND
 

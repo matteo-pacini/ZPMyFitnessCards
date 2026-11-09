@@ -5,6 +5,13 @@ DOMAIN = "zp_my_fitness"
 DB_FILE = f"{DOMAIN}.db"
 CARDS_URL = f"/{DOMAIN}/zp-my-fitness-cards.js"
 
+# Where the data lives, chosen when adding the integration: an SQLite file in
+# the config folder, or a Postgres database at CONF_DB_URL.
+CONF_ENGINE = "engine"
+CONF_DB_URL = "db_url"
+ENGINE_SQLITE = "sqlite"
+ENGINE_POSTGRESQL = "postgresql"
+
 SUBENTRY_PERSON = "person"
 
 # Person settings, stored in the person's sub-entry.

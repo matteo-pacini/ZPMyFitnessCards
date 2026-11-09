@@ -28,12 +28,16 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
 )
+from sqlalchemy import text
+from sqlalchemy.exc import ArgumentError, SQLAlchemyError
 
 from .const import (
     CONF_ACTIVITY,
     CONF_BIRTH_DATE,
     CONF_CALORIE_GOAL,
     CONF_CARBS_PCT,
+    CONF_DB_URL,
+    CONF_ENGINE,
     CONF_FAT_PCT,
     CONF_GOAL_WEIGHT,
     CONF_HEIGHT,
@@ -46,10 +50,13 @@ from .const import (
     CONF_START_DATE,
     CONF_START_WEIGHT,
     DOMAIN,
+    ENGINE_POSTGRESQL,
+    ENGINE_SQLITE,
     SEXES,
     SUBENTRY_PERSON,
 )
 from .data import today
+from .db import make_engine
 from .goals import ACTIVITY, PACES
 from .schema import vol
 
@@ -57,6 +64,8 @@ from .schema import vol
 DEFAULTS = {CONF_PROTEIN_PCT: 20, CONF_CARBS_PCT: 50, CONF_FAT_PCT: 30}
 
 CONFIRM = "confirm"
+
+TITLE = "ZPMyFitnessCards"
 
 
 def _number(low: float, high: float, step: float, unit: str) -> NumberSelector:
@@ -114,16 +123,68 @@ def validate_person(values: dict[str, Any], other_names: set[str]) -> dict[str, 
     return errors
 
 
+def check_database(url: str) -> str | None:
+    """Try a Postgres URL. Return an error key, or None if it works. Blocks."""
+    if not url.startswith(ENGINE_POSTGRESQL):
+        return "invalid_url"
+    try:
+        engine = make_engine(url)
+    except ImportError:
+        return "no_driver"
+    except ArgumentError:
+        return "invalid_url"
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        return "cannot_connect"
+    finally:
+        engine.dispose()
+    return None
+
+
 class ZPMyFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Add the integration. It takes no settings; people are sub-entries."""
+    """Add the integration: choose where the data lives. People are sub-entries."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Confirm, then create the entry."""
+        """Choose SQLite, the default, or Postgres."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="user",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(CONF_ENGINE, default=ENGINE_SQLITE): _choice(
+                            [ENGINE_SQLITE, ENGINE_POSTGRESQL], CONF_ENGINE
+                        )
+                    }
+                ),
+            )
+        if user_input[CONF_ENGINE] == ENGINE_POSTGRESQL:
+            return await self.async_step_postgresql()
+        return self.async_create_entry(title=TITLE, data={CONF_ENGINE: ENGINE_SQLITE})
+
+    async def async_step_postgresql(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for the Postgres database's URL, and check it works."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(title="ZPMyFitnessCards", data={})
-        return self.async_show_form(step_id="user")
+            url = user_input[CONF_DB_URL].strip()
+            error = await self.hass.async_add_executor_job(check_database, url)
+            if error is None:
+                return self.async_create_entry(
+                    title=TITLE, data={CONF_ENGINE: ENGINE_POSTGRESQL, CONF_DB_URL: url}
+                )
+            errors[CONF_DB_URL] = error
+        return self.async_show_form(
+            step_id="postgresql",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema({vol.Required(CONF_DB_URL): TextSelector()}), user_input
+            ),
+            errors=errors,
+        )
 
     @classmethod
     @callback

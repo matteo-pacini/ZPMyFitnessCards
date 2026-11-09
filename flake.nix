@@ -22,6 +22,8 @@
             pkgs.uv
             pkgs.nodejs_24
             pkgs.ruff
+            # A throwaway server for the tests that run against Postgres.
+            (pkgs.lib.getBin pkgs.postgresql)
           ];
 
           env = {

@@ -3,9 +3,31 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards is al ingesteld. Voeg personen toe met ‘Persoon toevoegen’."
     },
+    "error": {
+      "cannot_connect": "Verbinden is mislukt. Controleer host, poort, gebruiker, wachtwoord en databasenaam.",
+      "invalid_url": "Voer een URL in die begint met postgresql://.",
+      "no_driver": "Home Assistant heeft geen Postgres-driver (psycopg2) geïnstalleerd."
+    },
     "step": {
+      "postgresql": {
+        "data": {
+          "db_url": "Database-URL"
+        },
+        "data_description": {
+          "db_url": "Bijvoorbeeld postgresql://user:password@192.168.1.10:5432/zp_my_fitness. De database moet al bestaan."
+        },
+        "description": "Gebruik een eigen database voor ZPMyFitnessCards, niet die van de recorder van Home Assistant.",
+        "title": "Postgres-database"
+      },
       "user": {
-        "description": "Stelt ZPMyFitnessCards in. Voeg daarna elke persoon toe met ‘Persoon toevoegen’."
+        "data": {
+          "engine": "Database"
+        },
+        "data_description": {
+          "engine": "SQLite bewaart een bestand in de configuratiemap, dat in Home Assistant-back-ups zit. Postgres gebruikt een database die je zelf beheert en back-upt."
+        },
+        "description": "Kies waar ZPMyFitnessCards zijn gegevens bewaart. Voeg daarna elke persoon toe met ‘Persoon toevoegen’.",
+        "title": "Database"
       }
     }
   },
@@ -175,6 +197,12 @@
         "moderate": "Gemiddeld: training 3 tot 5 dagen per week",
         "sedentary": "Zittend: weinig of geen beweging",
         "very_active": "Zeer actief: lichamelijk werk of twee keer per dag training"
+      }
+    },
+    "engine": {
+      "options": {
+        "postgresql": "Postgres",
+        "sqlite": "SQLite (aanbevolen)"
       }
     },
     "pace": {

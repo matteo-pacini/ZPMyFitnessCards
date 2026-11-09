@@ -5,7 +5,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
 ## Layout
 
 - `custom_components/zp_my_fitness/`: the integration. `brand/` holds its icons.
-  - `db.py`: the SQLite database, with blocking methods. `data.py` (`FitnessData`) is the only caller.
+  - `db.py`: the database, SQLite or Postgres, through SQLAlchemy Core, with blocking methods. `data.py` (`FitnessData`) is the only caller.
   - `goals.py`: calorie, macro and BMI maths, with no Home Assistant code.
   - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
   - `websocket.py`: the commands the cards call.
@@ -13,9 +13,10 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `backup.py`: pauses writes while Home Assistant backs up.
 - `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
 - `src/`: one plain browser script per card. There are no imports and no npm dependencies.
+- `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` loads a card script into a `vm` context with a stubbed DOM.
-- `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`.
+- `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres.
 
 ## Commands
 
@@ -43,7 +44,9 @@ CI runs all of these through `nix develop -c`, plus hassfest and the HACS valida
 - **Theming.** Take colours and fonts from Home Assistant theme variables, never hard-coded colours.
 - **People.** Each person is a config sub-entry. Code refers to a person by the `key` in its data, never by name or sub-entry ID. Re-adding a removed person under the same name reuses their key, which brings back their data, entities and history.
 - **Writes.** Go through `FitnessData`, never `Database` directly. It runs the query in the executor, holds the lock that backups pause on, refreshes goals, corrects the recorder's statistics for past days, and sends `SIGNAL_CHANGED` to the sensors and the cards.
-- **Schema.** `MIGRATIONS` in `db.py` upgrades a database one version at a time. Never edit a released migration; append a new one.
+- **Both databases.** Every query must work on SQLite and Postgres: build it with SQLAlchemy Core, not raw SQL, and test it through `database_url`. Days are ISO date strings in both.
+- **Schema.** `MIGRATIONS` in `db.py` upgrades a database one version at a time, and `schema_version` records where it is. Never edit a released migration or `_schema_v1`; add a new schema function and a migration to it.
+- **Cleanup.** Tests create nothing outside temporary folders and the throwaway Postgres server, and remove both even when they fail.
 - **Daily totals.** Use `state_class: total` with `last_reset` at local midnight, never `total_increasing`: deleting an entry lowers a total, which `total_increasing` would read as a meter reset.
 - **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
 - **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.

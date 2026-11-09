@@ -1,9 +1,7 @@
 """The SQLite database, without Home Assistant."""
 
-import sqlite3
-from pathlib import Path
-
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from custom_components.zp_my_fitness.db import MIGRATIONS, Database
 from custom_components.zp_my_fitness.goals import Goals
@@ -12,8 +10,9 @@ OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat
 
 
 @pytest.fixture
-def db(tmp_path: Path) -> Database:
-    database = Database(tmp_path / "test.db")
+def db(database_url: str) -> Database:
+    """An open database, once on SQLite and once on Postgres."""
+    database = Database(database_url)
     database.open()
     yield database
     database.close()
@@ -23,13 +22,13 @@ def entry(day: str, meal: str = "breakfast", kcal: float = 100, **more) -> dict:
     return {"day": day, "meal": meal, "name": "Food", "kcal": kcal, **more}
 
 
-def test_creates_the_latest_schema_and_reopens_without_migrating(tmp_path: Path) -> None:
-    first = Database(tmp_path / "test.db")
+def test_creates_the_latest_schema_and_reopens_without_migrating(database_url: str) -> None:
+    first = Database(database_url)
     first.open()
     assert first.schema_version() == len(MIGRATIONS)
     first.add_food(OATS)
     first.close()
-    again = Database(tmp_path / "test.db")
+    again = Database(database_url)
     again.open()
     assert again.schema_version() == len(MIGRATIONS)
     assert again.search_foods("oats", 10)[0]["name"] == "Porridge oats"
@@ -48,7 +47,7 @@ def test_foods_search_by_name_or_barcode(db: Database) -> None:
 
 def test_a_barcode_belongs_to_one_food(db: Database) -> None:
     db.add_food({**OATS, "barcode": "123"})
-    with pytest.raises(sqlite3.IntegrityError):
+    with pytest.raises(IntegrityError):
         db.add_food({**OATS, "name": "Other", "barcode": "123"})
 
 

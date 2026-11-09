@@ -10,7 +10,7 @@ It is in early development. The integration, its database and its sensors work; 
 
 1. In HACS, add `https://github.com/matteo-pacini/ZPMyFitnessCards` as a custom repository of type Integration, then download ZPMyFitnessCards.
 2. Restart Home Assistant.
-3. In **Settings > Devices & services**, add **ZPMyFitnessCards**.
+3. In **Settings > Devices & services**, add **ZPMyFitnessCards**, and choose where it keeps its data (see [Database](#database)).
 4. On its page, use **Add person** for each person.
 
 Each person has a name, sex, birth date, height, starting weight and date, goal weight, activity level and weekly pace. From these the integration works out a calorie goal with the Mifflin-St Jeor formula, and follows it as the weight changes. You can type your own calorie goal instead, and set the protein, carbs and fat split, which defaults to 20%, 50% and 30%.
@@ -39,7 +39,14 @@ The weight sensor also has these attributes: `underweight_below_kg`, `overweight
 
 The daily totals keep long-term statistics, so a statistics graph with `stat_types: change` and `period: day` shows each day's intake. Changing a past day in the diary also corrects its statistics.
 
-The data lives in `zp_my_fitness.db` in the configuration folder, which Home Assistant backups include.
+## Database
+
+When you add the integration, you choose where its data lives:
+
+- **SQLite**, the default: a file, `zp_my_fitness.db`, in the configuration folder. Home Assistant backups include it, and pause writes while they copy it.
+- **Postgres**: a database you run, given as a URL such as `postgresql://user:password@192.168.1.10:5432/zp_my_fitness`. Create an empty database for it first; don't share the one Home Assistant's recorder uses. The integration creates its tables and checks the connection before saving. Home Assistant backups do not include it, so back it up yourself, for example with `pg_dump`. Home Assistant stores the URL, password included, in its configuration, as it does the recorder's.
+
+Postgres needs the psycopg2 driver. If your recorder already runs on Postgres with a `postgresql://` URL, Home Assistant has it; if not, setup says it is missing.
 
 ## Cards
 

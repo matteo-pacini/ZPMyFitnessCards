@@ -3,9 +3,31 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards est déjà configuré. Ajoutez des personnes avec « Ajouter une personne »."
     },
+    "error": {
+      "cannot_connect": "Connexion impossible. Vérifiez l’hôte, le port, l’utilisateur, le mot de passe et le nom de la base.",
+      "invalid_url": "Saisissez une URL qui commence par postgresql://.",
+      "no_driver": "Aucun pilote Postgres (psycopg2) n’est installé dans Home Assistant."
+    },
     "step": {
+      "postgresql": {
+        "data": {
+          "db_url": "URL de la base de données"
+        },
+        "data_description": {
+          "db_url": "Par exemple postgresql://user:password@192.168.1.10:5432/zp_my_fitness. La base doit déjà exister."
+        },
+        "description": "Utilisez une base dédiée à ZPMyFitnessCards, pas celle de l’enregistreur de Home Assistant.",
+        "title": "Base de données Postgres"
+      },
       "user": {
-        "description": "Configure ZPMyFitnessCards. Ajoutez ensuite chaque personne avec « Ajouter une personne »."
+        "data": {
+          "engine": "Base de données"
+        },
+        "data_description": {
+          "engine": "SQLite conserve un fichier dans le dossier de configuration, inclus dans les sauvegardes de Home Assistant. Postgres utilise une base que vous gérez et sauvegardez vous-même."
+        },
+        "description": "Choisissez où ZPMyFitnessCards conserve ses données. Ajoutez ensuite chaque personne avec « Ajouter une personne ».",
+        "title": "Base de données"
       }
     }
   },
@@ -175,6 +197,12 @@
         "moderate": "Modéré : exercice 3 à 5 jours par semaine",
         "sedentary": "Sédentaire : peu ou pas d’exercice",
         "very_active": "Très actif : travail physique ou entraînement deux fois par jour"
+      }
+    },
+    "engine": {
+      "options": {
+        "postgresql": "Postgres",
+        "sqlite": "SQLite (recommandé)"
       }
     },
     "pace": {

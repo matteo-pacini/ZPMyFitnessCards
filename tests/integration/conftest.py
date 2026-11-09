@@ -51,11 +51,12 @@ def person(name: str = "Debora", key: str | None = None, **changes: Any) -> dict
     }
 
 
-def mock_entry(*people: dict[str, Any]) -> MockConfigEntry:
-    """The integration's entry with these people as sub-entries."""
+def mock_entry(*people: dict[str, Any], data: dict[str, Any] | None = None) -> MockConfigEntry:
+    """The integration's entry with these people as sub-entries, on SQLite unless `data` says."""
     return MockConfigEntry(
         domain=DOMAIN,
         title="ZPMyFitnessCards",
+        data=data or {"engine": "sqlite"},
         subentries_data=[
             ConfigSubentryData(
                 subentry_type=SUBENTRY_PERSON,
@@ -70,8 +71,19 @@ def mock_entry(*people: dict[str, Any]) -> MockConfigEntry:
 
 
 @pytest.fixture
-async def entry(hass: HomeAssistant) -> MockConfigEntry:
-    """The integration set up with Debora (key "debora") and Matteo (key "matteo")."""
+def entry_data(database_url: str) -> dict[str, Any]:
+    """The entry's data: SQLite in the config folder, then a Postgres database."""
+    if database_url.startswith("sqlite"):
+        return {"engine": "sqlite"}
+    return {"engine": "postgresql", "db_url": database_url}
+
+
+@pytest.fixture
+async def entry(hass: HomeAssistant, entry_data: dict[str, Any]) -> MockConfigEntry:
+    """The integration set up with Debora (key "debora") and Matteo (key "matteo").
+
+    Each test using it runs twice: on SQLite, then on Postgres.
+    """
     entry = mock_entry(
         person(),
         person(
@@ -83,6 +95,7 @@ async def entry(hass: HomeAssistant) -> MockConfigEntry:
             goal_weight_kg=80.0,
             activity="light",
         ),
+        data=entry_data,
     )
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)

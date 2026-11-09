@@ -18,10 +18,10 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from . import websocket
-from .const import CARDS_URL, DB_FILE, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
+from .const import CARDS_URL, CONF_DB_URL, DB_FILE, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
 from .coordinator import PersonCoordinator
 from .data import FitnessData, Person
-from .db import Database
+from .db import Database, sqlite_url
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -57,7 +57,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> bool:
     """Open the database and set up each person's sensors."""
-    db = Database(Path(hass.config.path(DB_FILE)))
+    db = Database(entry.data.get(CONF_DB_URL) or sqlite_url(hass.config.path(DB_FILE)))
     await hass.async_add_executor_job(db.open)
     people = [
         Person.from_subentry(s)
