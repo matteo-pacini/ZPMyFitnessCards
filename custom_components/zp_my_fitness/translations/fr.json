@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Tous les aliments, poids et objectifs de cette personne ont été supprimés.",
+        "imported": "{weights} poids et {days} jours de calories importés.",
+        "no_recorder": "L’enregistreur ne fonctionne pas, il n’y a donc pas d’historique à importer.",
         "not_loaded": "ZPMyFitnessCards n’est pas chargé. Rechargez-le, puis réessayez.",
         "reconfigure_successful": "Enregistré."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Protéines, glucides et lipides doivent totaliser 100 %.",
         "name_empty": "Saisissez un nom.",
         "name_taken": "Une autre personne porte déjà ce nom.",
+        "no_statistics": "L’enregistreur ne conserve pas de statistiques à long terme pour ce capteur.",
         "not_confirmed": "Cochez la case pour confirmer.",
+        "nothing_selected": "Choisissez un capteur de poids, un capteur de calories ou les deux.",
         "start_date_future": "La date de début ne peut pas être dans le futur."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Supprime tous les aliments, poids et objectifs enregistrés pour {name}. Cette action est irréversible. {name} reste et repart de zéro.",
           "title": "Supprimer toutes les données"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Capteur de calories",
+            "weight_sensor": "Capteur de poids"
+          },
+          "data_description": {
+            "calories_sensor": "Un capteur qui compte les calories consommées et conserve des statistiques à long terme.",
+            "weight_sensor": "Un capteur qui a enregistré le poids, comme un ancien assistant de poids."
+          },
+          "description": "Copie l’historique de {name} depuis des capteurs conservés par l’enregistreur. Poids : la moyenne de chaque jour, seulement pour les jours sans poids. Calories : le total de chaque jour devient une entrée « Imported total » dans En-cas. Relancer l’import n’ajoute que ce qui manque.",
+          "title": "Importer l’historique"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Modifier les informations",
-            "erase": "Supprimer toutes les données"
+            "erase": "Supprimer toutes les données",
+            "import_history": "Importer l’historique"
           },
           "title": "Modifier la personne"
         },

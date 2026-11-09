@@ -7,7 +7,7 @@ no test_ prefix, so the normal test runs skip it.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -62,6 +62,42 @@ def sample(home: Home) -> Home:
                     "grams": grams,
                 }
             )
+    # A year of Matteo weighing in every few days, slowly losing weight.
+    matteo = next(
+        p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Matteo"
+    )
+    first = date.fromisoformat(today) - timedelta(days=360)
+    for n in range(0, 361, 4):
+        wobble = ((n * 37) % 11 - 5) / 10
+        home.ws(
+            {
+                "type": "zp_my_fitness/weight/set",
+                "person": matteo,
+                "day": (first + timedelta(days=n)).isoformat(),
+                "kg": round(95 - n * 0.018 + wobble, 1),
+            }
+        )
+    # Four weeks of Debora's meals before today, as quick adds.
+    for n in range(1, 29):
+        day = (date.fromisoformat(today) - timedelta(days=n)).isoformat()
+        for meal, kcal in zip(
+            ("breakfast", "lunch", "dinner", "snacks"),
+            (380 + (n * 53) % 120, 560 + (n * 71) % 220, 620 + (n * 97) % 330, (n * 31) % 260),
+            strict=True,
+        ):
+            home.ws(
+                {
+                    "type": "zp_my_fitness/entry/add",
+                    "person": debora,
+                    "day": day,
+                    "meal": meal,
+                    "name": "Sample",
+                    "kcal": kcal,
+                    "protein": kcal * 0.05,
+                    "carbs": kcal * 0.12,
+                    "fat": kcal * 0.035,
+                }
+            )
     return home
 
 
@@ -92,6 +128,15 @@ def shoot(
 
 DIARY = {"type": "custom:zp-food-diary-card", "person": "Debora"}
 FOODS_CARD = {"type": "custom:zp-foods-card"}
+WEIGHT = {"type": "custom:zp-weight-card", "person": "Matteo"}
+TRENDS = {"type": "custom:zp-trends-card", "person": "Debora"}
+
+
+def pick_range(value: str):
+    def setup(card) -> None:
+        card.locator(f'[data-action="range"][data-range="{value}"]').click()
+
+    return setup
 
 
 def open_add(card) -> None:
@@ -106,6 +151,9 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
     shoot(sample, browser, DIARY, "food-diary-add", setup=open_add)
     shoot(sample, browser, FOODS_CARD, "saved-foods")
+    shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
+    shoot(sample, browser, TRENDS, "trends", setup=pick_range("30"))
+    shoot(sample, browser, TRENDS, "trends-week")
     assert sorted(p.name for p in IMAGES.glob("*.png")) == sorted(
         f"{n}.png"
         for n in (
@@ -113,5 +161,8 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
             "food-diary-dark",
             "food-diary-add",
             "saved-foods",
+            "weight",
+            "trends",
+            "trends-week",
         )
     )

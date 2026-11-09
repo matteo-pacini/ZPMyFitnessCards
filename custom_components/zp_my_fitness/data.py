@@ -266,6 +266,26 @@ class FitnessData:
         await self.async_refresh_goals(person)
         self._changed(person.key)
 
+    async def async_add_weights(self, person: Person, weights: list[tuple[str, float]]) -> int:
+        """Record weights for days that have none; return how many were added."""
+        added = await self._write(self.db.add_weights, person.key, weights)
+        if added:
+            await self.async_refresh_goals(person)
+            self._changed(person.key)
+        return added
+
+    async def async_import_entries(self, person: str, entries: list[dict]) -> int:
+        """Log entries across many past days; return how many.
+
+        Their days' recorded history is left alone: it already holds the
+        totals these entries came from.
+        """
+        if not entries:
+            return 0
+        await self._write(lambda: [self.db.add_entry(person, e) for e in entries])
+        self._changed(person, {e["day"] for e in entries})
+        return len(entries)
+
     async def async_delete_weight(self, person: Person, day: str) -> None:
         """Delete a weight, then follow it with today's goals."""
         await self._write(self.db.delete_weight, person.key, day)

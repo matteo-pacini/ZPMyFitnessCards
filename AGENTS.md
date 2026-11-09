@@ -11,8 +11,9 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `websocket.py`: the commands the cards call.
   - `config_flow.py`: the integration and its people, one config sub-entry each.
   - `backup.py`: pauses writes while Home Assistant backs up.
+  - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.
 - `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
-- `src/`: plain browser scripts, one per card or family of cards. `food-cards.js` holds the food diary and saved foods cards, which share the food form and strings. There are no imports and no npm dependencies.
+- `src/`: plain browser scripts, one per card or family of cards. `fitness-cards.js` holds every card: they share loading, live updates, the food form and the strings. There are no imports and no npm dependencies.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` loads a card script into a `vm` context with a stubbed DOM, for the pure functions and the markup they build. Interaction is tested end to end.

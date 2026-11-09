@@ -58,12 +58,15 @@ from .const import (
 from .data import today
 from .db import make_engine
 from .goals import ACTIVITY, PACES
+from .history import async_import_calories, async_import_weights, has_statistics
 from .schema import vol
 
 # Defaults for a new person: MyFitnessPal's default macro split.
 DEFAULTS = {CONF_PROTEIN_PCT: 20, CONF_CARBS_PCT: 50, CONF_FAT_PCT: 30}
 
 CONFIRM = "confirm"
+CONF_WEIGHT_SENSOR = "weight_sensor"
+CONF_CALORIES_SENSOR = "calories_sensor"
 
 TITLE = "ZPMyFitnessCards"
 
@@ -246,7 +249,9 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         """Change the person, or erase their data."""
-        return self.async_show_menu(step_id="reconfigure", menu_options=["edit", "erase"])
+        return self.async_show_menu(
+            step_id="reconfigure", menu_options=["edit", "import_history", "erase"]
+        )
 
     async def async_step_edit(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         """Change the person's details."""
@@ -260,6 +265,57 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         # Optional fields left empty are absent, so build the data afresh.
         data = {**user_input, CONF_NAME: name, CONF_KEY: subentry.data[CONF_KEY]}
         return self.async_update_and_abort(self._get_entry(), subentry, title=name, data=data)
+
+    async def async_step_import_history(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Copy weights and calories from the recorder's history of existing sensors."""
+        entry = self._get_entry()
+        if entry.state is not ConfigEntryState.LOADED:
+            return self.async_abort(reason="not_loaded")
+        if "recorder" not in self.hass.config.components:
+            return self.async_abort(reason="no_recorder")
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            weight = user_input.get(CONF_WEIGHT_SENSOR)
+            calories = user_input.get(CONF_CALORIES_SENSOR)
+            if not weight and not calories:
+                errors["base"] = "nothing_selected"
+            for key, entity_id in ((CONF_WEIGHT_SENSOR, weight), (CONF_CALORIES_SENSOR, calories)):
+                if entity_id and not has_statistics(self.hass, entity_id):
+                    errors[key] = "no_statistics"
+            if not errors:
+                data = entry.runtime_data.data
+                key = self._get_reconfigure_subentry().data[CONF_KEY]
+                person = data.people[key]
+                weights = (
+                    await async_import_weights(self.hass, data, person, weight) if weight else 0
+                )
+                days = (
+                    await async_import_calories(self.hass, data, person, calories)
+                    if calories
+                    else 0
+                )
+                return self.async_abort(
+                    reason="imported",
+                    description_placeholders={"weights": str(weights), "days": str(days)},
+                )
+        schema = vol.Schema(
+            {
+                vol.Optional(CONF_WEIGHT_SENSOR): EntitySelector(
+                    EntitySelectorConfig(domain="sensor", device_class="weight")
+                ),
+                vol.Optional(CONF_CALORIES_SENSOR): EntitySelector(
+                    EntitySelectorConfig(domain="sensor")
+                ),
+            }
+        )
+        return self.async_show_form(
+            step_id="import_history",
+            data_schema=self.add_suggested_values_to_schema(schema, user_input),
+            errors=errors,
+            description_placeholders={"name": self._get_reconfigure_subentry().title},
+        )
 
     async def async_step_erase(
         self, user_input: dict[str, Any] | None = None

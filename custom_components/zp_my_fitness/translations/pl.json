@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Usunięto wszystkie posiłki, pomiary wagi i cele tej osoby.",
+        "imported": "Zaimportowano pomiary wagi: {weights}, dni z kaloriami: {days}.",
+        "no_recorder": "Rejestrator nie działa, więc nie ma historii do zaimportowania.",
         "not_loaded": "ZPMyFitnessCards nie jest załadowany. Załaduj go ponownie i spróbuj jeszcze raz.",
         "reconfigure_successful": "Zapisano."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Białko, węglowodany i tłuszcz muszą razem dawać 100%.",
         "name_empty": "Wpisz imię.",
         "name_taken": "Inna osoba ma już to imię.",
+        "no_statistics": "Rejestrator nie przechowuje długoterminowych statystyk tego czujnika.",
         "not_confirmed": "Zaznacz pole, aby potwierdzić.",
+        "nothing_selected": "Wybierz czujnik wagi, czujnik kalorii albo oba.",
         "start_date_future": "Data rozpoczęcia nie może być w przyszłości."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Usuwa wszystkie posiłki, pomiary wagi i cele zapisane dla: {name}. Tego nie można cofnąć. {name} pozostaje i zaczyna od nowa.",
           "title": "Usuń wszystkie dane"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Czujnik kalorii",
+            "weight_sensor": "Czujnik wagi"
+          },
+          "data_description": {
+            "calories_sensor": "Czujnik liczący zjedzone kalorie, z długoterminowymi statystykami.",
+            "weight_sensor": "Czujnik, który zapisywał wagę, na przykład starszy pomocnik wagi."
+          },
+          "description": "Kopiuje historię osoby {name} z czujników zapisanych przez rejestrator. Waga: średnia z każdego dnia, tylko dla dni bez wagi. Kalorie: suma z każdego dnia staje się jednym wpisem „Imported total” w przekąskach. Ponowny import dodaje tylko brakujące dane.",
+          "title": "Importuj historię"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Zmień dane",
-            "erase": "Usuń wszystkie dane"
+            "erase": "Usuń wszystkie dane",
+            "import_history": "Importuj historię"
           },
           "title": "Zmień osobę"
         },

@@ -41,18 +41,33 @@ OWNER = {"name": "Test Owner", "username": "owner", "password": "test-password-e
 PEOPLE = ["Matteo", "Debora"]
 
 # The person form, as filled in for each of PEOPLE.
-PERSON_FORM = {
-    "sex": "female",
-    "birth_date": "1996-03-15",
-    "height_cm": 165,
-    "start_weight_kg": 70,
-    "start_date": "2026-11-01",
-    "goal_weight_kg": 62,
-    "activity": "moderate",
-    "pace": "lose_0_5",
-    "protein_pct": 20,
-    "carbs_pct": 50,
-    "fat_pct": 30,
+PERSON_FORMS = {
+    "Matteo": {
+        "sex": "male",
+        "birth_date": "1990-06-01",
+        "height_cm": 180,
+        "start_weight_kg": 95,
+        "start_date": "2025-11-01",
+        "goal_weight_kg": 82,
+        "activity": "light",
+        "pace": "lose_0_5",
+        "protein_pct": 25,
+        "carbs_pct": 45,
+        "fat_pct": 30,
+    },
+    "Debora": {
+        "sex": "female",
+        "birth_date": "1996-03-15",
+        "height_cm": 165,
+        "start_weight_kg": 70,
+        "start_date": "2026-11-01",
+        "goal_weight_kg": 62,
+        "activity": "moderate",
+        "pace": "lose_0_5",
+        "protein_pct": 20,
+        "carbs_pct": 50,
+        "fat_pct": 30,
+    },
 }
 
 CONFIGURATION = """\
@@ -210,7 +225,7 @@ def _add_integration(home: Home, db_url: str | None) -> str:
         done = home.api(
             "POST",
             f"/api/config/config_entries/subentries/flow/{flow['flow_id']}",
-            {"name": name, **PERSON_FORM},
+            {"name": name, **PERSON_FORMS[name]},
         )
         assert done["type"] == "create_entry", done
     # Adding a person reloads the entry in the background. Wait until the

@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "已删除此人的所有食物、体重和目标。",
+        "imported": "已导入 {weights} 条体重和 {days} 天的热量。",
+        "no_recorder": "记录器未运行，因此没有可导入的历史记录。",
         "not_loaded": "ZPMyFitnessCards 未加载。请重新加载后再试。",
         "reconfigure_successful": "已保存。"
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",
         "name_empty": "请输入名称。",
         "name_taken": "已有其他人使用此名称。",
+        "no_statistics": "记录器没有保存此传感器的长期统计数据。",
         "not_confirmed": "请勾选复选框以确认。",
+        "nothing_selected": "请选择体重传感器、热量传感器或两者。",
         "start_date_future": "开始日期不能晚于今天。"
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "删除为 {name} 记录的所有食物、体重和目标。此操作无法撤销。{name} 会保留，并从头开始。",
           "title": "删除所有数据"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "热量传感器",
+            "weight_sensor": "体重传感器"
+          },
+          "data_description": {
+            "calories_sensor": "统计已摄入热量并保存长期统计数据的传感器。",
+            "weight_sensor": "记录过体重的传感器，例如旧的体重辅助元素。"
+          },
+          "description": "从记录器保存的传感器中复制 {name} 的历史记录。体重：每天的平均值，仅限尚无体重的日期。热量：每天的总量会变成零食下的一条“Imported total”记录。再次导入只会补充缺少的部分。",
+          "title": "导入历史记录"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "更改信息",
-            "erase": "删除所有数据"
+            "erase": "删除所有数据",
+            "import_history": "导入历史记录"
           },
           "title": "更改人员"
         },

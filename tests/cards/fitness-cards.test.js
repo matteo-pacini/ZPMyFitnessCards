@@ -6,7 +6,7 @@ const { load, plain, text } = require("./harness.js");
 let ctx;
 let fn;
 test.before(async () => {
-  ctx = await load("food-cards.js");
+  ctx = await load("fitness-cards.js");
   fn = vm.runInContext(
     "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML })",
     ctx,

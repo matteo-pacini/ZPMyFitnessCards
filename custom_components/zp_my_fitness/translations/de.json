@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Alle Lebensmittel, Gewichte und Ziele dieser Person wurden gelöscht.",
+        "imported": "{weights} Gewichte und {days} Tage mit Kalorien importiert.",
+        "no_recorder": "Der Recorder läuft nicht, daher gibt es keinen Verlauf zum Importieren.",
         "not_loaded": "ZPMyFitnessCards ist nicht geladen. Lade es neu und versuche es dann erneut.",
         "reconfigure_successful": "Gespeichert."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
         "name_empty": "Gib einen Namen ein.",
         "name_taken": "Eine andere Person hat bereits diesen Namen.",
+        "no_statistics": "Der Recorder führt für diesen Sensor keine Langzeitstatistiken.",
         "not_confirmed": "Setze das Häkchen zur Bestätigung.",
+        "nothing_selected": "Wähle einen Gewichtssensor, einen Kaloriensensor oder beide.",
         "start_date_future": "Das Startdatum darf nicht in der Zukunft liegen."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Löscht alle für {name} erfassten Lebensmittel, Gewichte und Ziele. Das kann nicht rückgängig gemacht werden. {name} bleibt bestehen und beginnt wieder bei null.",
           "title": "Alle Daten löschen"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Kaloriensensor",
+            "weight_sensor": "Gewichtssensor"
+          },
+          "data_description": {
+            "calories_sensor": "Ein Sensor, der gegessene Kalorien zählt und Langzeitstatistiken hat.",
+            "weight_sensor": "Ein Sensor, der Gewicht aufgezeichnet hat, etwa ein älterer Gewichtshelfer."
+          },
+          "description": "Kopiert den Verlauf von {name} aus Sensoren, die der Recorder aufgezeichnet hat. Gewicht: der Tagesdurchschnitt, nur für Tage ohne Gewicht. Kalorien: Die Tagessumme wird zu einem Eintrag „Imported total“ unter Snacks. Ein erneuter Import ergänzt nur, was fehlt.",
+          "title": "Verlauf importieren"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Angaben ändern",
-            "erase": "Alle Daten löschen"
+            "erase": "Alle Daten löschen",
+            "import_history": "Verlauf importieren"
           },
           "title": "Person ändern"
         },

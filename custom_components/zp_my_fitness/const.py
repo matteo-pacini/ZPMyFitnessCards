@@ -43,3 +43,8 @@ REQUIRED_NUTRIENTS = NUTRIENTS[:4]
 # Dispatcher signal sent after any write, with the person's key (None for
 # changes to foods) and the set of ISO days whose entries changed.
 SIGNAL_CHANGED = f"{DOMAIN}_changed"
+
+# The name of the entry that holds a day's calories imported from a sensor's
+# history, which knows totals but not foods.
+IMPORTED_ENTRY = "Imported total"
+IMPORTED_MEAL = "snacks"

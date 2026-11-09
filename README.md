@@ -4,7 +4,7 @@ A food diary and weight tracking for everyone in your home, inside Home Assistan
 
 ZPMyFitnessCards is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
 
-It is in early development. The integration, its sensors and the food diary and saved foods cards work; the weight, trends and summary cards come next.
+It is in early development. The integration, its sensors and the food diary, saved foods, weight and trends cards work; a summary card and barcode scanning come next.
 
 ## Install
 
@@ -15,7 +15,9 @@ It is in early development. The integration, its sensors and the food diary and 
 
 Each person has a name, sex, birth date, height, starting weight and date, goal weight, activity level and weekly pace. From these the integration works out a calorie goal with the Mifflin-St Jeor formula, and follows it as the weight changes. You can type your own calorie goal instead, and set the protein, carbs and fat split, which defaults to 20%, 50% and 30%.
 
-To change a person later, use **Change person**. Its **Delete all data** option erases their food, weights and goals. Removing a person keeps their data, and adding them back under the same name brings it back.
+To change a person later, use **Change person**. Its **Delete all data** option erases their food, weights and goals.
+
+**Import history**, in the same menu, copies a person's past from sensors the recorder has kept: each day's average from a weight sensor, for days with no weight yet, and each day's total from a calories sensor, as one "Imported total" entry under Snacks. Running it again adds only what is missing. Removing a person keeps their data, and adding them back under the same name brings it back.
 
 The integration loads the cards for you. There is no dashboard resource to add.
 
@@ -93,7 +95,33 @@ type: custom:zp-foods-card
 | `title` | Optional. Replaces "Saved foods". |
 | `locale` | Optional. As for the food diary card. |
 
-Both cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
+### Weight card
+
+One person's weight: the latest weigh-in, the change since their starting weight, and their BMI band. The chart covers 90 days, 1 year or all of it, shaded by BMI band for the person's height, with a dashed line at the goal weight. Log a weight for today or any past day; a day keeps one weight, so logging again replaces it. The last five weigh-ins are listed, each with a button to delete it.
+
+<img src="images/weight.png" alt="Weight" width="400">
+
+```yaml
+type: custom:zp-weight-card
+person: Matteo
+```
+
+### Trends card
+
+One person's calories, stacked by meal, with a mark at each day's calorie goal. 7 and 30 days show a bar a day; tap one to open that day in a food diary on the same dashboard. 90 days and 1 year show a bar a week, averaging the days logged that week. Above the chart: the average calories a day, the days at or under goal, and the share of energy from protein, carbs and fat. These count complete days only, not today. Goals are recorded from the day a person is added, so earlier days have none.
+
+<img src="images/trends.png" alt="Trends over 30 days" width="400">
+
+<img src="images/trends-week.png" alt="Trends over 7 days" width="400">
+
+```yaml
+type: custom:zp-trends-card
+person: Debora
+```
+
+The weight and trends cards take the same `person`, `title` and `locale` options as the food diary card.
+
+All four cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
 
 ## Development
 

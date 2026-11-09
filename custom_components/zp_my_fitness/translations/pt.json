@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Foram eliminados todos os alimentos, pesos e objetivos desta pessoa.",
+        "imported": "Importados {weights} pesos e {days} dias de calorias.",
+        "no_recorder": "O gravador não está a funcionar, por isso não há histórico para importar.",
         "not_loaded": "O ZPMyFitnessCards não está carregado. Recarregue-o e tente novamente.",
         "reconfigure_successful": "Guardado."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Proteína, hidratos de carbono e gordura têm de somar 100%.",
         "name_empty": "Introduza um nome.",
         "name_taken": "Outra pessoa já tem este nome.",
+        "no_statistics": "O gravador não guarda estatísticas de longo prazo para este sensor.",
         "not_confirmed": "Assinale a caixa para confirmar.",
+        "nothing_selected": "Escolha um sensor de peso, um de calorias ou ambos.",
         "start_date_future": "A data de início não pode ser no futuro."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Elimina todos os alimentos, pesos e objetivos registados para {name}. Não é possível anular. {name} mantém-se e recomeça do zero.",
           "title": "Eliminar todos os dados"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Sensor de calorias",
+            "weight_sensor": "Sensor de peso"
+          },
+          "data_description": {
+            "calories_sensor": "Um sensor que conta as calorias ingeridas e guarda estatísticas de longo prazo.",
+            "weight_sensor": "Um sensor que registou o peso, como um auxiliar de peso antigo."
+          },
+          "description": "Copia o histórico de {name} a partir de sensores guardados pelo gravador. Peso: a média de cada dia, só para dias sem peso. Calorias: o total de cada dia passa a uma entrada «Imported total» nos lanches. Importar de novo só acrescenta o que falta.",
+          "title": "Importar histórico"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Alterar dados",
-            "erase": "Eliminar todos os dados"
+            "erase": "Eliminar todos os dados",
+            "import_history": "Importar histórico"
           },
           "title": "Alterar pessoa"
         },

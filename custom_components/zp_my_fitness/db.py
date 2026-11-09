@@ -346,6 +346,15 @@ class Database:
         with self._db.begin() as conn:
             conn.execute(delete(ENTRIES).where(ENTRIES.c.id == entry_id))
 
+    def days_with_entry_named(self, person: str, name: str) -> set[str]:
+        """The days on which a person has an entry called `name`."""
+        rows = self._all(
+            select(ENTRIES.c.day)
+            .where(ENTRIES.c.person == person, ENTRIES.c.name == name)
+            .distinct()
+        )
+        return {row["day"] for row in rows}
+
     def entry(self, entry_id: int) -> dict[str, Any] | None:
         """One entry, or None."""
         return self._one(select(ENTRIES).where(ENTRIES.c.id == entry_id))
@@ -387,6 +396,20 @@ class Database:
                     set_={"kg": upsert.excluded.kg, "updated_at": upsert.excluded.updated_at},
                 )
             )
+
+    def add_weights(self, person: str, weights: Iterable[tuple[str, float]]) -> int:
+        """Record (day, kg) pairs for days that have no weight yet; return how many."""
+        added = 0
+        with self._db.begin() as conn:
+            for day, kg in weights:
+                insert_new = self._insert(WEIGHTS).values(
+                    person=person, day=day, kg=kg, updated_at=_now()
+                )
+                result = conn.execute(
+                    insert_new.on_conflict_do_nothing(index_elements=["person", "day"])
+                )
+                added += result.rowcount
+        return added
 
     def delete_weight(self, person: str, day: str) -> None:
         """Delete a person's weight for `day`."""

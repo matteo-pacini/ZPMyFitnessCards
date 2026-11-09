@@ -1,15 +1,19 @@
-// Food diary and saved foods cards, for the ZPMyFitnessCards integration.
+// The ZPMyFitnessCards cards.
 //
 // custom:zp-food-diary-card   one person's day, meal by meal: add, change,
 //                             delete and copy food
 // custom:zp-foods-card        the house's saved foods, per 100 g
+// custom:zp-weight-card       one person's weight: log it, and chart it with
+//                             the BMI bands and their goal
+// custom:zp-trends-card       one person's calories by day or week, by meal,
+//                             against their goal
 //
-// Both talk to the integration over its websocket commands, and redraw when
+// They talk to the integration over its websocket commands, and redraw when
 // its zp_my_fitness/subscribe events say something changed.
 //
-// Diary config:
+// Config for the cards that show one person (all but saved foods):
 //   person  a person's name; defaults to the person linked to the logged-in user
-//   title   optional heading; defaults to "Food diary"
+//   title   optional heading
 //   locale  optional language code; defaults to Home Assistant's language
 //
 // Saved foods config:
@@ -86,6 +90,31 @@ const STRINGS = {
     error_barcode_taken: "Another saved food has this barcode.",
     error_amount: "Enter an amount above 0.",
     error_quick: "Fill in a name and the kcal.",
+    title_weight: "Weight",
+    title_trends: "Trends",
+    range_7: "7 days",
+    range_30: "30 days",
+    range_90: "90 days",
+    range_365: "1 year",
+    range_all: "All",
+    since_start: "{change} since {date}",
+    underweight: "Underweight",
+    healthy: "Healthy",
+    overweight: "Overweight",
+    obese: "Obese",
+    goal_weight: "Goal {kg} kg",
+    log_weight: "Log weight",
+    kg: "kg",
+    day: "Day",
+    recent_weights: "Recent weigh-ins",
+    no_weights: "No weigh-ins yet. The starting weight is {kg} kg.",
+    avg_day: "Average a day",
+    on_goal: "Days on goal",
+    on_goal_value: "{days} of {logged}",
+    macro_split: "Protein · carbs · fat",
+    no_data: "Nothing logged in this period.",
+    week_of: "Week of {date}",
+    error_weight: "Enter a weight from 20 to 400 kg.",
   },
   de: {
     title_diary: "Ernährungstagebuch",
@@ -157,6 +186,31 @@ const STRINGS = {
     error_barcode_taken: "Ein anderes gespeichertes Lebensmittel hat diesen Barcode.",
     error_amount: "Gib eine Menge über 0 ein.",
     error_quick: "Gib einen Namen und die kcal ein.",
+    title_weight: "Gewicht",
+    title_trends: "Verlauf",
+    range_7: "7 Tage",
+    range_30: "30 Tage",
+    range_90: "90 Tage",
+    range_365: "1 Jahr",
+    range_all: "Alles",
+    since_start: "{change} seit {date}",
+    underweight: "Untergewicht",
+    healthy: "Normalgewicht",
+    overweight: "Übergewicht",
+    obese: "Adipositas",
+    goal_weight: "Ziel {kg} kg",
+    log_weight: "Gewicht eintragen",
+    kg: "kg",
+    day: "Tag",
+    recent_weights: "Letzte Messungen",
+    no_weights: "Noch keine Messungen. Das Startgewicht ist {kg} kg.",
+    avg_day: "Schnitt pro Tag",
+    on_goal: "Tage im Ziel",
+    on_goal_value: "{days} von {logged}",
+    macro_split: "Eiweiß · Kohlenhydrate · Fett",
+    no_data: "In diesem Zeitraum nichts eingetragen.",
+    week_of: "Woche ab {date}",
+    error_weight: "Gib ein Gewicht von 20 bis 400 kg ein.",
   },
   es: {
     title_diary: "Diario de comidas",
@@ -228,6 +282,31 @@ const STRINGS = {
     error_barcode_taken: "Otro alimento guardado tiene este código de barras.",
     error_amount: "Introduce una cantidad mayor que 0.",
     error_quick: "Rellena un nombre y las kcal.",
+    title_weight: "Peso",
+    title_trends: "Tendencias",
+    range_7: "7 días",
+    range_30: "30 días",
+    range_90: "90 días",
+    range_365: "1 año",
+    range_all: "Todo",
+    since_start: "{change} desde el {date}",
+    underweight: "Bajo peso",
+    healthy: "Saludable",
+    overweight: "Sobrepeso",
+    obese: "Obesidad",
+    goal_weight: "Objetivo {kg} kg",
+    log_weight: "Registrar peso",
+    kg: "kg",
+    day: "Día",
+    recent_weights: "Últimos pesajes",
+    no_weights: "Aún no hay pesajes. El peso inicial es {kg} kg.",
+    avg_day: "Media al día",
+    on_goal: "Días en objetivo",
+    on_goal_value: "{days} de {logged}",
+    macro_split: "Proteínas · carbohidratos · grasas",
+    no_data: "Nada registrado en este periodo.",
+    week_of: "Semana del {date}",
+    error_weight: "Introduce un peso de 20 a 400 kg.",
   },
   fr: {
     title_diary: "Journal alimentaire",
@@ -299,6 +378,31 @@ const STRINGS = {
     error_barcode_taken: "Un autre aliment enregistré a ce code-barres.",
     error_amount: "Saisissez une quantité supérieure à 0.",
     error_quick: "Indiquez un nom et les kcal.",
+    title_weight: "Poids",
+    title_trends: "Tendances",
+    range_7: "7 jours",
+    range_30: "30 jours",
+    range_90: "90 jours",
+    range_365: "1 an",
+    range_all: "Tout",
+    since_start: "{change} depuis le {date}",
+    underweight: "Insuffisance pondérale",
+    healthy: "Normal",
+    overweight: "Surpoids",
+    obese: "Obésité",
+    goal_weight: "Objectif {kg} kg",
+    log_weight: "Enregistrer le poids",
+    kg: "kg",
+    day: "Jour",
+    recent_weights: "Dernières pesées",
+    no_weights: "Aucune pesée pour l’instant. Le poids de départ est de {kg} kg.",
+    avg_day: "Moyenne par jour",
+    on_goal: "Jours dans l’objectif",
+    on_goal_value: "{days} sur {logged}",
+    macro_split: "Protéines · glucides · lipides",
+    no_data: "Rien d’enregistré sur cette période.",
+    week_of: "Semaine du {date}",
+    error_weight: "Saisissez un poids entre 20 et 400 kg.",
   },
   it: {
     title_diary: "Diario alimentare",
@@ -370,6 +474,31 @@ const STRINGS = {
     error_barcode_taken: "Un altro alimento salvato ha questo codice a barre.",
     error_amount: "Inserisci una quantità maggiore di 0.",
     error_quick: "Inserisci un nome e le kcal.",
+    title_weight: "Peso",
+    title_trends: "Andamento",
+    range_7: "7 giorni",
+    range_30: "30 giorni",
+    range_90: "90 giorni",
+    range_365: "1 anno",
+    range_all: "Tutto",
+    since_start: "{change} dal {date}",
+    underweight: "Sottopeso",
+    healthy: "Normopeso",
+    overweight: "Sovrappeso",
+    obese: "Obesità",
+    goal_weight: "Obiettivo {kg} kg",
+    log_weight: "Registra il peso",
+    kg: "kg",
+    day: "Giorno",
+    recent_weights: "Ultime pesate",
+    no_weights: "Ancora nessuna pesata. Il peso iniziale è {kg} kg.",
+    avg_day: "Media al giorno",
+    on_goal: "Giorni in obiettivo",
+    on_goal_value: "{days} su {logged}",
+    macro_split: "Proteine · carboidrati · grassi",
+    no_data: "Niente registrato in questo periodo.",
+    week_of: "Settimana dal {date}",
+    error_weight: "Inserisci un peso tra 20 e 400 kg.",
   },
   nl: {
     title_diary: "Voedingsdagboek",
@@ -441,6 +570,31 @@ const STRINGS = {
     error_barcode_taken: "Andere opgeslagen voeding heeft deze streepjescode.",
     error_amount: "Voer een hoeveelheid boven 0 in.",
     error_quick: "Vul een naam en de kcal in.",
+    title_weight: "Gewicht",
+    title_trends: "Trends",
+    range_7: "7 dagen",
+    range_30: "30 dagen",
+    range_90: "90 dagen",
+    range_365: "1 jaar",
+    range_all: "Alles",
+    since_start: "{change} sinds {date}",
+    underweight: "Ondergewicht",
+    healthy: "Gezond",
+    overweight: "Overgewicht",
+    obese: "Obesitas",
+    goal_weight: "Doel {kg} kg",
+    log_weight: "Gewicht vastleggen",
+    kg: "kg",
+    day: "Dag",
+    recent_weights: "Laatste wegingen",
+    no_weights: "Nog geen wegingen. Het startgewicht is {kg} kg.",
+    avg_day: "Gemiddeld per dag",
+    on_goal: "Dagen binnen doel",
+    on_goal_value: "{days} van {logged}",
+    macro_split: "Eiwit · koolhydraten · vet",
+    no_data: "Niets vastgelegd in deze periode.",
+    week_of: "Week van {date}",
+    error_weight: "Voer een gewicht van 20 tot 400 kg in.",
   },
   pl: {
     title_diary: "Dziennik żywienia",
@@ -512,6 +666,31 @@ const STRINGS = {
     error_barcode_taken: "Inny zapisany produkt ma ten kod kreskowy.",
     error_amount: "Wpisz ilość większą od 0.",
     error_quick: "Wpisz nazwę i kcal.",
+    title_weight: "Waga",
+    title_trends: "Trendy",
+    range_7: "7 dni",
+    range_30: "30 dni",
+    range_90: "90 dni",
+    range_365: "1 rok",
+    range_all: "Wszystko",
+    since_start: "{change} od {date}",
+    underweight: "Niedowaga",
+    healthy: "Prawidłowa",
+    overweight: "Nadwaga",
+    obese: "Otyłość",
+    goal_weight: "Cel {kg} kg",
+    log_weight: "Zapisz wagę",
+    kg: "kg",
+    day: "Dzień",
+    recent_weights: "Ostatnie pomiary",
+    no_weights: "Brak pomiarów. Waga początkowa to {kg} kg.",
+    avg_day: "Średnio dziennie",
+    on_goal: "Dni w celu",
+    on_goal_value: "{days} z {logged}",
+    macro_split: "Białko · węglowodany · tłuszcz",
+    no_data: "Nic nie zapisano w tym okresie.",
+    week_of: "Tydzień od {date}",
+    error_weight: "Wpisz wagę od 20 do 400 kg.",
   },
   pt: {
     title_diary: "Diário alimentar",
@@ -583,6 +762,31 @@ const STRINGS = {
     error_barcode_taken: "Outro alimento guardado tem este código de barras.",
     error_amount: "Introduza uma quantidade acima de 0.",
     error_quick: "Preencha um nome e as kcal.",
+    title_weight: "Peso",
+    title_trends: "Tendências",
+    range_7: "7 dias",
+    range_30: "30 dias",
+    range_90: "90 dias",
+    range_365: "1 ano",
+    range_all: "Tudo",
+    since_start: "{change} desde {date}",
+    underweight: "Baixo peso",
+    healthy: "Saudável",
+    overweight: "Excesso de peso",
+    obese: "Obesidade",
+    goal_weight: "Objetivo {kg} kg",
+    log_weight: "Registar peso",
+    kg: "kg",
+    day: "Dia",
+    recent_weights: "Últimas pesagens",
+    no_weights: "Ainda não há pesagens. O peso inicial é {kg} kg.",
+    avg_day: "Média por dia",
+    on_goal: "Dias no objetivo",
+    on_goal_value: "{days} de {logged}",
+    macro_split: "Proteína · hidratos · gordura",
+    no_data: "Nada registado neste período.",
+    week_of: "Semana de {date}",
+    error_weight: "Introduza um peso entre 20 e 400 kg.",
   },
   "pt-BR": {
     title_foods: "Alimentos salvos",
@@ -608,6 +812,13 @@ const STRINGS = {
     error_required: "Preencha o nome, e as kcal, proteína, carboidratos e gordura por 100 g.",
     error_barcode_taken: "Outro alimento salvo tem este código de barras.",
     error_amount: "Digite uma quantidade acima de 0.",
+    overweight: "Sobrepeso",
+    goal_weight: "Meta {kg} kg",
+    log_weight: "Registrar peso",
+    on_goal: "Dias na meta",
+    macro_split: "Proteína · carboidratos · gordura",
+    no_data: "Nada registrado neste período.",
+    error_weight: "Digite um peso entre 20 e 400 kg.",
   },
   sv: {
     title_diary: "Matdagbok",
@@ -679,6 +890,31 @@ const STRINGS = {
     error_barcode_taken: "En annan sparad mat har den här streckkoden.",
     error_amount: "Ange en mängd över 0.",
     error_quick: "Fyll i ett namn och kcal.",
+    title_weight: "Vikt",
+    title_trends: "Trender",
+    range_7: "7 dagar",
+    range_30: "30 dagar",
+    range_90: "90 dagar",
+    range_365: "1 år",
+    range_all: "Allt",
+    since_start: "{change} sedan {date}",
+    underweight: "Undervikt",
+    healthy: "Normalvikt",
+    overweight: "Övervikt",
+    obese: "Fetma",
+    goal_weight: "Mål {kg} kg",
+    log_weight: "Logga vikt",
+    kg: "kg",
+    day: "Dag",
+    recent_weights: "Senaste vägningar",
+    no_weights: "Inga vägningar än. Startvikten är {kg} kg.",
+    avg_day: "Snitt per dag",
+    on_goal: "Dagar inom målet",
+    on_goal_value: "{days} av {logged}",
+    macro_split: "Protein · kolhydrater · fett",
+    no_data: "Inget loggat under perioden.",
+    week_of: "Veckan från {date}",
+    error_weight: "Ange en vikt mellan 20 och 400 kg.",
   },
   "zh-Hans": {
     title_diary: "饮食日记",
@@ -750,6 +986,31 @@ const STRINGS = {
     error_barcode_taken: "另一种已保存的食物使用了此条形码。",
     error_amount: "请输入大于 0 的数量。",
     error_quick: "请填写名称和千卡。",
+    title_weight: "体重",
+    title_trends: "趋势",
+    range_7: "7 天",
+    range_30: "30 天",
+    range_90: "90 天",
+    range_365: "1 年",
+    range_all: "全部",
+    since_start: "自 {date} 以来 {change}",
+    underweight: "偏瘦",
+    healthy: "正常",
+    overweight: "超重",
+    obese: "肥胖",
+    goal_weight: "目标 {kg} 千克",
+    log_weight: "记录体重",
+    kg: "千克",
+    day: "日期",
+    recent_weights: "最近称重",
+    no_weights: "尚无称重记录。初始体重为 {kg} 千克。",
+    avg_day: "日均",
+    on_goal: "达标天数",
+    on_goal_value: "{days}/{logged}",
+    macro_split: "蛋白质 · 碳水化合物 · 脂肪",
+    no_data: "此期间没有记录。",
+    week_of: "{date} 起的一周",
+    error_weight: "请输入 20 到 400 千克之间的体重。",
   },
 };
 
@@ -776,6 +1037,10 @@ const NUTRIENTS = ["kcal", ...MACROS, ...OPTIONAL];
 // How long to wait before asking a reloading integration again, in ms.
 const RETRY_MS = 2000;
 const SEARCH_DELAY_MS = 250;
+
+// Sent on window when the trends card asks to open a day: {person, day}.
+// A food diary showing that person moves to the day.
+const OPEN_DAY = "zp-my-fitness-open-day";
 
 // Dates are ISO days ("2026-11-09") in Home Assistant's time zone.
 
@@ -1068,6 +1333,20 @@ class FoodDiaryCard extends FitnessCard {
   getCardSize() {
     return 8;
   }
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener(OPEN_DAY, this._openDay);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener(OPEN_DAY, this._openDay);
+  }
+
+  _openDay = (event) => {
+    if (this._person && event.detail.person === this._person.id) this._goTo(event.detail.day);
+  };
 
   async _load() {
     const people = await this._call({ type: "zp_my_fitness/people" });
@@ -1639,6 +1918,411 @@ function foodsListHTML(foods, query, locale, t) {
     .join("");
 }
 
+// Charts are SVG drawn in a fixed coordinate space and scaled to the card.
+const CHART = { width: 600, height: 240, left: 44, right: 12, top: 12, bottom: 28 };
+
+// A round step for about `count` axis ticks between `low` and `high`.
+function niceStep(low, high, count = 4) {
+  const raw = (high - low) / count || 1;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  return [1, 2, 2.5, 5, 10].map((m) => m * power).find((step) => step >= raw);
+}
+
+function ticks(low, high, count) {
+  const step = niceStep(low, high, count);
+  const out = [];
+  for (let v = Math.ceil(low / step) * step; v <= high + 1e-9; v += step) out.push(Math.round(v * 1000) / 1000);
+  return out;
+}
+
+const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
+
+const shortDate = (day, locale, withYear = false) => {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(
+    new Date(Date.UTC(y, m - 1, d)),
+  );
+};
+
+// The BMI band a weight falls in, from a person's band limits in kg.
+function bandOf(kg, person) {
+  if (kg < person.underweight_below_kg) return "underweight";
+  if (kg < person.overweight_from_kg) return "healthy";
+  if (kg < person.obese_from_kg) return "overweight";
+  return "obese";
+}
+
+// The first day a range shows, ending today. "all" starts at the first
+// weigh-in, or the person's start date before there is one.
+function rangeStart(range, today, firstDay) {
+  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
+  return shiftDay(today, -(Number(range) - 1));
+}
+
+// The weight chart: BMI bands, the goal, and the weigh-ins from `start` to `today`.
+function weightChartHTML(weights, person, start, today, locale, t) {
+  const { width, height, left, right, top, bottom } = CHART;
+  const values = weights.map((w) => w.kg);
+  const reference = values.length ? values : [person.start_weight_kg];
+  let low = Math.min(...reference, person.goal_weight_kg) - 2;
+  let high = Math.max(...reference, person.goal_weight_kg) + 2;
+  low = Math.floor(low);
+  high = Math.ceil(high);
+  const span = Math.max(daysBetween(start, today), 1);
+  const x = (day) => left + (daysBetween(start, day) / span) * (width - left - right);
+  const y = (kg) => top + ((high - kg) / (high - low)) * (height - top - bottom);
+  const clampY = (kg) => y(Math.min(Math.max(kg, low), high));
+
+  const limits = [low, person.underweight_below_kg, person.overweight_from_kg, person.obese_from_kg, high];
+  const bands = ["underweight", "healthy", "overweight", "obese"]
+    .map((band, i) => {
+      const from = Math.max(limits[i], low);
+      const to = Math.min(limits[i + 1], high);
+      if (to <= from) return "";
+      const tall = clampY(from) - clampY(to);
+      // Only label a band with room for its label.
+      const label = tall >= 16 ? `<text class="bandlabel" x="${width - right - 4}" y="${clampY(to) + 12}" text-anchor="end">${esc(t[band])}</text>` : "";
+      return `<rect class="band ${band}" x="${left}" y="${clampY(to)}" width="${width - left - right}" height="${tall}"><title>${esc(t[band])}</title></rect>${label}`;
+    })
+    .join("");
+  const yTicks = ticks(low, high, 4)
+    .map((v) => `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale, 1)}</text>`)
+    .join("");
+  const xCount = Math.min(4, span);
+  const xTicks = Array.from({ length: xCount + 1 }, (_, i) => shiftDay(start, Math.round((span * i) / xCount)))
+    .map((day, i) => `<text class="axis" x="${x(day)}" y="${height - 8}" text-anchor="${i === 0 ? "start" : i === xCount ? "end" : "middle"}">${esc(shortDate(day, locale, span > 400))}</text>`)
+    .join("");
+  const goal = `<line class="goal" x1="${left}" x2="${width - right}" y1="${y(person.goal_weight_kg)}" y2="${y(person.goal_weight_kg)}"/>
+    <text class="goallabel" x="${left + 4}" y="${y(person.goal_weight_kg) - 4}">${esc(fill(t.goal_weight, { kg: number(person.goal_weight_kg, locale, 1) }))}</text>`;
+  const path = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(w.kg).toFixed(1)}`).join("");
+  const points =
+    weights.length <= 120
+      ? weights.map((w) => `<circle class="point" cx="${x(w.day)}" cy="${y(w.kg)}" r="3"><title>${esc(shortDate(w.day, locale, true))}: ${number(w.kg, locale, 1)} kg</title></circle>`).join("")
+      : "";
+  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t.title_weight)}">
+    ${bands}${yTicks}${xTicks}${goal}
+    ${path ? `<path class="line" d="${path}"/>` : ""}${points}
+  </svg>`;
+}
+
+// One bar per day, or per week for long ranges, from zp_my_fitness/days.
+// A week's bar is the average of its logged days, and so is its goal.
+function trendBars(days, weekly) {
+  const logged = (d) => Object.keys(d.meals).length > 0;
+  const kcal = (d) => MEALS.map((m) => d.meals[m]?.kcal ?? 0);
+  if (!weekly) return days.map((d) => ({ day: d.day, days: [d.day], meals: kcal(d), goal: d.goals?.kcal ?? null, logged: logged(d) }));
+  const bars = [];
+  // Weeks end on the last day, so the newest bar is a full week.
+  for (let end = days.length; end > 0; end -= 7) {
+    const week = days.slice(Math.max(0, end - 7), end);
+    const counted = week.filter(logged);
+    const average = (values) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0);
+    const goals = counted.map((d) => d.goals?.kcal).filter((g) => g != null);
+    bars.unshift({
+      day: week[0].day,
+      days: week.map((d) => d.day),
+      meals: MEALS.map((_, i) => average(counted.map((d) => kcal(d)[i]))),
+      goal: goals.length ? average(goals) : null,
+      logged: counted.length > 0,
+    });
+  }
+  return bars;
+}
+
+// Averages over the logged days before `today`, which is still under way:
+// kcal a day, days at or under goal, and the share of energy from each macro.
+function trendStats(days, today) {
+  const logged = days.filter((d) => d.day < today && Object.keys(d.meals).length > 0);
+  const sum = (d, n) => MEALS.reduce((s, m) => s + (d.meals[m]?.[n] ?? 0), 0);
+  const kcal = logged.reduce((s, d) => s + sum(d, "kcal"), 0);
+  const energy = { protein: 4, carbs: 4, fat: 9 };
+  const fromMacros = Object.fromEntries(MACROS.map((m) => [m, logged.reduce((s, d) => s + sum(d, m), 0) * energy[m]]));
+  const total = MACROS.reduce((s, m) => s + fromMacros[m], 0);
+  const withGoal = logged.filter((d) => d.goals);
+  return {
+    logged: logged.length,
+    average: logged.length ? kcal / logged.length : 0,
+    onGoal: withGoal.filter((d) => sum(d, "kcal") <= d.goals.kcal).length,
+    withGoal: withGoal.length,
+    split: Object.fromEntries(MACROS.map((m) => [m, total ? (fromMacros[m] / total) * 100 : 0])),
+  };
+}
+
+function trendChartHTML(bars, weekly, locale, t) {
+  const { width, height, left, right, top, bottom } = CHART;
+  const totals = bars.map((b) => b.meals.reduce((a, c) => a + c, 0));
+  const high = Math.max(500, ...totals, ...bars.map((b) => b.goal ?? 0)) * 1.1;
+  const yTicks = ticks(0, high, 4);
+  const max = yTicks[yTicks.length - 1] < high ? yTicks[yTicks.length - 1] + niceStep(0, high, 4) : yTicks[yTicks.length - 1];
+  const y = (v) => top + (1 - v / max) * (height - top - bottom);
+  const slot = (width - left - right) / bars.length;
+  const barWidth = Math.max(2, slot * 0.64);
+  const labelEvery = Math.ceil(bars.length / 7);
+  const grid = ticks(0, max, 4)
+    .map((v) => `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale)}</text>`)
+    .join("");
+  const drawn = bars
+    .map((bar, i) => {
+      const x = left + i * slot + (slot - barWidth) / 2;
+      let base = 0;
+      const stack = bar.meals
+        .map((v, m) => {
+          if (v <= 0) return "";
+          const rect = `<rect class="meal${m}" x="${x.toFixed(1)}" y="${y(base + v).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(y(base) - y(base + v)).toFixed(1)}"/>`;
+          base += v;
+          return rect;
+        })
+        .join("");
+      const goal = bar.goal != null ? `<line class="goaltick" x1="${(x - 2).toFixed(1)}" x2="${(x + barWidth + 2).toFixed(1)}" y1="${y(bar.goal).toFixed(1)}" y2="${y(bar.goal).toFixed(1)}"/>` : "";
+      const label = i % labelEvery === 0 || i === bars.length - 1
+        ? `<text class="axis" x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" text-anchor="middle">${esc(weekly ? shortDate(bar.day, locale) : bars.length <= 7 ? dayLabelShort(bar.day, locale) : shortDate(bar.day, locale))}</text>`
+        : "";
+      const title = `${weekly ? fill(t.week_of, { date: shortDate(bar.day, locale, true) }) : shortDate(bar.day, locale, true)}: ${number(totals[i], locale)} ${t.kcal}`;
+      const hit = weekly ? "" : ` data-action="open-day" data-day="${bar.day}"`;
+      return `<g class="bar${bar.logged ? "" : " empty"}"${hit}><title>${esc(title)}</title>
+        <rect class="hit" x="${(left + i * slot).toFixed(1)}" y="${top}" width="${slot.toFixed(1)}" height="${height - top - bottom}"/>${stack}${goal}</g>${label}`;
+    })
+    .join("");
+  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t.title_trends)}">${grid}${drawn}</svg>`;
+}
+
+const dayLabelShort = (day, locale) => {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
+};
+
+const CHART_STYLE = `
+  .chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart .axis, .chart .bandlabel, .chart .goallabel { font-size: 11px; fill: var(--secondary-text-color); }
+  .chart .grid { stroke: var(--divider-color); stroke-width: 1; }
+  .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+  .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+  .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
+  .stats small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
+`;
+
+const rangeButtons = (ranges, selected, t) =>
+  `<div class="ranges" role="group">${ranges
+    .map((r) => `<button data-action="range" data-range="${r}" aria-pressed="${String(r) === String(selected)}">${esc(t[`range_${r}`])}</button>`)
+    .join("")}</div>`;
+
+// Base for the cards that show one person.
+class PersonCard extends FitnessCard {
+  static getStubConfig() {
+    return {};
+  }
+
+  static getConfigForm() {
+    return {
+      schema: [
+        { name: "person", selector: { text: {} } },
+        { name: "title", selector: { text: {} } },
+        { name: "locale", selector: { text: {} } },
+      ],
+      computeLabel: (s) => ({ person: "Person (empty: the logged-in user's)", title: "Title", locale: "Language" })[s.name],
+    };
+  }
+
+  async _load() {
+    const people = await this._call({ type: "zp_my_fitness/people" });
+    this._person = findPerson(people, this._config, this._hass);
+    this._data = this._person ? await this._fetch() : null;
+  }
+
+  async _refresh() {
+    try {
+      this._data = await this._fetch();
+      this._renderBody();
+    } catch {
+      this._start();
+    }
+  }
+
+  _changed(event) {
+    if (this._person && event.person === this._person.id) this._refresh();
+  }
+
+  _render() {
+    if (!this._card) return;
+    const t = this._t;
+    const title = `<div class="title">${esc(this._config.title || t[this.constructor.titleKey])}</div>`;
+    if (!this._person) {
+      let message = t.loading;
+      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
+      else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
+      this._card.innerHTML = `${title}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
+      return;
+    }
+    this._card.innerHTML = `<div class="head"><div>${title}<div class="sub person">${esc(this._person.name)}</div></div>
+      ${rangeButtons(this.constructor.ranges, this._range, t)}</div><div class="body"></div>`;
+    this._renderBody();
+  }
+}
+
+class WeightCard extends PersonCard {
+  static titleKey = "title_weight";
+  static ranges = ["90", "365", "all"];
+  static style = `${CHART_STYLE}
+    .body { display: flex; flex-direction: column; gap: 14px; }
+    .now { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .now b { font-size: 1.8rem; font-weight: var(--ha-font-weight-medium, 500); }
+    .chip { border-radius: 12px; padding: 2px 10px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--text-primary-color); }
+    .chip.underweight, .band.underweight { background: var(--info-color, var(--blue-color)); fill: var(--info-color, var(--blue-color)); }
+    .chip.healthy, .band.healthy { background: var(--success-color, var(--green-color)); fill: var(--success-color, var(--green-color)); }
+    .chip.overweight, .band.overweight { background: var(--warning-color, var(--amber-color)); fill: var(--warning-color, var(--amber-color)); }
+    .chip.obese, .band.obese { background: var(--error-color); fill: var(--error-color); }
+    .band { fill-opacity: 0.13; }
+    .chart .line { fill: none; stroke: var(--primary-color); stroke-width: 2.5; stroke-linejoin: round; }
+    .chart .point { fill: var(--card-background-color, var(--primary-background-color)); stroke: var(--primary-color); stroke-width: 2; }
+    .chart .goal { stroke: var(--primary-text-color); stroke-dasharray: 5 4; stroke-width: 1.2; }
+    .chart .goallabel { fill: var(--primary-text-color); }
+    .log { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+    .recent { display: flex; flex-direction: column; }
+    .recent .item { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--divider-color); }
+  `;
+
+  getCardSize() {
+    return 7;
+  }
+
+  get _range() {
+    return this._chosenRange ?? "90";
+  }
+
+  async _fetch() {
+    return this._call({ type: "zp_my_fitness/weights", person: this._person.id });
+  }
+
+  _renderBody() {
+    const body = this._card?.querySelector(".body");
+    if (!body || !this._data) return;
+    const t = this._t;
+    const locale = this._locale;
+    const person = this._person;
+    const today = this._today;
+    const weights = this._data;
+    const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
+    const change = latest - person.start_weight_kg;
+    const start = rangeStart(this._range, today, weights[0]?.day ?? person.start_date);
+    const shown = weights.filter((w) => w.day >= start);
+    const band = bandOf(latest, person);
+    const recent = weights.slice(-5).reverse();
+    const signed = `${change > 0 ? "+" : change < 0 ? "−" : "±"}${number(Math.abs(change), locale, 1)} kg`;
+    body.innerHTML = `
+      <div class="now num"><b>${number(latest, locale, 1)} kg</b>
+        <span class="sub">${esc(fill(t.since_start, { change: signed, date: shortDate(person.start_date, locale, true) }))}</span>
+        <span class="chip ${band}">${esc(t[band])}</span></div>
+      ${weightChartHTML(shown, person, start, today, locale, t)}
+      ${weights.length ? "" : `<div class="muted">${esc(fill(t.no_weights, { kg: number(person.start_weight_kg, locale, 1) }))}</div>`}
+      <div class="log">
+        <label>${esc(t.day)}<input type="date" data-field="day" value="${this._logDay ?? today}" max="${today}"></label>
+        <label>${esc(t.kg)}<input type="number" data-field="kg" min="20" max="400" step="0.1" inputmode="decimal"></label>
+        <button class="fill" data-action="log">${esc(t.log_weight)}</button>
+      </div>
+      ${this._error ? `<div class="error">${esc(this._error)}</div>` : ""}
+      ${recent.length ? `<div class="recent"><div class="sub">${esc(t.recent_weights)}</div>${recent
+        .map((w) => `<div class="item num"><span>${esc(shortDate(w.day, locale, true))}</span><span>${number(w.kg, locale, 1)} kg</span>
+          <button class="text" data-action="delete-weight" data-day="${w.day}" aria-label="${esc(t.delete)} ${esc(w.day)}">×</button></div>`)
+        .join("")}</div>` : ""}`;
+  }
+
+  static actions = {
+    "click:range"(el) {
+      this._chosenRange = el.dataset.range;
+      this._render();
+    },
+    async "click:log"() {
+      const day = this._card.querySelector('[data-field="day"]').value || this._today;
+      const kg = numberValue(this._card.querySelector('[data-field="kg"]'));
+      if (kg == null || kg < 20 || kg > 400) {
+        this._error = this._t.error_weight;
+        return this._renderBody();
+      }
+      this._error = null;
+      this._logDay = day;
+      try {
+        await this._call({ type: "zp_my_fitness/weight/set", person: this._person.id, day, kg });
+      } catch (err) {
+        this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
+        this._renderBody();
+      }
+    },
+    async "click:delete-weight"(el) {
+      try {
+        await this._call({ type: "zp_my_fitness/weight/delete", person: this._person.id, day: el.dataset.day });
+      } catch (err) {
+        this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
+        this._renderBody();
+      }
+    },
+  };
+}
+
+class TrendsCard extends PersonCard {
+  static titleKey = "title_trends";
+  static ranges = ["7", "30", "90", "365"];
+  static style = `${CHART_STYLE}
+    .body { display: flex; flex-direction: column; gap: 14px; }
+    .chart .bar .hit { fill: transparent; }
+    .chart .bar[data-action] { cursor: pointer; }
+    .chart .bar[data-action]:hover .hit { fill: var(--secondary-background-color); }
+    .chart .meal0, .legend .meal0 { fill: var(--amber-color, var(--primary-color)); background: var(--amber-color, var(--primary-color)); }
+    .chart .meal1, .legend .meal1 { fill: var(--light-blue-color, var(--primary-color)); background: var(--light-blue-color, var(--primary-color)); }
+    .chart .meal2, .legend .meal2 { fill: var(--indigo-color, var(--primary-color)); background: var(--indigo-color, var(--primary-color)); }
+    .chart .meal3, .legend .meal3 { fill: var(--teal-color, var(--primary-color)); background: var(--teal-color, var(--primary-color)); }
+    .chart .goaltick { stroke: var(--primary-text-color); stroke-width: 2; }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .legend .goalkey { width: 14px; height: 2px; background: var(--primary-text-color); border-radius: 0; }
+  `;
+
+  getCardSize() {
+    return 6;
+  }
+
+  get _range() {
+    return this._chosenRange ?? "7";
+  }
+
+  async _fetch() {
+    const today = this._today;
+    return this._call({ type: "zp_my_fitness/days", person: this._person.id, start: shiftDay(today, -(Number(this._range) - 1)), end: today });
+  }
+
+  _renderBody() {
+    const body = this._card?.querySelector(".body");
+    if (!body || !this._data) return;
+    const t = this._t;
+    const locale = this._locale;
+    const days = this._data.days;
+    const weekly = days.length > 31;
+    const stats = trendStats(days, this._today);
+    const split = MACROS.map((m) => `${number(stats.split[m], locale)}%`).join(" · ");
+    body.innerHTML = `
+      <div class="stats num">
+        <div><b>${stats.logged ? number(stats.average, locale) : "–"}</b><small>${esc(t.avg_day)}</small></div>
+        <div><b>${stats.withGoal ? esc(fill(t.on_goal_value, { days: stats.onGoal, logged: stats.withGoal })) : "–"}</b><small>${esc(t.on_goal)}</small></div>
+        <div><b>${stats.logged ? split : "–"}</b><small>${esc(t.macro_split)}</small></div>
+      </div>
+      ${days.some((d) => Object.keys(d.meals).length) ? trendChartHTML(trendBars(days, weekly), weekly, locale, t) : `<div class="muted">${esc(t.no_data)}</div>`}
+      <div class="legend">${MEALS.map((m, i) => `<span><i class="meal${i}"></i>${esc(t[m])}</span>`).join("")}<span><i class="goalkey"></i>${esc(t.goal)}</span></div>`;
+  }
+
+  static actions = {
+    async "click:range"(el) {
+      this._chosenRange = el.dataset.range;
+      this._render();
+      await this._refresh();
+    },
+    "click:open-day"(el) {
+      window.dispatchEvent(new CustomEvent(OPEN_DAY, { detail: { person: this._person.id, day: el.dataset.day } }));
+    },
+  };
+}
+
 // Home Assistant's frontend replaces window.customElements with its own
 // registry as it boots, and only finds cards defined there. The integration
 // loads this file alongside the frontend, so wait for the frontend's own
@@ -1646,6 +2330,8 @@ function foodsListHTML(foods, query, locale, t) {
 customElements.whenDefined("home-assistant").then(() => {
   window.customElements.define("zp-food-diary-card", FoodDiaryCard);
   window.customElements.define("zp-foods-card", FoodsCard);
+  window.customElements.define("zp-weight-card", WeightCard);
+  window.customElements.define("zp-trends-card", TrendsCard);
   window.customCards = window.customCards || [];
   window.customCards.push(
     {
@@ -1659,6 +2345,18 @@ customElements.whenDefined("home-assistant").then(() => {
       name: "Saved foods",
       description: "The foods saved in ZPMyFitnessCards, per 100 g",
       documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#saved-foods-card",
+    },
+    {
+      type: "zp-weight-card",
+      name: "Weight",
+      description: "Log weight, and chart it with the BMI bands and the goal, from ZPMyFitnessCards",
+      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#weight-card",
+    },
+    {
+      type: "zp-trends-card",
+      name: "Trends",
+      description: "Calories by day or week, by meal, against the goal, from ZPMyFitnessCards",
+      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#trends-card",
     },
   );
 });

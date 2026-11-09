@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Todos os alimentos, pesos e metas desta pessoa foram excluídos.",
+        "imported": "Importados {weights} pesos e {days} dias de calorias.",
+        "no_recorder": "O gravador não está em execução, então não há histórico para importar.",
         "not_loaded": "O ZPMyFitnessCards não está carregado. Recarregue-o e tente de novo.",
         "reconfigure_successful": "Salvo."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Proteína, carboidratos e gordura precisam somar 100%.",
         "name_empty": "Digite um nome.",
         "name_taken": "Outra pessoa já tem esse nome.",
+        "no_statistics": "O gravador não guarda estatísticas de longo prazo para este sensor.",
         "not_confirmed": "Marque a caixa para confirmar.",
+        "nothing_selected": "Escolha um sensor de peso, um de calorias ou os dois.",
         "start_date_future": "A data de início não pode estar no futuro."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Exclui todos os alimentos, pesos e metas registrados para {name}. Não é possível desfazer. {name} continua e recomeça do zero.",
           "title": "Excluir todos os dados"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Sensor de calorias",
+            "weight_sensor": "Sensor de peso"
+          },
+          "data_description": {
+            "calories_sensor": "Um sensor que conta as calorias ingeridas e guarda estatísticas de longo prazo.",
+            "weight_sensor": "Um sensor que registrou o peso, como um auxiliar de peso antigo."
+          },
+          "description": "Copia o histórico de {name} a partir de sensores salvos pelo gravador. Peso: a média de cada dia, só para dias sem peso. Calorias: o total de cada dia vira uma entrada “Imported total” nos lanches. Importar de novo só acrescenta o que falta.",
+          "title": "Importar histórico"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Alterar dados",
-            "erase": "Excluir todos os dados"
+            "erase": "Excluir todos os dados",
+            "import_history": "Importar histórico"
           },
           "title": "Alterar pessoa"
         },

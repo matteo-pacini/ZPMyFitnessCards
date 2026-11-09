@@ -211,3 +211,63 @@ def test_follows_the_locale_option(home: Home, page: Page, language: str) -> Non
     )
     expect(card.locator(".title").first).to_have_text("Diario alimentare")
     expect(meal(card, "breakfast").locator(".mealhead")).to_contain_text("Colazione")
+
+
+def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page) -> None:
+    yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
+    card = open_card(home, page, {"type": "custom:zp-weight-card", "person": "Debora"})
+    expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
+    expect(card.locator(".chart")).to_contain_text("Goal 62 kg")
+
+    card.locator('[data-field="day"]').fill(yesterday)
+    card.locator('[data-field="kg"]').fill("69.3")
+    card.locator('[data-action="log"]').click()
+    item = card.locator(".recent .item", has_text="69.3 kg")
+    expect(item).to_have_count(1, timeout=TIMEOUT)
+    weights = home.ws({"type": "zp_my_fitness/weights", "person": person_id(home, "Debora")})
+    assert {"day": yesterday, "kg": 69.3} in weights
+
+    card.locator('[data-field="kg"]').fill("5")
+    card.locator('[data-action="log"]').click()
+    expect(card.locator(".error")).to_contain_text("from 20 to 400 kg")
+
+    item.locator('[data-action="delete-weight"]').click()
+    expect(card.locator(".recent .item", has_text="69.3 kg")).to_have_count(0, timeout=TIMEOUT)
+
+
+def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> None:
+    yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
+    matteo = person_id(home, "Matteo")
+    home.ws(
+        {
+            "type": "zp_my_fitness/entry/add",
+            "person": matteo,
+            "day": yesterday,
+            "meal": "breakfast",
+            "name": "Trend eggs e2e",
+            "kcal": 300,
+        }
+    )
+    home.dashboard(
+        [
+            {"type": "custom:zp-trends-card", "person": "Matteo"},
+            {"type": "custom:zp-food-diary-card", "person": "Matteo"},
+        ]
+    )
+    page.goto(home.url + "/" + home.DASHBOARD + "/0")
+    trends = page.locator("zp-trends-card")
+    diary = page.locator("zp-food-diary-card")
+    expect(trends.locator(".chart")).to_be_visible(timeout=30_000)
+    expect(trends.locator(".stats")).to_contain_text("Average a day")
+    expect(diary.locator(".nav .label")).to_have_text("Today", timeout=TIMEOUT)
+
+    trends.locator(f'.bar[data-day="{yesterday}"] .hit').click()
+    expect(diary.locator(".nav .label")).to_have_text("Yesterday")
+    expect(diary.locator(".row", has_text="Trend eggs e2e")).to_have_count(1, timeout=TIMEOUT)
+
+    trends.locator('[data-action="range"][data-range="90"]').click()
+    expect(trends.locator('[data-action="range"][data-range="90"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    # 90 days are weekly bars, which do not open a day.
+    expect(trends.locator(".bar[data-action]")).to_have_count(0, timeout=TIMEOUT)

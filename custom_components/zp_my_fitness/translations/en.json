@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Deleted all of this person's food, weights and goals.",
+        "imported": "Imported {weights} weights and {days} days of calories.",
+        "no_recorder": "The recorder is not running, so there is no history to import.",
         "not_loaded": "ZPMyFitnessCards is not loaded. Reload it, then try again.",
         "reconfigure_successful": "Saved."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Protein, carbs and fat must add up to 100%.",
         "name_empty": "Enter a name.",
         "name_taken": "Another person already has this name.",
+        "no_statistics": "The recorder keeps no long-term statistics for this sensor.",
         "not_confirmed": "Tick the box to confirm.",
+        "nothing_selected": "Choose a weight sensor, a calories sensor or both.",
         "start_date_future": "The start date cannot be in the future."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Deletes every food entry, weight and goal logged for {name}. This cannot be undone. {name} stays, starting again from nothing.",
           "title": "Delete all data"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Calories sensor",
+            "weight_sensor": "Weight sensor"
+          },
+          "data_description": {
+            "calories_sensor": "A sensor that counts calories eaten and keeps long-term statistics.",
+            "weight_sensor": "A sensor that has recorded weight, such as an older weight helper."
+          },
+          "description": "Copies {name}'s history from sensors the recorder has kept. Weights: each day's average, only for days with no weight yet. Calories: each day's total becomes one “Imported total” entry under Snacks. Running it again adds only what is missing.",
+          "title": "Import history"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Change details",
-            "erase": "Delete all data"
+            "erase": "Delete all data",
+            "import_history": "Import history"
           },
           "title": "Change person"
         },

@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "All mat, alla vikter och mål för den här personen har tagits bort.",
+        "imported": "Importerade {weights} vikter och {days} dagar med kalorier.",
+        "no_recorder": "Recordern körs inte, så det finns ingen historik att importera.",
         "not_loaded": "ZPMyFitnessCards är inte inläst. Läs in det igen och försök sedan på nytt.",
         "reconfigure_successful": "Sparat."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Protein, kolhydrater och fett måste bli 100 % tillsammans.",
         "name_empty": "Ange ett namn.",
         "name_taken": "En annan person har redan det här namnet.",
+        "no_statistics": "Recordern sparar ingen långtidsstatistik för den här sensorn.",
         "not_confirmed": "Kryssa i rutan för att bekräfta.",
+        "nothing_selected": "Välj en viktsensor, en kalorisensor eller båda.",
         "start_date_future": "Startdatumet kan inte ligga i framtiden."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Tar bort all mat, alla vikter och mål som loggats för {name}. Det går inte att ångra. {name} finns kvar och börjar om från noll.",
           "title": "Ta bort all data"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Kalorisensor",
+            "weight_sensor": "Viktsensor"
+          },
+          "data_description": {
+            "calories_sensor": "En sensor som räknar ätna kalorier och sparar långtidsstatistik.",
+            "weight_sensor": "En sensor som har registrerat vikt, till exempel en äldre vikthjälpare."
+          },
+          "description": "Kopierar historiken för {name} från sensorer som recordern har sparat. Vikt: dagens medelvärde, bara för dagar utan vikt. Kalorier: dagens summa blir en post ”Imported total” under mellanmål. Kör du importen igen läggs bara det som saknas till.",
+          "title": "Importera historik"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Ändra uppgifter",
-            "erase": "Ta bort all data"
+            "erase": "Ta bort all data",
+            "import_history": "Importera historik"
           },
           "title": "Ändra person"
         },

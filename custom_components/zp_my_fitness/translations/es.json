@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Se han eliminado todos los alimentos, pesos y objetivos de esta persona.",
+        "imported": "Importados {weights} pesos y {days} días de calorías.",
+        "no_recorder": "El registrador no está en marcha, así que no hay historial que importar.",
         "not_loaded": "ZPMyFitnessCards no está cargado. Recárgalo y vuelve a intentarlo.",
         "reconfigure_successful": "Guardado."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Proteínas, carbohidratos y grasas deben sumar 100 %.",
         "name_empty": "Introduce un nombre.",
         "name_taken": "Otra persona ya tiene este nombre.",
+        "no_statistics": "El registrador no guarda estadísticas a largo plazo de este sensor.",
         "not_confirmed": "Marca la casilla para confirmar.",
+        "nothing_selected": "Elige un sensor de peso, uno de calorías o ambos.",
         "start_date_future": "La fecha de inicio no puede estar en el futuro."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Elimina todos los alimentos, pesos y objetivos registrados para {name}. No se puede deshacer. {name} se mantiene y vuelve a empezar desde cero.",
           "title": "Eliminar todos los datos"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Sensor de calorías",
+            "weight_sensor": "Sensor de peso"
+          },
+          "data_description": {
+            "calories_sensor": "Un sensor que cuenta las calorías consumidas y guarda estadísticas a largo plazo.",
+            "weight_sensor": "Un sensor que ha registrado el peso, como un ayudante de peso anterior."
+          },
+          "description": "Copia el historial de {name} desde sensores que el registrador ha guardado. Peso: la media de cada día, solo en días sin peso. Calorías: el total de cada día pasa a ser una entrada «Imported total» en Tentempiés. Si lo repites, solo añade lo que falta.",
+          "title": "Importar historial"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Cambiar datos",
-            "erase": "Eliminar todos los datos"
+            "erase": "Eliminar todos los datos",
+            "import_history": "Importar historial"
           },
           "title": "Cambiar persona"
         },

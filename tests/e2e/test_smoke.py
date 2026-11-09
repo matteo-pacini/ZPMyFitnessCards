@@ -66,7 +66,7 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
     assert eventually(home, "sensor.matteo_calories_today", calories + 389)
     assert eventually(home, "sensor.matteo_breakfast_calories", breakfast + 389)
     weight = eventually(home, "sensor.matteo_weight", 68.5)
-    assert weight["attributes"]["overweight_from_kg"] == 68.1
+    assert weight["attributes"]["overweight_from_kg"] == 81.0
     assert state(home, "sensor.debora_calories_today") == debora
 
 

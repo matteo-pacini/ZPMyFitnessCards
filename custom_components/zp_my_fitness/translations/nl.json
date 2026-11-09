@@ -35,6 +35,8 @@
     "person": {
       "abort": {
         "erased": "Alle voeding, gewichten en doelen van deze persoon zijn verwijderd.",
+        "imported": "{weights} gewichten en {days} dagen calorieën geïmporteerd.",
+        "no_recorder": "De recorder draait niet, dus er is geen geschiedenis om te importeren.",
         "not_loaded": "ZPMyFitnessCards is niet geladen. Laad het opnieuw en probeer het nog eens.",
         "reconfigure_successful": "Opgeslagen."
       },
@@ -44,7 +46,9 @@
         "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",
         "name_empty": "Voer een naam in.",
         "name_taken": "Iemand anders heeft deze naam al.",
+        "no_statistics": "De recorder houdt voor deze sensor geen langetermijnstatistieken bij.",
         "not_confirmed": "Vink het vakje aan om te bevestigen.",
+        "nothing_selected": "Kies een gewichtssensor, een caloriesensor of allebei.",
         "start_date_future": "De startdatum mag niet in de toekomst liggen."
       },
       "initiate_flow": {
@@ -87,10 +91,23 @@
           "description": "Verwijdert alle voeding, gewichten en doelen die voor {name} zijn vastgelegd. Dit kan niet ongedaan worden gemaakt. {name} blijft bestaan en begint opnieuw.",
           "title": "Alle gegevens verwijderen"
         },
+        "import_history": {
+          "data": {
+            "calories_sensor": "Caloriesensor",
+            "weight_sensor": "Gewichtssensor"
+          },
+          "data_description": {
+            "calories_sensor": "Een sensor die gegeten calorieën telt en langetermijnstatistieken bijhoudt.",
+            "weight_sensor": "Een sensor die gewicht heeft vastgelegd, zoals een oudere gewichtshelper."
+          },
+          "description": "Kopieert de geschiedenis van {name} uit sensoren die de recorder heeft bewaard. Gewicht: het daggemiddelde, alleen voor dagen zonder gewicht. Calorieën: het dagtotaal wordt één invoer ‘Imported total’ bij tussendoortjes. Opnieuw importeren voegt alleen toe wat ontbreekt.",
+          "title": "Geschiedenis importeren"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Gegevens wijzigen",
-            "erase": "Alle gegevens verwijderen"
+            "erase": "Alle gegevens verwijderen",
+            "import_history": "Geschiedenis importeren"
           },
           "title": "Persoon wijzigen"
         },
