@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -302,3 +303,157 @@ def test_the_summary_card_shows_today_and_opens_its_path(home: Home, page: Page)
 
     card.locator(".big").click()
     expect(page).to_have_url(re.compile(r"/config"), timeout=TIMEOUT)
+
+
+# Open Food Facts is answered here, so the tests never call the real service.
+OFF_PRODUCTS = {
+    "5201054017111": {
+        "product_name": "Greek yogurt 2%",
+        "brands": "Fage",
+        "serving_quantity": 170,
+        "nutriments": {
+            "energy-kcal_100g": 73,
+            "proteins_100g": 10,
+            "carbohydrates_100g": 3.6,
+            "fat_100g": 2,
+        },
+    },
+    "8076809513753": {
+        "product_name": "Spaghetti n.5",
+        "brands": "Barilla",
+        "nutriments": {
+            "energy-kcal_100g": 359,
+            "proteins_100g": 12.5,
+            "carbohydrates_100g": 71.2,
+            "fat_100g": 2,
+        },
+    },
+}
+
+
+def mock_open_food_facts(page: Page) -> list[str]:
+    asked: list[str] = []
+
+    def answer(route) -> None:
+        code = route.request.url.split("/product/")[1].split(".json")[0]
+        asked.append(code)
+        product = OFF_PRODUCTS.get(code)
+        if product is None:
+            route.fulfill(status=404, json={"status": 0}, headers=CORS)
+        else:
+            route.fulfill(json={"status": 1, "product": product}, headers=CORS)
+
+    page.route("https://world.openfoodfacts.org/**", answer)
+    return asked
+
+
+# Open Food Facts joins a product's name and brand with an en dash.
+DASH = "\u2013"
+
+CORS = {"Access-Control-Allow-Origin": "*"}
+
+
+def fake_camera(page: Page, code: str) -> None:
+    """A browser barcode reader that sees `code`, and a camera to read with."""
+    script = """
+        (() => {
+          window.BarcodeDetector = class {
+            static async getSupportedFormats() { return ["ean_13", "ean_8"]; }
+            async detect() { return [{ rawValue: CODE, format: "ean_13" }]; }
+          };
+          navigator.mediaDevices.getUserMedia = async () => {
+            const canvas = document.createElement("canvas");
+            canvas.getContext("2d").fillRect(0, 0, 10, 10);
+            return canvas.captureStream();
+          };
+        })();
+    """
+    page.add_init_script(script.replace("CODE", json.dumps(code)))
+
+
+def test_the_saved_foods_card_fills_a_food_from_its_barcode(home: Home, page: Page) -> None:
+    asked = mock_open_food_facts(page)
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="new"]').click()
+    form = card.locator(".foodform")
+    form.locator('[data-field="barcode"]').fill("123")
+    card.locator('[data-action="lookup"]').click()
+    expect(card.locator(".panel .error")).to_contain_text("8 to 14 digits")
+
+    form.locator('[data-field="barcode"]').fill("5201054017111")
+    card.locator('[data-action="lookup"]').click()
+    expect(card.locator(".panel .note")).to_contain_text("Filled in from Open Food Facts")
+    expect(form.locator('[data-field="name"]')).to_have_value(f"Greek yogurt 2% {DASH} Fage")
+    expect(form.locator('[data-field="kcal"]')).to_have_value("73")
+    expect(form.locator('[data-portion="grams"]')).to_have_value("170")
+    assert asked == ["5201054017111"]
+    card.locator('[data-action="save"]').click()
+    expect(card.locator(".panel")).to_be_hidden(timeout=TIMEOUT)
+    saved = home.ws({"type": "zp_my_fitness/food/barcode", "barcode": "5201054017111"})
+    assert saved["name"] == f"Greek yogurt 2% {DASH} Fage"
+    assert saved["portions"] == [{"name": "Serving", "grams": 170}]
+
+    # Looking the same barcode up again opens the saved food.
+    card.locator('[data-action="new"]').click()
+    card.locator('.foodform [data-field="barcode"]').fill("5201054017111")
+    card.locator('[data-action="lookup"]').click()
+    expect(card.locator(".panel .note")).to_contain_text("already has this barcode")
+    expect(card.locator('[data-action="delete"]')).to_be_visible()
+
+
+def test_the_diary_looks_up_a_typed_barcode_it_does_not_have(home: Home, page: Page) -> None:
+    mock_open_food_facts(page)
+    card = diary(home, page, "Debora")
+    meal(card, "dinner").locator('[data-action="add"]').click()
+    card.locator('[data-action="query"]').fill("8076809513753")
+    card.locator('[data-action="lookup-query"]').click()
+    expect(card.locator('.foodform [data-field="name"]')).to_have_value(
+        f"Spaghetti n.5 {DASH} Barilla"
+    )
+    card.locator('[data-action="save-new-food"]').click()
+    card.locator('[data-field="grams"]').fill("80")
+    card.locator('[data-action="add-entry"]').click()
+    row = meal(card, "dinner").locator(".row", has_text="Spaghetti n.5")
+    expect(row).to_contain_text("287", timeout=TIMEOUT)
+
+
+def test_the_diary_says_when_open_food_facts_does_not_know_a_barcode(
+    home: Home, page: Page
+) -> None:
+    mock_open_food_facts(page)
+    card = diary(home, page, "Debora")
+    meal(card, "snacks").locator('[data-action="add"]').click()
+    card.locator('[data-action="query"]').fill("40000000000099")
+    card.locator('[data-action="lookup-query"]').click()
+    expect(card.locator(".panel .error")).to_contain_text("does not know barcode 40000000000099")
+    expect(card.locator('.foodform [data-field="barcode"]')).to_have_value("40000000000099")
+
+
+def test_scanning_with_the_browser_reads_the_barcode(home: Home, page: Page) -> None:
+    mock_open_food_facts(page)
+    fake_camera(page, "8076809513753")
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="new"]').click()
+    card.locator('[data-action="scan"]').click()
+    form = card.locator(".foodform")
+    expect(form.locator('[data-field="barcode"]')).to_have_value("8076809513753", timeout=TIMEOUT)
+    expect(form.locator('[data-field="name"]')).to_have_value(f"Spaghetti n.5 {DASH} Barilla")
+    expect(card.locator(".scanner")).to_be_hidden()
+
+
+def test_scanning_a_saved_food_in_the_diary_chooses_it(home: Home, page: Page) -> None:
+    save_food(home, "Scanned oats e2e", barcode="12345670")
+    fake_camera(page, "12345670")
+    card = diary(home, page, "Debora")
+    meal(card, "breakfast").locator('[data-action="add"]').click()
+    card.locator('.panel [data-action="scan"]').click()
+    expect(card.locator(".picked")).to_contain_text("Scanned oats e2e", timeout=TIMEOUT)
+    expect(card.locator('[data-field="grams"]')).to_have_value("100")
+
+
+def test_without_a_scanner_there_is_no_scan_button(home: Home, page: Page) -> None:
+    page.add_init_script("delete window.BarcodeDetector")
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="new"]').click()
+    expect(card.locator('[data-action="lookup"]')).to_be_visible()
+    expect(card.locator('[data-action="scan"]')).to_have_count(0)

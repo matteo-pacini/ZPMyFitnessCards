@@ -53,6 +53,8 @@ CI runs all of these through `nix develop -c`, plus hassfest and the HACS valida
 - **Cleanup.** Tests create nothing outside temporary folders and the throwaway Postgres server, and remove both even when they fail.
 - **Daily totals.** Use `state_class: total` with `last_reset` at local midnight, never `total_increasing`: deleting an entry lowers a total, which `total_increasing` would read as a meter reset.
 - **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
+- **Open Food Facts.** Cards fetch it from the browser. Tests answer it with Playwright's `page.route`, never the real service.
+- **App scanner.** `scanWithApp` wraps `hass.auth.external.receiveMessage`, which the frontend does not document. Keep calling the original handler, which acknowledges each message, and keep typing a barcode working without any scanner.
 - **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.
 
 ## Style

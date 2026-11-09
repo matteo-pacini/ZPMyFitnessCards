@@ -136,6 +136,37 @@ TRENDS = {"type": "custom:zp-trends-card", "person": "Debora"}
 SUMMARY = {"type": "custom:zp-summary-card", "person": "Debora"}
 
 
+def look_up_barcode(card) -> None:
+    """Fill a new food from a barcode, with Open Food Facts answered locally."""
+    card.page.route(
+        "https://world.openfoodfacts.org/**",
+        lambda route: route.fulfill(
+            headers={"Access-Control-Allow-Origin": "*"},
+            json={
+                "status": 1,
+                "product": {
+                    "product_name": "Greek yogurt 2%",
+                    "brands": "Fage",
+                    "serving_quantity": 170,
+                    "nutriments": {
+                        "energy-kcal_100g": 73,
+                        "proteins_100g": 10,
+                        "carbohydrates_100g": 3.6,
+                        "fat_100g": 2,
+                        "sugars_100g": 3.6,
+                        "saturated-fat_100g": 1.3,
+                        "salt_100g": 0.1,
+                    },
+                },
+            },
+        ),
+    )
+    card.locator('[data-action="new"]').click()
+    card.locator('.foodform [data-field="barcode"]').fill("5201054017111")
+    card.locator('[data-action="lookup"]').click()
+    card.locator(".panel .note").wait_for()
+
+
 def pick_range(value: str):
     def setup(card) -> None:
         card.locator(f'[data-action="range"][data-range="{value}"]').click()
@@ -155,6 +186,7 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
     shoot(sample, browser, DIARY, "food-diary-add", setup=open_add)
     shoot(sample, browser, FOODS_CARD, "saved-foods")
+    shoot(sample, browser, FOODS_CARD, "barcode-lookup", setup=look_up_barcode)
     shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
     shoot(sample, browser, TRENDS, "trends", setup=pick_range("30"))
     shoot(sample, browser, TRENDS, "trends-week")
@@ -167,6 +199,7 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
             "food-diary-dark",
             "food-diary-add",
             "saved-foods",
+            "barcode-lookup",
             "weight",
             "trends",
             "trends-week",

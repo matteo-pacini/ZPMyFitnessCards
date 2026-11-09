@@ -4,7 +4,7 @@ A food diary and weight tracking for everyone in your home, inside Home Assistan
 
 ZPMyFitnessCards is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
 
-It is in early development. The integration, its sensors and all five cards work; barcode scanning comes next.
+It is in early development. The integration, its sensors, all five cards and barcodes work.
 
 ## Install
 
@@ -94,6 +94,18 @@ type: custom:zp-foods-card
 | --- | --- |
 | `title` | Optional. Replaces "Saved foods". |
 | `locale` | Optional. As for the food diary card. |
+
+### Barcodes
+
+Both the saved foods card and the food diary's **Add food** panel know barcodes.
+
+- **Typing one** works on every device. In the saved foods card, type it in a food's Barcode field and tap **Look up barcode**. In the diary, type it in the search box: a saved food with that barcode shows up, and if there is none, **Look up … on Open Food Facts** fills in a new food.
+- **Scanning one** shows a **Scan** button where the device can. In the Home Assistant app (Android 2024.6.1 or later, iOS 2024.5 or later) it opens the app's own scanner. In a browser that has a barcode reader built in, such as Chrome on Android, it opens the camera in the card.
+- **Open Food Facts** fills in the name, the values per 100 g and a serving size from the barcode, straight from your browser. Check them against the label before saving. A barcode that a saved food already has opens that food instead.
+
+<img src="images/barcode-lookup.png" alt="A food filled in from its barcode" width="400">
+
+Scanning in the app relies on an undocumented part of Home Assistant's frontend; if an update changes it, the Scan button stops working there and typing still works.
 
 ### Weight card
 
