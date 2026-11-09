@@ -105,7 +105,6 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
     shoot(sample, browser, DIARY, "food-diary")
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
     shoot(sample, browser, DIARY, "food-diary-add", setup=open_add)
-    shoot(sample, browser, DIARY, "food-diary-phone", width=390)
     shoot(sample, browser, FOODS_CARD, "saved-foods")
     assert sorted(p.name for p in IMAGES.glob("*.png")) == sorted(
         f"{n}.png"
