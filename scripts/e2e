@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# End-to-end tests against a brand-new Home Assistant. Run in the Nix dev shell.
+# Home Assistant's pytest plugin blocks network sockets, which these tests need.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec pytest -p no:homeassistant tests/e2e "$@"

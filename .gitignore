@@ -1,0 +1,6 @@
+.venv/
+.direnv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+result

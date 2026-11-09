@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate-hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # The integration ships its icons in brand/ (Home Assistant 2026.3
+          # and later) instead of in the home-assistant/brands repo.
+          ignore: brands
+
+  hassfest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: home-assistant/actions/hassfest@master
+
+  test:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: wimpysworld/nothing-but-nix@v12
+        with:
+          hatchet-protocol: "rampage"
+          witness-carnage: true
+          nix-permission-edict: true
+
+      # Ubuntu 24.04 blocks unprivileged user namespaces through AppArmor, and
+      # single-user Nix needs them for the build sandbox.
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - uses: nixbuild/nix-quick-install-action@v35
+
+      - name: Lint
+        run: nix develop -c bash -c 'ruff check . && ruff format --check .'
+
+      - name: Cards bundle is up to date
+        run: nix develop -c node scripts/build.js --check
+
+      - name: Card tests
+        run: nix develop -c node --experimental-vm-modules --test 'tests/cards/*.test.js'
+
+      - name: Integration tests
+        run: nix develop -c pytest
+
+      - name: End-to-end tests
+        run: nix develop -c scripts/e2e

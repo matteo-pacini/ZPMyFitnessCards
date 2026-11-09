@@ -1,0 +1,45 @@
+[project]
+name = "zp-my-fitness-cards"
+version = "0.1.0"
+requires-python = ">=3.14.2"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest-homeassistant-custom-component==0.13.375",
+  "playwright==1.64.1",
+  # The frontend release Home Assistant 2026.10.4 pins, for the end-to-end tests.
+  "home-assistant-frontend==20260930.5",
+  # What the integrations a new Home Assistant 2026.10.4 always loads need,
+  # pinned as in their manifests. The end-to-end tests start Home Assistant
+  # with --skip-pip, and its frontend stalls while any of these is missing.
+  "PyMetno==0.13.0",
+  "PyTurboJPEG==1.8.3",
+  "gTTS==2.5.4",
+  "gazetteer-matcher==1.1.0",
+  "ha-ffmpeg==3.2.2",
+  "hassil==3.12.1",
+  "home-assistant-intents==2026.10.6",
+  "infrared-protocols==10.1.0",
+  "mutagen==1.48.1",
+  "pycountry==24.6.1",
+  "pymicro-vad==1.0.1",
+  "pyspeex-noise==1.0.2",
+  "radios==1.0.0",
+  "rf-protocols==4.3.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests/integration"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "ASYNC", "SIM", "RUF"]

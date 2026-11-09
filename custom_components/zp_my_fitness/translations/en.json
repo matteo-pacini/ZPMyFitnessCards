@@ -1,0 +1,35 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "ZPMyFitnessCards is already set up. Add people to it with \"Add person\"."
+    },
+    "step": {
+      "user": {
+        "description": "Sets up ZPMyFitnessCards. Afterwards, add each person with \"Add person\"."
+      }
+    }
+  },
+  "config_subentries": {
+    "person": {
+      "entry_type": "Person",
+      "error": {
+        "name_empty": "Enter a name.",
+        "name_taken": "Another person already has this name."
+      },
+      "initiate_flow": {
+        "user": "Add person"
+      },
+      "step": {
+        "user": {
+          "data": {
+            "name": "Name"
+          },
+          "data_description": {
+            "name": "Shown on the cards. It must differ from every other person's name."
+          },
+          "title": "Add person"
+        }
+      }
+    }
+  }
+}
