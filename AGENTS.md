@@ -17,6 +17,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` loads a card script into a `vm` context with a stubbed DOM, for the pure functions and the markup they build. Interaction is tested end to end.
+- `tests/e2e/test_card_states.py`: cards mounted straight into the running Home Assistant page, with a connection that fails on purpose, for the loading, failure and retry paths a dashboard rarely shows.
 - `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres. Tests share one Home Assistant per database, so give the data each test adds unique names. `screenshots.py` takes the README images.
 - `images/`: the README screenshots, from `scripts/screenshots`.
 
@@ -28,7 +29,7 @@ Work inside the Nix dev shell: `nix develop`, or direnv with `.envrc`. Entering 
 node scripts/build.js                                    # rebuild the cards' bundle
 node scripts/build.js --check                            # CI: fail if it is stale
 node --experimental-vm-modules --test 'tests/cards/*.test.js'
-pytest                                                   # integration tests
+pytest --cov                                             # integration tests; fails under 100% coverage
 scripts/e2e                                              # end-to-end tests (Linux)
 scripts/screenshots                                      # retake images/ (Linux)
 ruff check . && ruff format --check .
@@ -55,6 +56,7 @@ CI runs all of these through `nix develop -c`, plus hassfest and the HACS valida
 - **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
 - **Open Food Facts.** Cards fetch it from the browser. Tests answer it with Playwright's `page.route`, never the real service.
 - **App scanner.** `scanWithApp` wraps `hass.auth.external.receiveMessage`, which the frontend does not document. Keep calling the original handler, which acknowledges each message, and keep typing a barcode working without any scanner.
+- **Coverage.** The Python tests must cover every line and branch of the integration (`fail_under = 100` in `pyproject.toml`). Card code needs a unit test for its pure functions and an end-to-end test for each interaction and failure path.
 - **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.
 
 ## Style

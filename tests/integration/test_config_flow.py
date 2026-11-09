@@ -1,7 +1,9 @@
 """Adding the integration, and adding, changing and erasing people."""
 
 from typing import Any
+from unittest.mock import patch
 
+import pytest
 from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -9,7 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zp_my_fitness.const import DOMAIN, SUBENTRY_PERSON
 
-from .conftest import person
+from .conftest import mock_entry, person
 
 FORM = {k: v for k, v in person().items() if k != "key"}
 
@@ -162,3 +164,51 @@ async def test_rejects_postgres_urls_that_do_not_work(
     assert result["errors"] == {"db_url": "cannot_connect"}
     result = await _postgres_flow(hass, postgres_server.format(database="no_such_database"))
     assert result["errors"] == {"db_url": "cannot_connect"}
+
+
+async def test_says_when_the_postgres_driver_is_missing(hass: HomeAssistant) -> None:
+    with patch("custom_components.zp_my_fitness.config_flow.make_engine", side_effect=ImportError):
+        result = await _postgres_flow(hass, "postgresql://user@host/db")
+    assert result["errors"] == {"db_url": "no_driver"}
+
+
+async def test_rejects_a_postgres_url_naming_an_unknown_driver(hass: HomeAssistant) -> None:
+    result = await _postgres_flow(hass, "postgresql+nosuchdriver://user@host/db")
+    assert result["errors"] == {"db_url": "invalid_url"}
+
+
+async def test_a_person_added_while_unloaded_gets_a_new_key(hass: HomeAssistant) -> None:
+    entry = mock_entry()
+    entry.add_to_hass(hass)
+    result = await _add(hass, entry, name="Nora")
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert len(_people(entry)["Nora"]["key"]) == 32
+
+
+@pytest.mark.parametrize("step", ["import_history", "erase"])
+async def test_steps_that_need_the_database_wait_for_it_to_load(
+    hass: HomeAssistant, step: str
+) -> None:
+    entry = mock_entry(person())
+    entry.add_to_hass(hass)
+    subentry = next(iter(entry.subentries.values()))
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_PERSON),
+        context={"source": SOURCE_RECONFIGURE, "subentry_id": subentry.subentry_id},
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": step}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "not_loaded"
+
+
+async def test_importing_history_needs_the_recorder(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    result = await _reconfigure(hass, entry, "Debora")
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "import_history"}
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "no_recorder"

@@ -273,9 +273,16 @@ def _home(db_url: str | None) -> Iterator[Home]:
         stderr=subprocess.DEVNULL,
     )
     try:
-        _wait_until_up(home, process)
-        _onboard(home)
-        _add_integration(home, db_url)
+        try:
+            _wait_until_up(home, process)
+            _onboard(home)
+            _add_integration(home, db_url)
+        except Exception as err:
+            # The temporary folder goes with the run, so keep the log's end here.
+            log = home.log()[-6000:] if (config_dir / "home-assistant.log").exists() else ""
+            raise RuntimeError(
+                f"Setting up the test Home Assistant failed: {err!r}\n{log}"
+            ) from err
         yield home
     finally:
         process.terminate()

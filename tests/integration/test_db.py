@@ -134,3 +134,20 @@ def test_deletes_everything_for_one_person(db: Database) -> None:
     assert db.goal_on("p", "2026-11-09") is None
     assert db.key_for_name("P", exclude=[]) is None
     assert len(db.day_entries("q", "2026-11-09")) == 1
+
+
+def test_a_new_database_starts_at_the_latest_version_and_closes_twice(database_url: str) -> None:
+    db = Database(database_url)
+    db.open()
+    assert db.schema_version() == len(MIGRATIONS)
+    db.close()
+    db.close()
+
+
+def test_updates_with_nothing_to_change_return_the_row(db: Database) -> None:
+    food = db.add_food({**OATS, "portions": [{"name": "Bowl", "grams": 40}]})
+    assert db.update_food(food["id"], {"unknown": 1}) == food
+    assert db.update_food(food["id"], {"portions": None})["portions"] == []
+    logged = db.add_entry("p", entry("2026-11-09"))
+    assert db.update_entry(logged["id"], {}) == logged
+    assert db.update_entry(999, {"kcal": 1}) is None

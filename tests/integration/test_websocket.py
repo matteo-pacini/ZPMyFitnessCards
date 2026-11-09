@@ -204,3 +204,51 @@ async def test_subscribers_hear_about_changes(hass: HomeAssistant, ws) -> None:
     messages = [await client.receive_json(), await client.receive_json()]
     event = next(m for m in messages if m["type"] == "event")
     assert event["event"] == {"person": "debora", "days": ["2026-11-08"]}
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"day": "yesterday"},
+        {"day": "2026-11-09", "kcal": -1},
+        {"day": "2026-11-09", "grams": 0},
+        {"day": "2026-11-09", "name": "   "},
+    ],
+)
+async def test_rejects_bad_values(ws, fields: dict) -> None:
+    message = {"person": "debora", "meal": "lunch", "name": "Soup", "kcal": 100, **fields}
+    assert await error(ws, "entry/add", **message) == "invalid_format"
+
+
+async def test_says_when_food_or_entries_are_missing(ws) -> None:
+    assert (
+        await error(
+            ws, "entry/add", person="debora", day="2026-11-09", meal="lunch", food_id=999, grams=10
+        )
+        == "not_found"
+    )
+    assert await error(ws, "entry/update", entry_id=999, grams=10) == "not_found"
+    assert await error(ws, "food/update", food_id=999, kcal=1) == "not_found"
+
+
+async def test_refuses_to_empty_required_values(ws) -> None:
+    entry = await ok(
+        ws, "entry/add", person="debora", day="2026-11-09", meal="lunch", name="Soup", kcal=100
+    )
+    assert await error(ws, "entry/update", entry_id=entry["id"], kcal=None) == "invalid_format"
+    food = await ok(ws, "food/add", **OATS)
+    assert await error(ws, "food/update", food_id=food["id"], protein=None) == "invalid_format"
+
+
+async def test_refuses_a_barcode_another_food_has(ws) -> None:
+    await ok(ws, "food/add", **OATS, barcode="5000")
+    other = await ok(ws, "food/add", **{**OATS, "name": "Other"})
+    assert await error(ws, "food/update", food_id=other["id"], barcode="5000") == "barcode_taken"
+
+
+async def test_answers_not_loaded_while_the_integration_is_unloaded(
+    hass: HomeAssistant, ws
+) -> None:
+    entry = hass.config_entries.async_entries("zp_my_fitness")[0]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert await error(ws, "people") == "not_loaded"

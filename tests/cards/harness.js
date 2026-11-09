@@ -24,7 +24,9 @@ async function load(file) {
     `,
     ctx,
   );
-  vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "..", "src", file), "utf8"), ctx);
+  // The filename lets coverage tools attribute the code to the source file.
+  const source = path.join(__dirname, "..", "..", "src", file);
+  vm.runInContext(fs.readFileSync(source, "utf8"), ctx, { filename: source });
   await new Promise((r) => setImmediate(r));
   return ctx;
 }

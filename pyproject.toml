@@ -50,3 +50,14 @@ select = ["E", "F", "W", "I", "UP", "B", "ASYNC", "SIM", "RUF"]
 [tool.ruff.lint.per-file-ignores]
 # Tests may check files directly; blocking the event loop there harms nothing.
 "tests/**" = ["ASYNC240"]
+
+# CI runs pytest --cov, which fails below this. Cover new code with tests,
+# or explain in the code why a line cannot run in a test.
+[tool.coverage.run]
+source = ["custom_components/zp_my_fitness"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true

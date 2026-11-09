@@ -159,7 +159,7 @@ See [AGENTS.md](AGENTS.md) for the layout and commands. Everything runs in the N
 
 ```sh
 nix develop
-pytest && scripts/e2e
+pytest --cov && scripts/e2e
 scripts/screenshots   # retake the images in images/
 ```
 

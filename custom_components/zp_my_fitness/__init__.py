@@ -9,8 +9,8 @@ from pathlib import Path
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_change
@@ -69,10 +69,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     coordinators = {p.key: PersonCoordinator(hass, data, p) for p in people}
     entry.runtime_data = RuntimeData(data, coordinators)
 
-    async def close() -> None:
+    async def close(_event: Event | None = None) -> None:
         await hass.async_add_executor_job(db.close)
 
     entry.async_on_unload(close)
+    # Home Assistant does not unload entries when it stops, so close then too.
+    entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, close))
 
     for coordinator in coordinators.values():
         await coordinator.async_config_entry_first_refresh()

@@ -58,7 +58,7 @@ jobs:
         run: nix develop -c node --experimental-vm-modules --test 'tests/cards/*.test.js'
 
       - name: Integration tests
-        run: nix develop -c pytest
+        run: nix develop -c pytest --cov
 
       - name: End-to-end tests
         run: nix develop -c scripts/e2e

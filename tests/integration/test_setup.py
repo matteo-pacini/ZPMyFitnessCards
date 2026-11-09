@@ -1,6 +1,7 @@
 """Setting up and unloading the integration."""
 
 import os
+from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -39,3 +40,29 @@ async def test_unloads_and_reloads_keeping_data(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert float(hass.states.get("sensor.debora_weight").state) == 68
+
+
+async def test_registers_the_cards_with_the_frontend_when_it_runs(hass: HomeAssistant) -> None:
+    hass.config.components.add("frontend")
+    entry = mock_entry(person())
+    entry.add_to_hass(hass)
+    with patch("custom_components.zp_my_fitness.add_extra_js_url") as add:
+        assert await hass.config_entries.async_setup(entry.entry_id)
+    add.assert_called_once_with(hass, f"{CARDS_URL}?v=0.1.0")
+
+
+async def test_leaves_the_frontend_alone_when_it_does_not_run(hass: HomeAssistant) -> None:
+    entry = mock_entry(person())
+    entry.add_to_hass(hass)
+    with patch("custom_components.zp_my_fitness.add_extra_js_url") as add:
+        assert await hass.config_entries.async_setup(entry.entry_id)
+    add.assert_not_called()
+
+
+async def test_closes_the_database_when_home_assistant_stops(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    db = entry.runtime_data.data.db
+    with patch.object(db, "close", wraps=db.close) as close:
+        await hass.async_stop()
+    close.assert_called_once()

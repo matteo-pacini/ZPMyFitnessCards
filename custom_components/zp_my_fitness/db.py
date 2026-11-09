@@ -30,12 +30,12 @@ from sqlalchemy import (
     event,
     func,
     insert,
-    inspect,
     or_,
     select,
     update,
 )
 from sqlalchemy.dialects import postgresql, sqlite
+from sqlalchemy.pool import NullPool
 
 from .const import NUTRIENTS
 from .goals import Goals
@@ -129,7 +129,9 @@ def sqlite_url(path: str) -> str:
 def make_engine(url: str) -> Engine:
     """An engine for `url`, set up for this integration's use of it."""
     if url.startswith("sqlite"):
-        engine = create_engine(url, connect_args={"check_same_thread": False})
+        # A connection per use: opening a local file is cheap, and nothing is
+        # left open for a reload or shutdown to miss.
+        engine = create_engine(url, connect_args={"check_same_thread": False}, poolclass=NullPool)
 
         @event.listens_for(engine, "connect")
         def _pragmas(dbapi_connection: Any, _record: Any) -> None:
@@ -199,10 +201,8 @@ class Database:
                 conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)")
 
     def schema_version(self) -> int:
-        """The schema version the database is at."""
+        """The schema version the database is at; open() creates its table first."""
         with self._db.connect() as conn:
-            if not inspect(conn).has_table("schema_version"):
-                return 0
             return conn.execute(select(VERSION.c.version)).scalar() or 0
 
     def _insert(self, table: Table) -> Any:

@@ -318,6 +318,16 @@ OFF_PRODUCTS = {
             "fat_100g": 2,
         },
     },
+    "4000417025005": {
+        "product_name": "Dark chocolate 70%",
+        "brands": "Ritter Sport",
+        "nutriments": {
+            "energy-kcal_100g": 598,
+            "proteins_100g": 7.8,
+            "carbohydrates_100g": 46,
+            "fat_100g": 43,
+        },
+    },
     "8076809513753": {
         "product_name": "Spaghetti n.5",
         "brands": "Barilla",
@@ -353,22 +363,28 @@ DASH = "\u2013"
 CORS = {"Access-Control-Allow-Origin": "*"}
 
 
-def fake_camera(page: Page, code: str) -> None:
-    """A browser barcode reader that sees `code`, and a camera to read with."""
+def fake_camera(page: Page, code: str | None, *, refuse: bool = False) -> None:
+    """A browser barcode reader that sees `code` (or nothing), and a camera.
+
+    With `refuse`, the camera is denied, as when a person blocks it.
+    """
     script = """
         (() => {
           window.BarcodeDetector = class {
             static async getSupportedFormats() { return ["ean_13", "ean_8"]; }
-            async detect() { return [{ rawValue: CODE, format: "ean_13" }]; }
+            async detect() { return CODE === null ? [] : [{ rawValue: CODE, format: "ean_13" }]; }
           };
           navigator.mediaDevices.getUserMedia = async () => {
+            if (REFUSE) throw new DOMException("Permission denied", "NotAllowedError");
             const canvas = document.createElement("canvas");
             canvas.getContext("2d").fillRect(0, 0, 10, 10);
             return canvas.captureStream();
           };
         })();
     """
-    page.add_init_script(script.replace("CODE", json.dumps(code)))
+    page.add_init_script(
+        script.replace("CODE", json.dumps(code)).replace("REFUSE", json.dumps(refuse))
+    )
 
 
 def test_the_saved_foods_card_fills_a_food_from_its_barcode(home: Home, page: Page) -> None:
@@ -457,3 +473,128 @@ def test_without_a_scanner_there_is_no_scan_button(home: Home, page: Page) -> No
     card.locator('[data-action="new"]').click()
     expect(card.locator('[data-action="lookup"]')).to_be_visible()
     expect(card.locator('[data-action="scan"]')).to_have_count(0)
+
+
+def test_the_diary_s_calendar_and_cancel(home: Home, page: Page) -> None:
+    yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
+    card = diary(home, page, "Matteo")
+    card.locator('[data-action="pick-day"]').fill(yesterday)
+    expect(card.locator(".nav .label")).to_have_text("Yesterday")
+    meal(card, "lunch").locator('[data-action="add"]').click()
+    expect(card.locator(".panel")).to_be_visible()
+    card.locator('.panel .mealhead [data-action="close"]').click()
+    expect(card.locator(".panel")).to_be_hidden()
+
+
+def test_portions_and_meal_can_change_before_adding(home: Home, page: Page) -> None:
+    save_food(
+        home,
+        "Sliced bread e2e",
+        portions=[{"name": "Slice", "grams": 36}, {"name": "Half slice", "grams": 18}],
+    )
+    card = diary(home, page, "Matteo")
+    meal(card, "breakfast").locator('[data-action="add"]').click()
+    card.locator('[data-action="query"]').fill("Sliced bread e2e")
+    card.locator('[data-action="choose"]', has_text="Sliced bread e2e").click()
+    expect(card.locator('[data-field="grams"]')).to_have_value("36")
+    card.locator('[data-action="portion"]', has_text="Half slice").click()
+    expect(card.locator('[data-field="grams"]')).to_have_value("18")
+    card.locator('.picked [data-field="meal"]').select_option("lunch")
+    expect(card.locator('[data-action="add-entry"]')).to_have_text("Add to Lunch")
+    card.locator('[data-action="add-entry"]').click()
+    row = meal(card, "lunch").locator(".row", has_text="Sliced bread e2e")
+    expect(row).to_contain_text("18 g", timeout=TIMEOUT)
+
+
+def test_the_new_food_tab_edits_portions_and_finds_saved_barcodes(home: Home, page: Page) -> None:
+    save_food(home, "Known oats e2e", barcode="96385074")
+    card = diary(home, page, "Debora")
+    meal(card, "breakfast").locator('[data-action="add"]').click()
+    card.locator('[data-action="tab"][data-tab="new"]').click()
+    card.locator('[data-action="add-portion"]').click()
+    expect(card.locator(".foodform .portion")).to_have_count(1)
+    card.locator('[data-action="remove-portion"]').click()
+    expect(card.locator(".foodform .portion")).to_have_count(0)
+
+    card.locator('.foodform [data-field="barcode"]').fill("96385074")
+    card.locator('.foodform [data-action="lookup"]').click()
+    expect(card.locator(".panel .note")).to_contain_text("Known oats e2e already has this barcode")
+    expect(card.locator(".picked")).to_contain_text("Known oats e2e")
+
+
+def test_the_new_food_tab_scans_with_the_camera(home: Home, page: Page) -> None:
+    mock_open_food_facts(page)
+    # A product no other test saves, so the scan fills a new food.
+    fake_camera(page, "4000417025005")
+    card = diary(home, page, "Debora")
+    meal(card, "dinner").locator('[data-action="add"]').click()
+    card.locator('[data-action="tab"][data-tab="new"]').click()
+    card.locator('.foodform [data-action="scan"]').click()
+    expect(card.locator('.foodform [data-field="barcode"]')).to_have_value(
+        "4000417025005", timeout=TIMEOUT
+    )
+    expect(card.locator('.foodform [data-field="kcal"]')).to_have_value("598")
+
+
+@pytest.mark.parametrize("where", ["diary", "foods"])
+def test_a_scan_can_be_cancelled(home: Home, page: Page, where: str) -> None:
+    fake_camera(page, None)
+    if where == "diary":
+        card = diary(home, page, "Debora")
+        meal(card, "lunch").locator('[data-action="add"]').click()
+        query = card.locator('[data-action="query"]')
+        query.fill("before")
+    else:
+        card = open_card(home, page, {"type": "custom:zp-foods-card"})
+        card.locator('[data-action="new"]').click()
+        query = card.locator('.foodform [data-field="barcode"]')
+        query.fill("12345670")
+    card.locator('.panel [data-action="scan"]').first.click()
+    expect(card.locator(".scanner video")).to_be_visible(timeout=TIMEOUT)
+    card.locator('[data-action="stop-scan"]').click()
+    expect(card.locator(".scanner")).to_be_hidden(timeout=TIMEOUT)
+    expect(query).to_have_value("before" if where == "diary" else "12345670")
+
+
+def test_a_blocked_camera_is_explained(home: Home, page: Page) -> None:
+    fake_camera(page, "12345670", refuse=True)
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="new"]').click()
+    card.locator('[data-action="scan"]').click()
+    expect(card.locator(".panel .error")).to_contain_text(
+        "Could not use the camera: Permission denied", timeout=TIMEOUT
+    )
+
+
+def test_an_unreachable_open_food_facts_is_explained(home: Home, page: Page) -> None:
+    page.route("https://world.openfoodfacts.org/**", lambda route: route.abort())
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="new"]').click()
+    card.locator('.foodform [data-field="barcode"]').fill("40000000000105")
+    card.locator('[data-action="lookup"]').click()
+    expect(card.locator(".panel .error")).to_contain_text(
+        "Could not reach Open Food Facts", timeout=TIMEOUT
+    )
+
+
+def test_the_saved_foods_form_removes_portions_and_cancels(home: Home, page: Page) -> None:
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="new"]').click()
+    card.locator('[data-action="add-portion"]').click()
+    card.locator('[data-action="add-portion"]').click()
+    card.locator(".foodform .portion").first.locator('[data-portion="name"]').fill("Keep")
+    card.locator(".foodform .portion").nth(1).locator('[data-action="remove-portion"]').click()
+    expect(card.locator(".foodform .portion")).to_have_count(1)
+    expect(card.locator('.foodform [data-portion="name"]')).to_have_value("Keep")
+    card.locator('.panel [data-action="close"]').click()
+    expect(card.locator(".panel")).to_be_hidden()
+
+
+def test_the_weight_card_switches_range(home: Home, page: Page) -> None:
+    card = open_card(home, page, {"type": "custom:zp-weight-card", "person": "Matteo"})
+    for value in ("all", "365", "90"):
+        card.locator(f'[data-action="range"][data-range="{value}"]').click()
+        expect(card.locator(f'[data-action="range"][data-range="{value}"]')).to_have_attribute(
+            "aria-pressed", "true"
+        )
+        expect(card.locator(".chart")).to_be_visible()
