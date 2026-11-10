@@ -153,6 +153,12 @@ The weight, trends and summary cards take the same `person`, `title` and `locale
 
 All five cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
 
+### In the Home Assistant app
+
+The cards fit a phone's width. These are the food diary, summary, weight and trends cards in the Home Assistant app on Android.
+
+<img src="images/phone-food-diary.png" alt="Food diary in the Home Assistant app" width="200"> <img src="images/phone-summary.png" alt="Summary in the Home Assistant app" width="200"> <img src="images/phone-summary-dark.png" alt="Summary in the Home Assistant app, dark mode" width="200"> <img src="images/phone-weight.png" alt="Weight in the Home Assistant app" width="200"> <img src="images/phone-trends.png" alt="Trends in the Home Assistant app" width="200">
+
 ## Development
 
 See [AGENTS.md](AGENTS.md) for the layout and commands. Everything runs in the Nix dev shell:
@@ -160,7 +166,8 @@ See [AGENTS.md](AGENTS.md) for the layout and commands. Everything runs in the N
 ```sh
 nix develop
 pytest --cov && scripts/e2e
-scripts/screenshots   # retake the images in images/
+scripts/screenshots         # retake the desktop images in images/
+scripts/phone-screenshots   # retake the phone images (Android emulator in a VM; needs nested KVM)
 ```
 
 ## Licence

@@ -85,3 +85,38 @@ jobs:
 
       - name: End-to-end tests
         run: nix develop -c scripts/e2e
+
+  # The end-to-end tests again, inside a NixOS VM with no network, built from
+  # uv.lock. The Android VM test is left out: it needs nested KVM, which the
+  # runners, themselves VMs, run far too slowly.
+  e2e-vm:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: wimpysworld/nothing-but-nix@v12
+        with:
+          hatchet-protocol: "rampage"
+          witness-carnage: true
+          nix-permission-edict: true
+
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      # The runner has /dev/kvm, but only root may open it.
+      - name: Open /dev/kvm to the runner user
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: nixbuild/nix-quick-install-action@v35
+        with:
+          nix_conf: |
+            system-features = nixos-test benchmark big-parallel kvm
+
+      - name: End-to-end tests in a VM
+        run: nix build -L .#checks.x86_64-linux.e2e-vm

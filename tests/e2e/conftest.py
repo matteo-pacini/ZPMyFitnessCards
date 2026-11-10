@@ -177,6 +177,20 @@ def _wait_until_up(home: Home, process: subprocess.Popen, seconds: float = 120) 
     raise TimeoutError(f"Home Assistant did not start in {seconds} s")
 
 
+def _wait_until_running(home: Home, seconds: float = 300) -> None:
+    """Wait for startup to finish.
+
+    Until then the frontend shows a "Starting ..." toast over the bottom of
+    the page, where it can catch the tests' clicks. Onboarding's weather
+    integration keeps startup going for minutes with no network.
+    """
+    deadline = time.monotonic() + seconds
+    while home.api("GET", "/api/config")["state"] != "RUNNING":
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"Home Assistant did not finish starting in {seconds} s")
+        time.sleep(0.5)
+
+
 def _onboard(home: Home) -> None:
     """Create the owner, then finish the remaining onboarding steps."""
     client_id = home.url + "/"
@@ -256,10 +270,14 @@ def home(request: pytest.FixtureRequest) -> Iterator[Home]:
         yield from _home(db_url)
 
 
-def _home(db_url: str | None) -> Iterator[Home]:
+def _home(db_url: str | None, configuration: str = CONFIGURATION) -> Iterator[Home]:
+    """Start Home Assistant, set it up, yield it, then stop it and delete it.
+
+    `configuration` is configuration.yaml with a `{port}` slot.
+    """
     config_dir = Path(tempfile.mkdtemp(prefix="zp-my-fitness-e2e-"))
     port = _free_port()
-    (config_dir / "configuration.yaml").write_text(CONFIGURATION.format(port=port))
+    (config_dir / "configuration.yaml").write_text(configuration.format(port=port))
     (config_dir / "custom_components").mkdir()
     (config_dir / "custom_components" / "zp_my_fitness").symlink_to(
         REPO / "custom_components" / "zp_my_fitness"
@@ -277,6 +295,7 @@ def _home(db_url: str | None) -> Iterator[Home]:
             _wait_until_up(home, process)
             _onboard(home)
             _add_integration(home, db_url)
+            _wait_until_running(home)
         except Exception as err:
             # The temporary folder goes with the run, so keep the log's end here.
             log = home.log()[-6000:] if (config_dir / "home-assistant.log").exists() else ""

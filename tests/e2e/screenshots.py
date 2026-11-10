@@ -34,7 +34,14 @@ FOODS = [
 
 @pytest.fixture(scope="module")
 def sample(home: Home) -> Home:
-    """Debora's day so far, logged from saved foods."""
+    """`home` with add_sample_data's data."""
+    add_sample_data(home)
+    return home
+
+
+def add_sample_data(home: Home) -> None:
+    """Debora's day so far from saved foods, her last four weeks, and a year
+    of Matteo's weigh-ins."""
     debora = next(
         p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Debora"
     )
@@ -101,7 +108,6 @@ def sample(home: Home) -> Home:
                     "fat": kcal * 0.035,
                 }
             )
-    return home
 
 
 def shoot(

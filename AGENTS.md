@@ -37,6 +37,17 @@ ruff check . && ruff format --check .
 
 CI runs all of these through `nix develop -c` on every pull request and on master, plus hassfest and the HACS validator, and puts both coverage reports on the run's summary page.
 
+`nix develop .#android` (x86_64-linux only) adds an Android SDK and a `pixel_8` AVD: a Pixel 8 on the Android 37.2 Play Store image with 16 KB pages and the host keyboard on, for the Home Assistant Companion app, whose APK is in `$COMPANION_APK`. Start it with `emulator -avd pixel_8`; the `emulator` and `adb` on its PATH are wrappers that run under `steam-run`, for the host GPU, and with `HOME` set to `.android/`. Every AVD, key and emulator file lives in `.android/`, which git ignores; delete it to start over. `create-avd` writes the AVD; `nix/android.nix` defines the SDK, the AVD and the app for both this shell and the VM test.
+
+The same tests also run inside NixOS VMs with no network (`nix/e2e-vm.nix`), with Python from `uv.lock` through uv2nix (`nix/python.nix`):
+
+```sh
+nix build .#checks.x86_64-linux.e2e-vm       # tests/e2e in Chromium, SQLite and Postgres
+nix build .#checks.x86_64-linux.android-vm   # tests/e2e/test_android.py; needs nested KVM
+```
+
+`tests/e2e/test_android.py` boots a fresh AVD, installs the Companion app, takes it through its first run against a Home Assistant that lets 127.0.0.1 in without a password, turns on the app's WebView remote debugging, and drives the cards in the app through Playwright over `adb forward`. The emulator's camera cannot show a barcode, so the scan test checks that the app's scanner opens, then sends the result the app would. It is skipped unless `COMPANION_APK` is set. To keep its screenshots when it fails, run the VM through its driver: `nix build .#checks.x86_64-linux.android-vm.driver`, then `result/bin/nixos-test-driver --output_directory <dir>`.
+
 ## Rules that are easy to break
 
 - **Versions move together.** `pytest-homeassistant-custom-component` pins one Home Assistant release. The e2e packages in `pyproject.toml`, `home-assistant-frontend` and the rest, are pinned to what that release's manifests ask for. Playwright for Python must equal the Nix shell's `playwright-driver`; the e2e tests check it.

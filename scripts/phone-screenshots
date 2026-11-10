@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Takes the README's phone screenshots into images/: the cards inside the
+# Companion app on the Android VM test's Pixel 8. Needs nested KVM. Commit
+# the images afterwards.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+nix build .#checks.x86_64-linux.android-vm.driver -o "$work/driver"
+mkdir "$work/out"
+# A fresh TMPDIR: the driver keeps the VM's disk there between runs.
+(cd "$work" && TMPDIR="$work" ./driver/bin/nixos-test-driver --output_directory "$work/out")
+find "$work/out" -name 'phone-*.png' -exec cp {} images/ \;
