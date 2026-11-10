@@ -8,9 +8,15 @@ It is in early development. The integration, its sensors, all five cards and bar
 
 ## Install
 
-1. In HACS, add `https://github.com/matteo-pacini/ZPMyFitnessCards` as a custom repository of type Integration, then download ZPMyFitnessCards.
+1. Open the repository in HACS with this button, then download ZPMyFitnessCards. Or, in HACS, add `https://github.com/matteo-pacini/ZPMyFitnessCards` as a custom repository of type Integration.
+
+   [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=matteo-pacini&repository=ZPMyFitnessCards&category=integration)
+
 2. Restart Home Assistant.
-3. In **Settings > Devices & services**, add **ZPMyFitnessCards**, and choose where it keeps its data (see [Database](#database)).
+3. Add the integration with this button, or add **ZPMyFitnessCards** in **Settings > Devices & services**. Choose where it keeps its data (see [Database](#database)).
+
+   [![Open your Home Assistant instance and start setting up ZPMyFitnessCards.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zp_my_fitness)
+
 4. On its page, use **Add person** for each person.
 
 Each person has a name, sex, birth date, height, starting weight and date, goal weight, activity level and weekly pace. From these the integration works out a calorie goal with the Mifflin-St Jeor formula, and follows it as the weight changes. You can type your own calorie goal instead, and set the protein, carbs and fat split, which defaults to 20%, 50% and 30%.
