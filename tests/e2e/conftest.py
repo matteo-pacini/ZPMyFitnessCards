@@ -5,6 +5,9 @@ with an empty configuration folder that links this repo's integration. It
 then completes onboarding, adds the integration and its people through the
 same REST API the UI uses, and saves a test dashboard. The folder is deleted
 afterwards, so every session starts from nothing.
+
+That Home Assistant searches Open Food Facts on a local fake (`search`), set
+through ZP_MY_FITNESS_SEARCH_URL, since the VM checks run with no network.
 """
 
 from __future__ import annotations
@@ -17,12 +20,15 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import urllib.parse
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from dataclasses import dataclass, field
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -256,8 +262,86 @@ def _add_integration(home: Home, db_url: str | None) -> str:
     raise TimeoutError("ZPMyFitnessCards did not finish loading its people")
 
 
+class FakeSearch:
+    """Search-a-licious for the test Home Assistant, on a free localhost port.
+
+    It answers each request with `answer(params)`, a (status, JSON body)
+    pair, and keeps each request's query parameters in `asked`.
+    """
+
+    def __init__(self) -> None:
+        fake = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                params = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(self.path).query))
+                fake.asked.append(params)
+                status, body = fake.answer(params)
+                data = json.dumps(body).encode()
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, *_args: Any) -> None:
+                pass
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.url = f"http://127.0.0.1:{self.server.server_port}/search"
+        self.reset()
+
+    def reset(self) -> None:
+        """Forget what was asked, and fail every search until told otherwise."""
+        self.asked: list[dict[str, str]] = []
+        self.answer: Callable[[dict[str, str]], tuple[int, Any]] = lambda _params: (
+            503,
+            {"detail": "the test gave no answer"},
+        )
+
+    def find(self, products: list[dict[str, Any]]) -> None:
+        """Answer every search with `products`, ten to a page."""
+
+        def answer(params: dict[str, str]) -> tuple[int, Any]:
+            page = int(params["page"])
+            return 200, {
+                "hits": products[(page - 1) * 10 : page * 10],
+                "page": page,
+                "page_size": 10,
+                "page_count": -(-len(products) // 10),
+                "count": len(products),
+                "debug": {"query": {}},
+                "took": 1,
+                "timed_out": False,
+                "is_count_exact": True,
+            }
+
+        self.answer = answer
+
+
+@pytest.fixture(scope="session")
+def search_server() -> Iterator[FakeSearch]:
+    """The fake Search-a-licious, running for the whole session."""
+    fake = FakeSearch()
+    thread = threading.Thread(target=fake.server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield fake
+    finally:
+        fake.server.shutdown()
+        fake.server.server_close()
+        thread.join()
+
+
+@pytest.fixture
+def search(search_server: FakeSearch) -> FakeSearch:
+    """The fake Search-a-licious, failing every search until the test says what to find."""
+    search_server.reset()
+    return search_server
+
+
 @pytest.fixture(scope="session", params=["sqlite", "postgresql"])
-def home(request: pytest.FixtureRequest) -> Iterator[Home]:
+def home(request: pytest.FixtureRequest, search_server: FakeSearch) -> Iterator[Home]:
     """A brand-new, onboarded Home Assistant with the integration and two people.
 
     Every test using it runs twice: with the data in SQLite, then in Postgres.
@@ -267,13 +351,16 @@ def home(request: pytest.FixtureRequest) -> Iterator[Home]:
         if request.param == "postgresql":
             server = request.getfixturevalue("postgres_server")
             db_url = cleanup.enter_context(new_database(server))
-        yield from _home(db_url)
+        yield from _home(db_url, search_url=search_server.url)
 
 
-def _home(db_url: str | None, configuration: str = CONFIGURATION) -> Iterator[Home]:
+def _home(
+    db_url: str | None, configuration: str = CONFIGURATION, search_url: str | None = None
+) -> Iterator[Home]:
     """Start Home Assistant, set it up, yield it, then stop it and delete it.
 
-    `configuration` is configuration.yaml with a `{port}` slot.
+    `configuration` is configuration.yaml with a `{port}` slot. With
+    `search_url`, the integration searches Open Food Facts there.
     """
     config_dir = Path(tempfile.mkdtemp(prefix="zp-my-fitness-e2e-"))
     port = _free_port()
@@ -285,10 +372,12 @@ def _home(db_url: str | None, configuration: str = CONFIGURATION) -> Iterator[Ho
     home = Home(url=f"http://127.0.0.1:{port}", config_dir=config_dir)
     # --skip-pip: everything this test needs is already in .venv, and the
     # integrations that fail without their packages are not ones it uses.
+    env = {**os.environ, "ZP_MY_FITNESS_SEARCH_URL": search_url} if search_url else None
     process = subprocess.Popen(
         [sys.executable, "-m", "homeassistant", "--config", str(config_dir), "--skip-pip"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        env=env,
     )
     try:
         try:

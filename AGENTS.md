@@ -13,13 +13,14 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `config_flow.py`: the integration and its people, one config sub-entry each.
   - `backup.py`: pauses writes while Home Assistant backs up.
   - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.
+  - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `zp_my_fitness/foods/search`, through its Search-a-licious service.
 - `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
 - `src/`: plain browser scripts, one per card or family of cards. `fitness-cards.js` holds every card: they share loading, live updates, the food form and the strings. There are no imports and no npm dependencies.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` loads a card script into a `vm` context with a stubbed DOM, for the pure functions and the markup they build. Interaction is tested end to end.
 - `tests/e2e/test_card_states.py`: cards mounted straight into the running Home Assistant page, with a connection that fails on purpose, for the loading, failure and retry paths a dashboard rarely shows.
-- `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres. Chromium sees only the fonts in `nix/fonts.nix`, never the host's. Tests share one Home Assistant per database, so give the data each test adds unique names. `screenshots.py` takes the README images.
+- `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres. Chromium sees only the fonts in `nix/fonts.nix`, never the host's. Tests share one Home Assistant per database, so give the data each test adds unique names. That Home Assistant searches Open Food Facts on a fake Search-a-licious, which the `search` fixture tells what to find. `screenshots.py` takes the README images.
 - `images/`: the README screenshots, from `scripts/screenshots`.
 
 ## Commands
@@ -76,7 +77,7 @@ scripts/throttle 4 nix build -L .#checks.x86_64-linux.e2e-vm-sqlite
 - **Cleanup.** Tests create nothing outside temporary folders and the throwaway Postgres server, and remove both even when they fail.
 - **Daily totals.** Use `state_class: total` with `last_reset` at local midnight, never `total_increasing`: deleting an entry lowers a total, which `total_increasing` would read as a meter reset.
 - **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
-- **Open Food Facts.** Cards fetch it from the browser. Tests answer it with Playwright's `page.route`, never the real service.
+- **Open Food Facts.** Tests never call the real service. The barcode lookup runs in the browser, and tests answer it with Playwright's `page.route`. Search by name runs on the Home Assistant server, in `openfoodfacts.py`, because Search-a-licious refuses browsers from other sites. Integration tests answer it with `aioclient_mock`. The e2e tests answer it with `FakeSearch` in `tests/e2e/conftest.py`, a local server that the test Home Assistant reaches through the `ZP_MY_FITNESS_SEARCH_URL` environment variable. That variable is only for tests: keep it out of the config flow, options and `configuration.yaml`.
 - **App scanner.** `scanWithApp` wraps `hass.auth.external.receiveMessage`, which the frontend does not document. Keep calling the original handler, which acknowledges each message, and keep typing a barcode working without any scanner.
 - **Coverage.** CI fails if the Python tests cover less than 90% of the integration's lines and branches (`fail_under` in `pyproject.toml`), and reports card unit coverage without enforcing it. Test new code anyway: card code needs a unit test for its pure functions and an end-to-end test for each interaction and failure path.
 - **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.

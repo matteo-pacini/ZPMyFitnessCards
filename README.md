@@ -148,6 +148,19 @@ Both the saved foods card and the food diary's **Add food** panel know barcodes.
 
 Scanning in the app relies on an undocumented part of Home Assistant's frontend; if an update changes it, the Scan button stops working there and typing still works.
 
+### Open Food Facts search
+
+The search boxes in the saved foods card and in the food diary's **Add food** panel can also search Open Food Facts by name.
+
+- Type a name, then tap **Search Open Food Facts for "…"** under your saved foods. It searches only when you tap it, never as you type.
+- It shows ten products at a time, and **More** shows the next ten. Each row has the name, brand, pack size and kcal per 100 g. Names are in the card's language when the product has one, else in English.
+- It only finds products that give kcal, protein, carbs and fat per 100 g.
+- Tap a product to open **New food**, filled in as from its barcode. If the barcode lookup fails, the values come from the search instead, with a warning. The search can be months behind Open Food Facts, and has no serving sizes.
+
+<img src="images/food-search.png" alt="Searching Open Food Facts from the food diary" width="400">
+
+Home Assistant runs this search, not your browser, so the Home Assistant server needs internet access. It sends Open Food Facts the words you typed and the card's language.
+
 ### Weight card
 
 One person's weight: the latest weigh-in, the change since their starting weight, and their BMI band. The chart covers 90 days, 1 year or all of it, shaded by BMI band for the person's height, with a dashed line at the goal weight. Log a weight for today or any past day; a day keeps one weight, so logging again replaces it. The last five weigh-ins are listed, each with a button to delete it.

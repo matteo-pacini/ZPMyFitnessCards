@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from playwright.sync_api import Locator, Page, expect
 
-from .conftest import Home
+from .conftest import FakeSearch, Home
 
 TIMEOUT = 15_000
 
@@ -338,6 +338,17 @@ OFF_PRODUCTS = {
             "fat_100g": 2,
         },
     },
+    "7613035974685": {
+        "product_name": "Skyr nature",
+        "brands": "Siggi's",
+        "serving_quantity": 150,
+        "nutriments": {
+            "energy-kcal_100g": 63,
+            "proteins_100g": 11,
+            "carbohydrates_100g": 3.6,
+            "fat_100g": 0.2,
+        },
+    },
 }
 
 
@@ -575,6 +586,177 @@ def test_an_unreachable_open_food_facts_is_explained(home: Home, page: Page) -> 
     expect(card.locator(".panel .error")).to_contain_text(
         "Could not reach Open Food Facts", timeout=TIMEOUT
     )
+
+
+def hit(code: str, name: str, kcal: float, **more) -> dict:
+    """A product as Open Food Facts' search gives it."""
+    return {
+        "code": code,
+        "product_name": name,
+        "brands": ["Test dairy"],
+        "quantity": "500 g",
+        "nutriments": {
+            "energy-kcal_100g": kcal,
+            "proteins_100g": 10,
+            "carbohydrates_100g": 4,
+            "fat_100g": 0.2,
+        },
+        **more,
+    }
+
+
+def test_the_diary_searches_open_food_facts_by_name(
+    home: Home, page: Page, search: FakeSearch
+) -> None:
+    looked_up = mock_open_food_facts(page)
+    # A page of ten, then two more. The last is one the barcode lookup knows,
+    # with newer values than the search's.
+    products = [hit(f"20000000000{n:02}", f"Skyr e2e {n}", 60 + n) for n in range(11)]
+    products.append(hit("7613035974685", "Skyr e2e nature", 60))
+    search.find(products)
+    card = diary(home, page, "Debora")
+    meal(card, "breakfast").locator('[data-action="add"]').click()
+    expect(card.locator(".off")).to_have_text("Type a name to search Open Food Facts too.")
+
+    card.locator('[data-action="query"]').fill("skyr e2e")
+    expect(card.locator(".results")).to_contain_text("No saved food matches", timeout=TIMEOUT)
+    button = card.locator('[data-action="off-search"]')
+    expect(button).to_have_text("Search Open Food Facts for \u201cskyr e2e\u201d")
+    # Typing searches saved foods only.
+    assert search.asked == []
+
+    button.click()
+    rows = card.locator('[data-action="off-pick"]')
+    expect(rows).to_have_count(10, timeout=TIMEOUT)
+    expect(rows.first).to_have_text(
+        re.compile(r"Skyr e2e 0\s+Test dairy · 500 g\s+60 kcal per 100 g")
+    )
+    asked = search.asked[0]
+    assert asked["q"].startswith("skyr e2e nutriments.energy-kcal_100g:[0 TO *] ")
+    assert (asked["langs"], asked["page"], asked["page_size"]) == ("en", "1", "10")
+
+    card.locator('[data-action="off-next"]').click()
+    expect(rows).to_have_count(12, timeout=TIMEOUT)
+    expect(card.locator('[data-action="off-next"]')).to_have_count(0)
+    assert search.asked[1]["page"] == "2"
+
+    # Picking looks the barcode up for current values, as a lookup does.
+    rows.last.click()
+    form = card.locator(".foodform")
+    expect(form.locator('[data-field="name"]')).to_have_value(
+        f"Skyr nature {DASH} Siggi's", timeout=TIMEOUT
+    )
+    expect(form.locator('[data-field="kcal"]')).to_have_value("63")
+    expect(form.locator('[data-field="barcode"]')).to_have_value("7613035974685")
+    expect(form.locator('[data-portion="grams"]')).to_have_value("150")
+    expect(card.locator(".panel .note")).to_contain_text("Filled in from Open Food Facts")
+    expect(card.locator(".panel .warning")).to_have_count(0)
+    assert looked_up == ["7613035974685"]
+
+    card.locator('[data-action="save-new-food"]').click()
+    card.locator('[data-field="grams"]').fill("100")
+    card.locator('[data-action="add-entry"]').click()
+    row = meal(card, "breakfast").locator(".row", has_text="Skyr nature")
+    expect(row).to_contain_text("63", timeout=TIMEOUT)
+
+
+@pytest.mark.parametrize("lookup", ["unknown", "unreachable"])
+def test_a_failed_lookup_fills_the_food_from_the_search_with_a_warning(
+    home: Home, page: Page, search: FakeSearch, lookup: str
+) -> None:
+    if lookup == "unknown":
+        mock_open_food_facts(page)
+        code = "40000000000310"
+    else:
+        page.route("https://world.openfoodfacts.org/**", lambda route: route.abort())
+        code = "40000000000327"
+    search.find([hit(code, f"Old crackers e2e {lookup}", 421, brands=["Crunchy"], quantity="")])
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="query"]').fill(f"crackers e2e {lookup}")
+    card.locator('[data-action="off-search"]').click()
+    card.locator('[data-action="off-pick"]').click()
+
+    form = card.locator(".panel .foodform")
+    expect(form.locator('[data-field="name"]')).to_have_value(
+        f"Old crackers e2e {lookup} {DASH} Crunchy", timeout=TIMEOUT
+    )
+    expect(form.locator('[data-field="kcal"]')).to_have_value("421")
+    expect(form.locator('[data-field="barcode"]')).to_have_value(code)
+    expect(form.locator(".portion")).to_have_count(0)
+    expect(card.locator(".panel .warning")).to_have_text(
+        "Filled in from an Open Food Facts search, whose values may be out of date. "
+        "Check them against the label."
+    )
+    expect(card.locator(".panel .error")).to_have_count(0)
+    card.locator('[data-action="save"]').click()
+    expect(card.locator(".panel")).to_be_hidden(timeout=TIMEOUT)
+    assert home.ws({"type": "zp_my_fitness/food/barcode", "barcode": code})["kcal"] == 421
+
+
+def test_a_failed_search_can_be_retried_and_may_find_nothing(
+    home: Home, page: Page, search: FakeSearch
+) -> None:
+    card = diary(home, page, "Matteo")
+    meal(card, "lunch").locator('[data-action="add"]').click()
+    card.locator('[data-action="query"]').fill("nothing e2e")
+    # The fake fails every search until it is told what to find.
+    card.locator('[data-action="off-search"]').click()
+    expect(card.locator(".off .error")).to_have_text(
+        "Could not search Open Food Facts: HTTP 503", timeout=TIMEOUT
+    )
+    search.find([])
+    card.locator('.off [data-action="off-next"]', has_text="Try again").click()
+    expect(card.locator(".off")).to_contain_text(
+        "Open Food Facts has no product matching \u201cnothing e2e\u201d "
+        "with kcal, protein, carbs and fat.",
+        timeout=TIMEOUT,
+    )
+    assert [a["page"] for a in search.asked] == ["1", "1"]
+
+
+def test_searches_open_food_facts_in_the_card_s_language(
+    home: Home, page: Page, search: FakeSearch
+) -> None:
+    search.find(
+        [
+            hit(
+                "40000000000334",
+                "Yoghurt",
+                97,
+                product_name_it="Yogurt greco e2e",
+                product_name_en="Greek yogurt e2e",
+            )
+        ]
+    )
+    card = open_card(
+        home, page, {"type": "custom:zp-food-diary-card", "person": "Debora", "locale": "it"}
+    )
+    meal(card, "dinner").locator('[data-action="add"]').click()
+    card.locator('[data-action="query"]').fill("yogurt greco")
+    card.locator('[data-action="off-search"]').click()
+    expect(card.locator('[data-action="off-pick"]')).to_contain_text(
+        "Yogurt greco e2e", timeout=TIMEOUT
+    )
+    assert search.asked[0]["langs"] == "it,en"
+    assert search.asked[0]["fields"] == (
+        "code,product_name,product_name_it,product_name_en,brands,quantity,nutriments"
+    )
+
+
+def test_picking_a_product_already_saved_opens_the_saved_food(
+    home: Home, page: Page, search: FakeSearch
+) -> None:
+    mock_open_food_facts(page)
+    save_food(home, "Saved skyr e2e", barcode="40000000000341")
+    search.find([hit("40000000000341", "Skyr e2e already saved", 60)])
+    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card.locator('[data-action="query"]').fill("skyr e2e already saved")
+    card.locator('[data-action="off-search"]').click()
+    card.locator('[data-action="off-pick"]').click()
+    expect(card.locator(".panel .note")).to_contain_text(
+        "Saved skyr e2e already has this barcode", timeout=TIMEOUT
+    )
+    expect(card.locator('[data-action="delete"]')).to_be_visible()
 
 
 def test_the_saved_foods_form_removes_portions_and_cancels(home: Home, page: Page) -> None:

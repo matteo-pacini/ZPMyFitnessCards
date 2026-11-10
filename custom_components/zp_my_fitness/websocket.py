@@ -8,6 +8,7 @@ per-person permissions to apply.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import asdict
 from datetime import date, timedelta
@@ -28,6 +29,7 @@ from .const import (
     SIGNAL_CHANGED,
 )
 from .data import FitnessData, Person, food_entry, loaded_data, today
+from .openfoodfacts import SearchError, async_search
 from .schema import vol
 
 # The longest range zp_my_fitness/days answers, in days.
@@ -36,6 +38,7 @@ MAX_RANGE = 400
 ERR_NOT_LOADED = "not_loaded"
 ERR_NOT_FOUND = "not_found"
 ERR_BARCODE_TAKEN = "barcode_taken"
+ERR_SEARCH_FAILED = "search_failed"
 
 
 def _day(value: Any) -> str:
@@ -66,6 +69,13 @@ def _name(value: Any) -> str:
     text = str(value).strip()
     if not text:
         raise vol.Invalid("empty")
+    return text
+
+
+def _language(value: Any) -> str:
+    text = str(value)
+    if not re.fullmatch(r"[a-z]{2,3}", text):
+        raise vol.Invalid("not a two- or three-letter language code")
     return text
 
 
@@ -100,6 +110,7 @@ def async_register(hass: HomeAssistant) -> None:
         ws_add_food,
         ws_update_food,
         ws_delete_food,
+        ws_search_open_food_facts,
         ws_weights,
         ws_set_weight,
         ws_delete_weight,
@@ -405,6 +416,32 @@ async def ws_delete_food(data: FitnessData, _person: None, msg: dict) -> _Error 
     if not await data.async_food_write(data.db.delete_food, msg["food_id"]):
         return NOT_FOUND
     return None
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/foods/search",
+        vol.Required("query"): _name,
+        vol.Required("language"): _language,
+        vol.Optional("page", default=1): vol.All(int, vol.Range(min=1)),
+    }
+)
+@websocket_api.async_response
+async def ws_search_open_food_facts(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """A page of Open Food Facts products whose names match the query.
+
+    Names come in `language` where products have one, and in English. The
+    result is {products, more}, as openfoodfacts.async_search gives it.
+    Needs no database, so it answers while the integration reloads.
+    """
+    try:
+        found = await async_search(hass, msg["query"], msg["language"], msg["page"])
+    except SearchError as err:
+        connection.send_error(msg["id"], ERR_SEARCH_FAILED, str(err))
+        return
+    connection.send_result(msg["id"], found)
 
 
 # Weights

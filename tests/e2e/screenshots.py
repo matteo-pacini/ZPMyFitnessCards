@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from playwright.sync_api import Browser, Page, expect
 
-from .conftest import REPO, Home
+from .conftest import REPO, FakeSearch, Home
 
 IMAGES = REPO / "images"
 
@@ -187,10 +187,53 @@ def open_add(card) -> None:
     card.locator('[data-field="grams"]').fill("140")
 
 
-def test_screenshots(sample: Home, browser: Browser) -> None:
+# What Open Food Facts' search finds for "greek yogurt", the first of three pages.
+SEARCH_HITS = [
+    (code, name, [brand], quantity, kcal)
+    for code, name, brand, quantity, kcal in (
+        ("5201054025321", "Total 0% Greek yogurt", "Fage", "500 g", 54),
+        ("5201054017111", "Total 5% Greek yogurt", "Fage", "170 g", 93),
+        ("5051413908606", "Greek style natural yogurt", "Yeo Valley", "450 g", 115),
+        ("0894700010137", "Nonfat Greek yogurt", "Chobani", "150 g", 53),
+    )
+]
+
+
+def search_open_food_facts(search: FakeSearch):
+    def answer(params: dict[str, str]) -> tuple[int, dict]:
+        hits = [
+            {
+                "code": code,
+                "product_name": name,
+                "brands": brands,
+                "quantity": quantity,
+                "nutriments": {
+                    "energy-kcal_100g": kcal,
+                    "proteins_100g": 9,
+                    "carbohydrates_100g": 4,
+                    "fat_100g": 2,
+                },
+            }
+            for code, name, brands, quantity, kcal in SEARCH_HITS
+        ]
+        return 200, {"hits": hits, "page": 1, "page_count": 3}
+
+    def setup(card) -> None:
+        search.answer = answer
+        card.locator('.meal[data-meal="breakfast"] [data-action="add"]').click()
+        card.locator('[data-action="query"]').fill("greek yogurt")
+        card.locator('[data-action="choose"]', has_text="Greek yogurt 2%").wait_for()
+        card.locator('[data-action="off-search"]').click()
+        card.locator('[data-action="off-next"]').wait_for()
+
+    return setup
+
+
+def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None:
     shoot(sample, browser, DIARY, "food-diary")
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
     shoot(sample, browser, DIARY, "food-diary-add", setup=open_add)
+    shoot(sample, browser, DIARY, "food-search", setup=search_open_food_facts(search))
     shoot(sample, browser, FOODS_CARD, "saved-foods")
     shoot(sample, browser, FOODS_CARD, "barcode-lookup", setup=look_up_barcode)
     shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
@@ -206,6 +249,7 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
             "food-diary",
             "food-diary-dark",
             "food-diary-add",
+            "food-search",
             "saved-foods",
             "barcode-lookup",
             "weight",

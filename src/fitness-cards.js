@@ -138,6 +138,15 @@ const STRINGS = {
     serving: "Serving",
     error_barcode: "A barcode is 8 to 14 digits.",
     camera_failed: "Could not use the camera: {message}",
+    off_search: "Search Open Food Facts for “{query}”",
+    off_hint: "Type a name to search Open Food Facts too.",
+    off_results: "From Open Food Facts",
+    off_searching: "Searching Open Food Facts…",
+    off_no_results: "Open Food Facts has no product matching “{query}” with kcal, protein, carbs and fat.",
+    off_search_failed: "Could not search Open Food Facts: {message}",
+    off_stale: "Filled in from an Open Food Facts search, whose values may be out of date. Check them against the label.",
+    more: "More",
+    try_again: "Try again",
   },
   de: {
     title_diary: "Ernährungstagebuch",
@@ -252,6 +261,15 @@ const STRINGS = {
     serving: "Portion",
     error_barcode: "Ein Barcode hat 8 bis 14 Ziffern.",
     camera_failed: "Die Kamera ließ sich nicht verwenden: {message}",
+    off_search: "Open Food Facts nach „{query}“ durchsuchen",
+    off_hint: "Gib einen Namen ein, um auch Open Food Facts zu durchsuchen.",
+    off_results: "Aus Open Food Facts",
+    off_searching: "Open Food Facts wird durchsucht…",
+    off_no_results: "Open Food Facts hat kein Produkt zu „{query}“ mit kcal, Eiweiß, Kohlenhydraten und Fett.",
+    off_search_failed: "Open Food Facts ließ sich nicht durchsuchen: {message}",
+    off_stale: "Aus einer Suche bei Open Food Facts übernommen, deren Werte veraltet sein können. Prüfe sie anhand des Etiketts.",
+    more: "Mehr",
+    try_again: "Erneut versuchen",
   },
   es: {
     title_diary: "Diario de comidas",
@@ -366,6 +384,15 @@ const STRINGS = {
     serving: "Ración",
     error_barcode: "Un código de barras tiene de 8 a 14 cifras.",
     camera_failed: "No se pudo usar la cámara: {message}",
+    off_search: "Buscar «{query}» en Open Food Facts",
+    off_hint: "Escribe un nombre para buscar también en Open Food Facts.",
+    off_results: "De Open Food Facts",
+    off_searching: "Buscando en Open Food Facts…",
+    off_no_results: "Open Food Facts no tiene ningún producto que coincida con «{query}» con kcal, proteínas, carbohidratos y grasas.",
+    off_search_failed: "No se pudo buscar en Open Food Facts: {message}",
+    off_stale: "Rellenado con una búsqueda de Open Food Facts, cuyos valores pueden estar desactualizados. Compruébalos con la etiqueta.",
+    more: "Más",
+    try_again: "Reintentar",
   },
   fr: {
     title_diary: "Journal alimentaire",
@@ -480,6 +507,15 @@ const STRINGS = {
     serving: "Portion",
     error_barcode: "Un code-barres compte de 8 à 14 chiffres.",
     camera_failed: "Impossible d’utiliser la caméra : {message}",
+    off_search: "Chercher « {query} » sur Open Food Facts",
+    off_hint: "Saisissez un nom pour chercher aussi sur Open Food Facts.",
+    off_results: "Depuis Open Food Facts",
+    off_searching: "Recherche sur Open Food Facts…",
+    off_no_results: "Open Food Facts n’a aucun produit correspondant à « {query} » avec kcal, protéines, glucides et lipides.",
+    off_search_failed: "Impossible de chercher sur Open Food Facts : {message}",
+    off_stale: "Rempli depuis une recherche Open Food Facts, dont les valeurs peuvent être périmées. Vérifiez-les sur l’étiquette.",
+    more: "Plus",
+    try_again: "Réessayer",
   },
   it: {
     title_diary: "Diario alimentare",
@@ -594,6 +630,15 @@ const STRINGS = {
     serving: "Porzione",
     error_barcode: "Un codice a barre ha da 8 a 14 cifre.",
     camera_failed: "Impossibile usare la fotocamera: {message}",
+    off_search: "Cerca «{query}» su Open Food Facts",
+    off_hint: "Scrivi un nome per cercare anche su Open Food Facts.",
+    off_results: "Da Open Food Facts",
+    off_searching: "Ricerca su Open Food Facts…",
+    off_no_results: "Open Food Facts non ha prodotti che corrispondono a «{query}» con kcal, proteine, carboidrati e grassi.",
+    off_search_failed: "Impossibile cercare su Open Food Facts: {message}",
+    off_stale: "Compilato da una ricerca su Open Food Facts, i cui valori potrebbero non essere aggiornati. Controllali sull'etichetta.",
+    more: "Altri",
+    try_again: "Riprova",
   },
   nl: {
     title_diary: "Voedingsdagboek",
@@ -708,6 +753,15 @@ const STRINGS = {
     serving: "Portie",
     error_barcode: "Een streepjescode heeft 8 tot 14 cijfers.",
     camera_failed: "De camera kon niet worden gebruikt: {message}",
+    off_search: "Zoek ‘{query}’ op Open Food Facts",
+    off_hint: "Typ een naam om ook op Open Food Facts te zoeken.",
+    off_results: "Van Open Food Facts",
+    off_searching: "Zoeken op Open Food Facts…",
+    off_no_results: "Open Food Facts heeft geen product dat past bij ‘{query}’ met kcal, eiwit, koolhydraten en vet.",
+    off_search_failed: "Zoeken op Open Food Facts is mislukt: {message}",
+    off_stale: "Ingevuld vanuit een zoekopdracht op Open Food Facts, waarvan de waarden verouderd kunnen zijn. Controleer ze met het etiket.",
+    more: "Meer",
+    try_again: "Opnieuw proberen",
   },
   pl: {
     title_diary: "Dziennik żywienia",
@@ -822,6 +876,15 @@ const STRINGS = {
     serving: "Porcja",
     error_barcode: "Kod kreskowy ma od 8 do 14 cyfr.",
     camera_failed: "Nie można użyć aparatu: {message}",
+    off_search: "Szukaj „{query}” w Open Food Facts",
+    off_hint: "Wpisz nazwę, aby szukać także w Open Food Facts.",
+    off_results: "Z Open Food Facts",
+    off_searching: "Szukanie w Open Food Facts…",
+    off_no_results: "Open Food Facts nie ma produktu pasującego do „{query}” z kcal, białkiem, węglowodanami i tłuszczem.",
+    off_search_failed: "Nie można przeszukać Open Food Facts: {message}",
+    off_stale: "Uzupełniono z wyszukiwania w Open Food Facts, którego wartości mogą być nieaktualne. Sprawdź je na etykiecie.",
+    more: "Więcej",
+    try_again: "Spróbuj ponownie",
   },
   pt: {
     title_diary: "Diário alimentar",
@@ -936,6 +999,15 @@ const STRINGS = {
     serving: "Porção",
     error_barcode: "Um código de barras tem de 8 a 14 algarismos.",
     camera_failed: "Não foi possível usar a câmara: {message}",
+    off_search: "Pesquisar «{query}» no Open Food Facts",
+    off_hint: "Escreva um nome para pesquisar também no Open Food Facts.",
+    off_results: "Do Open Food Facts",
+    off_searching: "A pesquisar no Open Food Facts…",
+    off_no_results: "O Open Food Facts não tem nenhum produto que corresponda a «{query}» com kcal, proteína, hidratos e gordura.",
+    off_search_failed: "Não foi possível pesquisar no Open Food Facts: {message}",
+    off_stale: "Preenchido a partir de uma pesquisa no Open Food Facts, cujos valores podem estar desatualizados. Confirme-os no rótulo.",
+    more: "Mais",
+    try_again: "Tentar de novo",
   },
   "pt-BR": {
     title_foods: "Alimentos salvos",
@@ -978,6 +1050,13 @@ const STRINGS = {
     off_filled: "Preenchido a partir do Open Food Facts. Confira os valores no rótulo.",
     error_barcode: "Um código de barras tem de 8 a 14 dígitos.",
     camera_failed: "Não foi possível usar a câmera: {message}",
+    off_search: "Buscar “{query}” no Open Food Facts",
+    off_hint: "Digite um nome para buscar também no Open Food Facts.",
+    off_searching: "Buscando no Open Food Facts…",
+    off_no_results: "O Open Food Facts não tem nenhum produto que corresponda a “{query}” com kcal, proteína, carboidratos e gordura.",
+    off_search_failed: "Não foi possível buscar no Open Food Facts: {message}",
+    off_stale: "Preenchido a partir de uma busca no Open Food Facts, cujos valores podem estar desatualizados. Confira-os no rótulo.",
+    try_again: "Tentar novamente",
   },
   sv: {
     title_diary: "Matdagbok",
@@ -1092,6 +1171,15 @@ const STRINGS = {
     serving: "Portion",
     error_barcode: "En streckkod har 8 till 14 siffror.",
     camera_failed: "Det gick inte att använda kameran: {message}",
+    off_search: "Sök efter ”{query}” på Open Food Facts",
+    off_hint: "Skriv ett namn för att även söka på Open Food Facts.",
+    off_results: "Från Open Food Facts",
+    off_searching: "Söker på Open Food Facts…",
+    off_no_results: "Open Food Facts har ingen produkt som matchar ”{query}” med kcal, protein, kolhydrater och fett.",
+    off_search_failed: "Det gick inte att söka på Open Food Facts: {message}",
+    off_stale: "Ifyllt från en sökning på Open Food Facts, vars värden kan vara inaktuella. Kontrollera dem mot etiketten.",
+    more: "Fler",
+    try_again: "Försök igen",
   },
   "zh-Hans": {
     title_diary: "饮食日记",
@@ -1206,6 +1294,15 @@ const STRINGS = {
     serving: "每份",
     error_barcode: "条形码为 8 到 14 位数字。",
     camera_failed: "无法使用摄像头：{message}",
+    off_search: "在 Open Food Facts 搜索“{query}”",
+    off_hint: "输入名称，即可同时搜索 Open Food Facts。",
+    off_results: "来自 Open Food Facts",
+    off_searching: "正在搜索 Open Food Facts…",
+    off_no_results: "Open Food Facts 没有与“{query}”匹配且含千卡、蛋白质、碳水化合物和脂肪的产品。",
+    off_search_failed: "无法搜索 Open Food Facts：{message}",
+    off_stale: "已根据 Open Food Facts 的搜索结果填写，数值可能已过时。请对照标签核对。",
+    more: "更多",
+    try_again: "重试",
   },
 };
 
@@ -1326,6 +1423,7 @@ const STYLE = `
   .barcodes { display: flex; gap: 12px; }
   .scanner video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--secondary-background-color); }
   .note { color: var(--secondary-text-color); }
+  .warning { color: var(--warning-color); }
 `;
 
 // Shared by the diary's "New food" tab and the saved foods card.
@@ -1394,8 +1492,7 @@ function offFood(code, product, serving) {
   let kcal = value("energy-kcal");
   // Some products only give energy in kJ.
   if (kcal == null && value("energy") != null) kcal = Math.round(value("energy") / 4.184);
-  const brand = product.brands?.split(",")[0]?.trim();
-  const name = [product.product_name?.trim(), brand].filter(Boolean).join(" – ");
+  const name = [product.product_name?.trim(), firstBrand(product.brands)].filter(Boolean).join(" – ");
   const grams = Number(product.serving_quantity);
   return {
     name,
@@ -1430,6 +1527,48 @@ function mergeFood(form, found) {
   if (!form.name) merged.name = found.name;
   if (!form.portions?.length) merged.portions = found.portions;
   return merged;
+}
+
+// Open Food Facts search by name. Browsers cannot reach its search service,
+// so the integration asks it, for products with kcal, protein, carbs and fat.
+
+// Open Food Facts' code for a card's language: pt-BR searches as pt.
+const offLanguage = (locale) => locale.split("-")[0].toLowerCase();
+
+// The first brand of a search's list, or of a lookup's comma-separated text.
+const firstBrand = (brands) => (Array.isArray(brands) ? brands : (brands ?? "").split(","))[0]?.trim() || null;
+
+// A product's name in `lang` if it has one, else in English, else in its own language.
+const offName = (product, lang) =>
+  [product[`product_name_${lang}`], product.product_name_en, product.product_name].map((n) => n?.trim()).find(Boolean) ?? "";
+
+// A product a search found, as a food. The search has no serving sizes.
+const searchedFood = (product, lang, serving) => offFood(product.code, { ...product, product_name: offName(product, lang) }, serving);
+
+function offRowHTML(product, lang, locale, t) {
+  const details = [firstBrand(product.brands), product.quantity?.trim()].filter(Boolean).join(" · ");
+  return `<button class="row" data-action="off-pick" data-code="${esc(product.code)}">
+    <span>${esc(offName(product, lang) || product.code)}${details ? ` <small>${esc(details)}</small>` : ""}</span>
+    <small class="num">${esc(fill(t.per_100g_value, { kcal: number(product.nutriments["energy-kcal_100g"], locale) }))}</small></button>`;
+}
+
+// What goes under the saved foods a card found for `query`: a button to
+// search Open Food Facts for it, then that search, from `off`. A search for
+// other text than the query is out of date, so the button shows instead.
+// A barcode has its own lookup, and an empty query gets a hint.
+function offSearchHTML(query, off, lang, locale, t) {
+  const text = query.trim();
+  if (!text) return `<div class="muted">${esc(t.off_hint)}</div>`;
+  if (BARCODE.test(text)) return "";
+  if (off?.query !== text) return `<button class="text" data-action="off-search">${esc(fill(t.off_search, { query: text }))}</button>`;
+  let end = "";
+  if (off.busy) end = `<div class="muted">${esc(t.off_searching)}</div>`;
+  else if (off.error != null) {
+    end = `<div class="error">${esc(fill(t.off_search_failed, { message: off.error }))}</div>
+      <button class="text" data-action="off-next">${esc(t.try_again)}</button>`;
+  } else if (!off.products.length) end = `<div class="muted">${esc(fill(t.off_no_results, { query: text }))}</div>`;
+  else if (off.more) end = `<button class="text" data-action="off-next">${esc(t.more)}</button>`;
+  return `<div class="sub">${esc(t.off_results)}</div>${off.products.map((p) => offRowHTML(p, lang, locale, t)).join("")}${end}`;
 }
 
 // Scan with the Home Assistant app's own scanner. Resolves to the code, or
@@ -1615,6 +1754,37 @@ class FitnessCard extends HTMLElement {
     }
   }
 
+  // A product picked from a search of Open Food Facts, looked up by its
+  // barcode for current values. If that fails, the food is what the search
+  // found, with a warning. Returns what _lookUp does, or {food, warning}.
+  async _lookUpPicked(product) {
+    const looked = await this._lookUp({ barcode: product.code, portions: [] });
+    if (!looked.error) return looked;
+    return { food: searchedFood(product, offLanguage(this._locale), this._t.serving), warning: this._t.off_stale };
+  }
+
+  // Add the next page of Open Food Facts' products for `off.query` to `off`,
+  // redrawing with _renderOff as it goes.
+  async _searchOff(off) {
+    Object.assign(off, { busy: true, error: null });
+    this._renderOff();
+    try {
+      const found = await this._call({
+        type: "zp_my_fitness/foods/search",
+        query: off.query,
+        language: offLanguage(this._locale),
+        page: off.page + 1,
+      });
+      off.products.push(...found.products);
+      off.more = found.more;
+      off.page += 1;
+    } catch (err) {
+      off.error = err?.message ?? "";
+    }
+    off.busy = false;
+    this._renderOff();
+  }
+
   // Send a command; on failure show its error in the open panel.
   async _send(message, errorKey) {
     try {
@@ -1655,8 +1825,8 @@ class FoodDiaryCard extends FitnessCard {
     .tabs button { padding: 8px 10px; border-radius: 6px 6px 0 0; color: var(--secondary-text-color); }
     .tabs button[aria-selected="true"] { color: var(--primary-color); box-shadow: inset 0 -2px 0 var(--primary-color); }
     .searchrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-    .results { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
-    .results .row small { color: var(--secondary-text-color); }
+    .results, .off { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
+    .results .row small, .off .row small { color: var(--secondary-text-color); }
     .results .row[aria-pressed="true"] { background: var(--secondary-background-color); }
     .picked { display: flex; flex-direction: column; gap: 10px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1775,9 +1945,13 @@ class FoodDiaryCard extends FitnessCard {
     const error = p.error ? `<div class="error">${esc(p.error)}</div>` : "";
     if (p.kind === "edit") panel.innerHTML = editPanelHTML(p, this._locale, t) + error;
     else if (p.kind === "copy") panel.innerHTML = copyPanelHTML(p, this._today, t) + error;
-    else panel.innerHTML = addPanelHTML(p, t, Boolean(this._scanner)) + (p.note ? `<div class="note">${esc(p.note)}</div>` : "") + error;
+    else {
+      const warning = p.warning ? `<div class="warning">${esc(p.warning)}</div>` : "";
+      panel.innerHTML = addPanelHTML(p, t, Boolean(this._scanner)) + (p.note ? `<div class="note">${esc(p.note)}</div>` : "") + warning + error;
+    }
     if (p.kind === "add" && p.tab === "search") {
       this._renderResults();
+      this._renderOff();
       this._renderPicked();
     }
   }
@@ -1805,6 +1979,12 @@ class FoodDiaryCard extends FitnessCard {
             <span>${esc(f.name)}</span><small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, this._locale) }))}</small></button>`,
         )
         .join("");
+  }
+
+  _renderOff() {
+    const box = this._card?.querySelector(".panel .off");
+    const p = this._panel;
+    if (box && p) box.innerHTML = offSearchHTML(p.query, p.off, offLanguage(this._locale), this._locale, this._t);
   }
 
   _renderPicked() {
@@ -1874,12 +2054,16 @@ class FoodDiaryCard extends FitnessCard {
   // Fill the New food form from its barcode, or choose the saved food that has it.
   async _fillNewFood() {
     const p = this._panel;
-    const looked = await this._lookUp(p.newFood);
+    this._showLookedUp(p, await this._lookUp(p.newFood));
+  }
+
+  // Show in panel `p` what _lookUp or _lookUpPicked found, if `p` is still open.
+  _showLookedUp(p, looked) {
     if (this._panel !== p) return;
     if (looked.saved) {
-      Object.assign(p, { tab: "search", query: looked.saved.name, results: [looked.saved], food: looked.saved, grams: looked.saved.portions[0]?.grams ?? 100, note: looked.note, error: null });
+      Object.assign(p, { tab: "search", query: looked.saved.name, results: [looked.saved], food: looked.saved, grams: looked.saved.portions[0]?.grams ?? 100, note: looked.note, warning: null, error: null });
     } else {
-      Object.assign(p, { newFood: looked.food, note: looked.note ?? null, error: looked.error ?? null });
+      Object.assign(p, { newFood: looked.food, note: looked.note ?? null, warning: looked.warning ?? null, error: looked.error ?? null });
     }
     this._renderPanel();
   }
@@ -1921,13 +2105,29 @@ class FoodDiaryCard extends FitnessCard {
       p.tab = el.dataset.tab;
       p.error = null;
       p.note = null;
+      p.warning = null;
       this._renderPanel();
       if (p.tab === "search") this._search();
     },
     "input:query"(el) {
       this._panel.query = el.value;
+      this._renderOff();
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this._search(), SEARCH_DELAY_MS);
+    },
+    "click:off-search"() {
+      const p = this._panel;
+      p.off = { query: p.query.trim(), products: [], page: 0, more: false };
+      this._searchOff(p.off);
+    },
+    "click:off-next"() {
+      this._searchOff(this._panel.off);
+    },
+    async "click:off-pick"(el) {
+      const p = this._panel;
+      const product = p.off.products.find((x) => x.code === el.dataset.code);
+      Object.assign(p, { tab: "new", newFood: { barcode: product.code, portions: [] } });
+      this._showLookedUp(p, await this._lookUpPicked(product));
     },
     "click:choose"(el) {
       const p = this._panel;
@@ -2031,7 +2231,7 @@ class FoodDiaryCard extends FitnessCard {
       const sent = await this._send({ type: "zp_my_fitness/food/add", ...food }, barcodeError);
       if (!sent.ok) return;
       const saved = sent.result;
-      Object.assign(p, { tab: "search", query: saved.name, results: [saved], food: saved, grams: saved.portions[0]?.grams ?? 100, newFood: null, error: null });
+      Object.assign(p, { tab: "search", query: saved.name, results: [saved], food: saved, grams: saved.portions[0]?.grams ?? 100, newFood: null, warning: null, error: null });
       this._renderPanel();
     },
     async "click:save-edit"() {
@@ -2123,7 +2323,7 @@ function addPanelHTML(p, t, scan = false) {
   if (p.tab === "search") {
     const scanButton = scan ? `<button class="text" data-action="scan">${esc(t.scan)}</button>` : "";
     content = `<div class="searchrow"><input type="search" data-action="query" value="${esc(p.query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">${scanButton}</div>
-      <div class="scanner" hidden></div><div class="results"></div><div class="picked"></div>`;
+      <div class="scanner" hidden></div><div class="results"></div><div class="off"></div><div class="picked"></div>`;
   } else if (p.tab === "quick") {
     const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" type="number" min="0" step="any" inputmode="decimal"></label>`;
     content = `<div class="grid"><label>${esc(t.name)}<input data-field="name"></label>${n("kcal", t.kcal)}</div>
@@ -2168,6 +2368,7 @@ class FoodsCard extends FitnessCard {
     .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }
     .row small { color: var(--secondary-text-color); }
+    .off { display: flex; flex-direction: column; }
     .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
   `;
 
@@ -2218,14 +2419,20 @@ class FoodsCard extends FitnessCard {
     }
     this._card.innerHTML = `<div class="head">${title}<button class="fill" data-action="new">+ ${esc(t.add_food)}</button></div>
       <input type="search" data-action="query" value="${esc(this._query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">
-      <div class="panel" hidden></div><div class="list"></div>`;
+      <div class="panel" hidden></div><div class="list"></div><div class="off"></div>`;
     this._renderList();
+    this._renderOff();
     this._renderPanel();
   }
 
   _renderList() {
     const list = this._card?.querySelector(".list");
     if (list) list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t);
+  }
+
+  _renderOff() {
+    const box = this._card?.querySelector(".off");
+    if (box) box.innerHTML = offSearchHTML(this._query, this._off, offLanguage(this._locale), this._locale, this._t);
   }
 
   _renderPanel() {
@@ -2244,7 +2451,7 @@ class FoodsCard extends FitnessCard {
       : `${p.food.id ? `<button class="text" data-action="delete">${esc(t.delete)}</button>` : ""}
          <button class="text" data-action="close">${esc(t.cancel)}</button><button class="fill" data-action="save">${esc(t.save_food)}</button>`;
     panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${foodFormHTML(p.food, t, Boolean(this._scanner))}
-      ${p.note ? `<div class="note">${esc(p.note)}</div>` : ""}${p.error ? `<div class="error">${esc(p.error)}</div>` : ""}<div class="actions">${buttons}</div>`;
+      ${p.note ? `<div class="note">${esc(p.note)}</div>` : ""}${p.warning ? `<div class="warning">${esc(p.warning)}</div>` : ""}${p.error ? `<div class="error">${esc(p.error)}</div>` : ""}<div class="actions">${buttons}</div>`;
   }
 
   // Fill the form from its barcode, or open the saved food that has it.
@@ -2252,7 +2459,7 @@ class FoodsCard extends FitnessCard {
     const looked = await this._lookUp(this._panel.food);
     this._panel = looked.saved
       ? { food: looked.saved, note: looked.note }
-      : { ...this._panel, food: looked.food, note: looked.note ?? null, error: looked.error ?? null };
+      : { ...this._panel, food: looked.food, note: looked.note ?? null, warning: null, error: looked.error ?? null };
     this._renderPanel();
   }
 
@@ -2278,8 +2485,26 @@ class FoodsCard extends FitnessCard {
     },
     "input:query"(el) {
       this._query = el.value;
+      this._renderOff();
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this._refresh(), SEARCH_DELAY_MS);
+    },
+    "click:off-search"() {
+      this._off = { query: this._query.trim(), products: [], page: 0, more: false };
+      this._searchOff(this._off);
+    },
+    "click:off-next"() {
+      this._searchOff(this._off);
+    },
+    // Opens New food, filled in, or the saved food with the product's barcode.
+    async "click:off-pick"(el) {
+      const product = this._off.products.find((x) => x.code === el.dataset.code);
+      const looked = await this._lookUpPicked(product);
+      this._panel = looked.saved
+        ? { food: looked.saved, note: looked.note }
+        : { food: looked.food, note: looked.note ?? null, warning: looked.warning ?? null };
+      this._renderPanel();
+      this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
     },
     "click:add-portion"() {
       this._keepForm();
