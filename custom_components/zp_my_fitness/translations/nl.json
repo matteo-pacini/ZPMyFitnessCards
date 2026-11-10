@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "{count} opgeslagen voedingsmiddelen heten {food}. Geef ze een andere naam of gebruik een streepjescode."
+    },
+    "future_day": {
+      "message": "{day} ligt in de toekomst."
+    },
+    "grams_required": {
+      "message": "Geef het aantal gram van de opgeslagen voeding."
+    },
+    "kcal_required": {
+      "message": "Snel toevoegen heeft de kcal nodig."
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards is niet geladen."
+    },
+    "nutrients_with_saved_food": {
+      "message": "kcal, eiwit, koolhydraten en vet zijn alleen voor snel toevoegen. Opgeslagen voeding heeft eigen waarden."
+    },
+    "one_food": {
+      "message": "Geef precies één van: opgeslagen voeding, een streepjescode of een naam."
+    },
+    "unknown_barcode": {
+      "message": "Geen opgeslagen voeding heeft de streepjescode {barcode}."
+    },
+    "unknown_food": {
+      "message": "Er is geen opgeslagen voeding met de naam {food}."
+    },
+    "unknown_person": {
+      "message": "Kies een persoon die aan ZPMyFitnessCards is toegevoegd."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (aanbevolen)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Ontbijt",
+        "dinner": "Avondeten",
+        "lunch": "Lunch",
+        "snacks": "Tussendoortjes"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "0,25 kg per week afvallen",
@@ -235,6 +275,90 @@
         "female": "Vrouw",
         "male": "Man"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Geeft de dag van een persoon terug: de items en totalen van elke maaltijd, de totalen van de dag, de doelen en het gewicht.",
+      "fields": {
+        "day": {
+          "description": "Vandaag als je het leeg laat. Dagen in de toekomst zijn niet toegestaan.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "De persoon: het apparaat van die persoon in ZPMyFitnessCards.",
+          "name": "Persoon"
+        }
+      },
+      "name": "Dag ophalen"
+    },
+    "log_food": {
+      "description": "Legt voeding vast in het dagboek van een persoon: opgeslagen voeding, op naam of streepjescode, met het aantal gram, of snel een naam en kcal.",
+      "fields": {
+        "barcode": {
+          "description": "De streepjescode van opgeslagen voeding, in plaats van de naam.",
+          "name": "Streepjescode"
+        },
+        "carbs": {
+          "description": "Bij snel toevoegen, in g. Optioneel.",
+          "name": "Koolhydraten"
+        },
+        "day": {
+          "description": "Vandaag als je het leeg laat. Dagen in de toekomst zijn niet toegestaan.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "De persoon: het apparaat van die persoon in ZPMyFitnessCards.",
+          "name": "Persoon"
+        },
+        "fat": {
+          "description": "Bij snel toevoegen, in g. Optioneel.",
+          "name": "Vet"
+        },
+        "food": {
+          "description": "De naam van opgeslagen voeding. Hoofdletters maken niet uit.",
+          "name": "Opgeslagen voeding"
+        },
+        "grams": {
+          "description": "Hoeveel van de opgeslagen voeding. Optioneel bij snel toevoegen.",
+          "name": "Gram"
+        },
+        "kcal": {
+          "description": "Bij snel toevoegen. Verplicht met een naam.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "De maaltijd waaronder het komt.",
+          "name": "Maaltijd"
+        },
+        "name": {
+          "description": "Bij snel toevoegen, in plaats van opgeslagen voeding: wat er gegeten is.",
+          "name": "Naam"
+        },
+        "protein": {
+          "description": "Bij snel toevoegen, in g. Optioneel.",
+          "name": "Eiwit"
+        }
+      },
+      "name": "Voeding vastleggen"
+    },
+    "log_weight": {
+      "description": "Legt het gewicht van een persoon vast voor een dag. Een dag heeft één gewicht, dus opnieuw vastleggen vervangt het.",
+      "fields": {
+        "day": {
+          "description": "Vandaag als je het leeg laat. Dagen in de toekomst zijn niet toegestaan.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "De persoon: het apparaat van die persoon in ZPMyFitnessCards.",
+          "name": "Persoon"
+        },
+        "weight": {
+          "description": "In kg, van 20 tot 400.",
+          "name": "Gewicht"
+        }
+      },
+      "name": "Gewicht vastleggen"
     }
   }
 }

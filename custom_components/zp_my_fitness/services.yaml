@@ -1,0 +1,101 @@
+log_weight:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: zp_my_fitness
+    weight:
+      required: true
+      example: 68.4
+      selector:
+        number:
+          min: 20
+          max: 400
+          step: 0.1
+          unit_of_measurement: kg
+          mode: box
+    day:
+      selector:
+        date:
+
+log_food:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: zp_my_fitness
+    meal:
+      required: true
+      selector:
+        select:
+          options:
+            - breakfast
+            - lunch
+            - dinner
+            - snacks
+          translation_key: meal
+    day:
+      selector:
+        date:
+    food:
+      example: Porridge oats
+      selector:
+        text:
+    barcode:
+      example: "5000168001142"
+      selector:
+        text:
+    grams:
+      example: 60
+      selector:
+        number:
+          min: 0
+          step: any
+          unit_of_measurement: g
+          mode: box
+    name:
+      example: Restaurant pizza
+      selector:
+        text:
+    kcal:
+      example: 900
+      selector:
+        number:
+          min: 0
+          step: any
+          unit_of_measurement: kcal
+          mode: box
+    protein:
+      selector:
+        number:
+          min: 0
+          step: any
+          unit_of_measurement: g
+          mode: box
+    carbs:
+      selector:
+        number:
+          min: 0
+          step: any
+          unit_of_measurement: g
+          mode: box
+    fat:
+      selector:
+        number:
+          min: 0
+          step: any
+          unit_of_measurement: g
+          mode: box
+
+get_day:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: zp_my_fitness
+    day:
+      selector:
+        date:

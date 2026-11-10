@@ -1,0 +1,13 @@
+{
+  "services": {
+    "get_day": {
+      "service": "mdi:calendar-text"
+    },
+    "log_food": {
+      "service": "mdi:food-apple"
+    },
+    "log_weight": {
+      "service": "mdi:scale-bathroom"
+    }
+  }
+}

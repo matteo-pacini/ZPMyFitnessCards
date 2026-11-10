@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "Liczba zapisanych produktów o nazwie {food}: {count}. Zmień ich nazwy albo użyj kodu kreskowego."
+    },
+    "future_day": {
+      "message": "{day} jest w przyszłości."
+    },
+    "grams_required": {
+      "message": "Podaj gramy zapisanego produktu."
+    },
+    "kcal_required": {
+      "message": "Szybkie dodanie wymaga kcal."
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards nie jest załadowany."
+    },
+    "nutrients_with_saved_food": {
+      "message": "kcal, białko, węglowodany i tłuszcz są tylko do szybkiego dodania. Zapisany produkt ma własne wartości."
+    },
+    "one_food": {
+      "message": "Podaj dokładnie jedno: zapisany produkt, kod kreskowy albo nazwę."
+    },
+    "unknown_barcode": {
+      "message": "Żaden zapisany produkt nie ma kodu kreskowego {barcode}."
+    },
+    "unknown_food": {
+      "message": "Nie ma zapisanego produktu o nazwie {food}."
+    },
+    "unknown_person": {
+      "message": "Wybierz osobę dodaną do ZPMyFitnessCards."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (zalecane)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Śniadanie",
+        "dinner": "Kolacja",
+        "lunch": "Obiad",
+        "snacks": "Przekąski"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "Chudnij 0,25 kg tygodniowo",
@@ -235,6 +275,90 @@
         "female": "Kobieta",
         "male": "Mężczyzna"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Zwraca dzień osoby: wpisy i sumy każdego posiłku, sumy dnia, cele i wagę.",
+      "fields": {
+        "day": {
+          "description": "Dzisiaj, jeśli puste. Przyszłe dni są niedozwolone.",
+          "name": "Dzień"
+        },
+        "device_id": {
+          "description": "Osoba, jako jej urządzenie w ZPMyFitnessCards.",
+          "name": "Osoba"
+        }
+      },
+      "name": "Pobierz dzień"
+    },
+    "log_food": {
+      "description": "Zapisuje jedzenie w dzienniku osoby: zapisany produkt, po nazwie lub kodzie kreskowym, z gramami, albo szybkie dodanie nazwy i kcal.",
+      "fields": {
+        "barcode": {
+          "description": "Kod kreskowy zapisanego produktu, zamiast jego nazwy.",
+          "name": "Kod kreskowy"
+        },
+        "carbs": {
+          "description": "Przy szybkim dodaniu, w g. Opcjonalnie.",
+          "name": "Węglowodany"
+        },
+        "day": {
+          "description": "Dzisiaj, jeśli puste. Przyszłe dni są niedozwolone.",
+          "name": "Dzień"
+        },
+        "device_id": {
+          "description": "Osoba, jako jej urządzenie w ZPMyFitnessCards.",
+          "name": "Osoba"
+        },
+        "fat": {
+          "description": "Przy szybkim dodaniu, w g. Opcjonalnie.",
+          "name": "Tłuszcz"
+        },
+        "food": {
+          "description": "Nazwa zapisanego produktu. Wielkość liter nie ma znaczenia.",
+          "name": "Zapisany produkt"
+        },
+        "grams": {
+          "description": "Ile zapisanego produktu. Opcjonalnie przy szybkim dodaniu.",
+          "name": "Gramy"
+        },
+        "kcal": {
+          "description": "Przy szybkim dodaniu. Wymagane z nazwą.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "Posiłek, do którego to zapisać.",
+          "name": "Posiłek"
+        },
+        "name": {
+          "description": "Przy szybkim dodaniu, zamiast zapisanego produktu: co zostało zjedzone.",
+          "name": "Nazwa"
+        },
+        "protein": {
+          "description": "Przy szybkim dodaniu, w g. Opcjonalnie.",
+          "name": "Białko"
+        }
+      },
+      "name": "Zapisz jedzenie"
+    },
+    "log_weight": {
+      "description": "Zapisuje wagę osoby w danym dniu. Dzień ma jedną wagę, więc ponowny zapis ją zastępuje.",
+      "fields": {
+        "day": {
+          "description": "Dzisiaj, jeśli puste. Przyszłe dni są niedozwolone.",
+          "name": "Dzień"
+        },
+        "device_id": {
+          "description": "Osoba, jako jej urządzenie w ZPMyFitnessCards.",
+          "name": "Osoba"
+        },
+        "weight": {
+          "description": "W kg, od 20 do 400.",
+          "name": "Waga"
+        }
+      },
+      "name": "Zapisz wagę"
     }
   }
 }

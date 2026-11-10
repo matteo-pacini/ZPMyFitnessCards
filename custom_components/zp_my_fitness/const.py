@@ -35,6 +35,10 @@ SEXES = ("female", "male")
 
 MEALS = ("breakfast", "lunch", "dinner", "snacks")
 
+# The weights a person can log, in kg.
+MIN_KG = 20
+MAX_KG = 400
+
 # What a food or an entry can carry. The first four are required for foods;
 # the rest are optional everywhere.
 NUTRIENTS = ("kcal", "protein", "carbs", "fat", "fibre", "sugar", "saturated_fat", "salt")

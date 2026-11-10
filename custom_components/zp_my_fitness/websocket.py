@@ -14,13 +14,20 @@ from datetime import date, timedelta
 from typing import Any
 
 from homeassistant.components import websocket_api
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from sqlalchemy.exc import IntegrityError
 
-from .const import DOMAIN, MEALS, NUTRIENTS, REQUIRED_NUTRIENTS, SIGNAL_CHANGED
-from .data import FitnessData, Person, today
+from .const import (
+    DOMAIN,
+    MAX_KG,
+    MEALS,
+    MIN_KG,
+    NUTRIENTS,
+    REQUIRED_NUTRIENTS,
+    SIGNAL_CHANGED,
+)
+from .data import FitnessData, Person, food_entry, loaded_data, today
 from .schema import vol
 
 # The longest range zp_my_fitness/days answers, in days.
@@ -100,13 +107,6 @@ def async_register(hass: HomeAssistant) -> None:
         websocket_api.async_register_command(hass, command)
 
 
-def _data(hass: HomeAssistant) -> FitnessData | None:
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.state is ConfigEntryState.LOADED:
-            return entry.runtime_data.data
-    return None
-
-
 def _command(schema: dict) -> Callable:
     """Register an async command that needs the loaded integration.
 
@@ -120,7 +120,7 @@ def _command(schema: dict) -> Callable:
         async def command(
             hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
         ) -> None:
-            data = _data(hass)
+            data = loaded_data(hass)
             if data is None:
                 connection.send_error(msg["id"], ERR_NOT_LOADED, "ZPMyFitnessCards is not loaded")
                 return
@@ -239,10 +239,6 @@ async def ws_days(data: FitnessData, person: Person, msg: dict) -> dict | _Error
 # Entries
 
 
-def _scaled(food: dict, grams: float) -> dict[str, float | None]:
-    return {n: None if food[n] is None else food[n] * grams / 100 for n in NUTRIENTS}
-
-
 @_command(
     {
         vol.Required("type"): f"{DOMAIN}/entry/add",
@@ -256,11 +252,7 @@ def _scaled(food: dict, grams: float) -> dict[str, float | None]:
     }
 )
 async def ws_add_entry(data: FitnessData, person: Person, msg: dict) -> dict | _Error:
-    """Log food: a saved food and grams, or a quick add of a name and kcal.
-
-    For a saved food, the entry copies its name and its nutrients scaled to
-    the grams, so later changes to the food leave the entry as it was.
-    """
+    """Log food: a saved food and grams, or a quick add of a name and kcal."""
     entry = {"day": msg["day"], "meal": msg["meal"]}
     if "food_id" in msg:
         if "grams" not in msg:
@@ -268,8 +260,7 @@ async def ws_add_entry(data: FitnessData, person: Person, msg: dict) -> dict | _
         food = await data.async_read(data.db.food, msg["food_id"])
         if food is None:
             return NOT_FOUND
-        entry |= {"food_id": food["id"], "name": food["name"], "grams": msg["grams"]}
-        entry |= _scaled(food, msg["grams"])
+        entry |= food_entry(food, msg["grams"])
     else:
         if "name" not in msg or msg.get("kcal") is None:
             return _Error("invalid_format", "name and kcal are required without food_id")
@@ -438,7 +429,7 @@ async def ws_weights(data: FitnessData, person: Person, msg: dict) -> list[dict]
         vol.Required("type"): f"{DOMAIN}/weight/set",
         **PERSON,
         vol.Required("day"): _day,
-        vol.Required("kg"): vol.All(vol.Coerce(float), vol.Range(min=20, max=400)),
+        vol.Required("kg"): vol.All(vol.Coerce(float), vol.Range(min=MIN_KG, max=MAX_KG)),
     }
 )
 async def ws_set_weight(data: FitnessData, person: Person, msg: dict) -> None:

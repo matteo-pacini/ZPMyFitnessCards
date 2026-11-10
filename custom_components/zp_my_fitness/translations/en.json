@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "{count} saved foods are called {food}. Rename them, or use a barcode."
+    },
+    "future_day": {
+      "message": "{day} is in the future."
+    },
+    "grams_required": {
+      "message": "Give the grams of the saved food."
+    },
+    "kcal_required": {
+      "message": "A quick add needs the kcal."
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards is not loaded."
+    },
+    "nutrients_with_saved_food": {
+      "message": "kcal, protein, carbs and fat are for a quick add only. A saved food has its own."
+    },
+    "one_food": {
+      "message": "Give exactly one of a saved food, a barcode or a name."
+    },
+    "unknown_barcode": {
+      "message": "No saved food has the barcode {barcode}."
+    },
+    "unknown_food": {
+      "message": "There is no saved food called {food}."
+    },
+    "unknown_person": {
+      "message": "Choose a person added to ZPMyFitnessCards."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (recommended)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Breakfast",
+        "dinner": "Dinner",
+        "lunch": "Lunch",
+        "snacks": "Snacks"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "Lose 0.25 kg a week",
@@ -235,6 +275,90 @@
         "female": "Female",
         "male": "Male"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight.",
+      "fields": {
+        "day": {
+          "description": "Today if left out. Future days are not allowed.",
+          "name": "Day"
+        },
+        "device_id": {
+          "description": "The person, as their device in ZPMyFitnessCards.",
+          "name": "Person"
+        }
+      },
+      "name": "Get day"
+    },
+    "log_food": {
+      "description": "Logs food in a person's diary: a saved food, by its name or barcode, with its grams, or a quick add of a name and kcal.",
+      "fields": {
+        "barcode": {
+          "description": "The barcode of a saved food, instead of its name.",
+          "name": "Barcode"
+        },
+        "carbs": {
+          "description": "For a quick add, in g. Optional.",
+          "name": "Carbs"
+        },
+        "day": {
+          "description": "Today if left out. Future days are not allowed.",
+          "name": "Day"
+        },
+        "device_id": {
+          "description": "The person, as their device in ZPMyFitnessCards.",
+          "name": "Person"
+        },
+        "fat": {
+          "description": "For a quick add, in g. Optional.",
+          "name": "Fat"
+        },
+        "food": {
+          "description": "The name of a saved food. Case does not matter.",
+          "name": "Saved food"
+        },
+        "grams": {
+          "description": "How much of the saved food. Optional for a quick add.",
+          "name": "Grams"
+        },
+        "kcal": {
+          "description": "For a quick add. Required with a name.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "The meal to log it under.",
+          "name": "Meal"
+        },
+        "name": {
+          "description": "For a quick add, instead of a saved food: what was eaten.",
+          "name": "Name"
+        },
+        "protein": {
+          "description": "For a quick add, in g. Optional.",
+          "name": "Protein"
+        }
+      },
+      "name": "Log food"
+    },
+    "log_weight": {
+      "description": "Records a person's weight for a day. A day keeps one weight, so logging again replaces it.",
+      "fields": {
+        "day": {
+          "description": "Today if left out. Future days are not allowed.",
+          "name": "Day"
+        },
+        "device_id": {
+          "description": "The person, as their device in ZPMyFitnessCards.",
+          "name": "Person"
+        },
+        "weight": {
+          "description": "In kg, from 20 to 400.",
+          "name": "Weight"
+        }
+      },
+      "name": "Log weight"
     }
   }
 }

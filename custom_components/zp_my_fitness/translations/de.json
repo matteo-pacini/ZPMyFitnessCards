@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "{count} gespeicherte Lebensmittel heißen {food}. Benenne sie um oder nimm einen Barcode."
+    },
+    "future_day": {
+      "message": "{day} liegt in der Zukunft."
+    },
+    "grams_required": {
+      "message": "Gib die Gramm des gespeicherten Lebensmittels an."
+    },
+    "kcal_required": {
+      "message": "Schnelles Eintragen braucht die kcal."
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards ist nicht geladen."
+    },
+    "nutrients_with_saved_food": {
+      "message": "kcal, Eiweiß, Kohlenhydrate und Fett gibt es nur beim schnellen Eintragen. Ein gespeichertes Lebensmittel hat eigene Werte."
+    },
+    "one_food": {
+      "message": "Gib genau eines an: ein gespeichertes Lebensmittel, einen Barcode oder einen Namen."
+    },
+    "unknown_barcode": {
+      "message": "Kein gespeichertes Lebensmittel hat den Barcode {barcode}."
+    },
+    "unknown_food": {
+      "message": "Es gibt kein gespeichertes Lebensmittel namens {food}."
+    },
+    "unknown_person": {
+      "message": "Wähle eine Person, die in ZPMyFitnessCards hinzugefügt ist."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (empfohlen)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Frühstück",
+        "dinner": "Abendessen",
+        "lunch": "Mittagessen",
+        "snacks": "Snacks"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "0,25 kg pro Woche abnehmen",
@@ -235,6 +275,90 @@
         "female": "Weiblich",
         "male": "Männlich"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Gibt den Tag einer Person zurück: Einträge und Summen jeder Mahlzeit, die Summen des Tages, die Ziele und das Gewicht.",
+      "fields": {
+        "day": {
+          "description": "Heute, wenn leer gelassen. Künftige Tage sind nicht erlaubt.",
+          "name": "Tag"
+        },
+        "device_id": {
+          "description": "Die Person, als ihr Gerät in ZPMyFitnessCards.",
+          "name": "Person"
+        }
+      },
+      "name": "Tag abrufen"
+    },
+    "log_food": {
+      "description": "Trägt Essen ins Tagebuch einer Person ein: ein gespeichertes Lebensmittel, nach Name oder Barcode, mit seinen Gramm, oder schnell einen Namen und kcal.",
+      "fields": {
+        "barcode": {
+          "description": "Der Barcode eines gespeicherten Lebensmittels, statt seines Namens.",
+          "name": "Barcode"
+        },
+        "carbs": {
+          "description": "Zum schnellen Eintragen, in g. Optional.",
+          "name": "Kohlenhydrate"
+        },
+        "day": {
+          "description": "Heute, wenn leer gelassen. Künftige Tage sind nicht erlaubt.",
+          "name": "Tag"
+        },
+        "device_id": {
+          "description": "Die Person, als ihr Gerät in ZPMyFitnessCards.",
+          "name": "Person"
+        },
+        "fat": {
+          "description": "Zum schnellen Eintragen, in g. Optional.",
+          "name": "Fett"
+        },
+        "food": {
+          "description": "Der Name eines gespeicherten Lebensmittels. Groß- und Kleinschreibung zählt nicht.",
+          "name": "Gespeichertes Lebensmittel"
+        },
+        "grams": {
+          "description": "Wie viel vom gespeicherten Lebensmittel. Beim schnellen Eintragen optional.",
+          "name": "Gramm"
+        },
+        "kcal": {
+          "description": "Zum schnellen Eintragen. Mit einem Namen erforderlich.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "Die Mahlzeit, unter der es eingetragen wird.",
+          "name": "Mahlzeit"
+        },
+        "name": {
+          "description": "Zum schnellen Eintragen, statt eines gespeicherten Lebensmittels: was gegessen wurde.",
+          "name": "Name"
+        },
+        "protein": {
+          "description": "Zum schnellen Eintragen, in g. Optional.",
+          "name": "Eiweiß"
+        }
+      },
+      "name": "Essen eintragen"
+    },
+    "log_weight": {
+      "description": "Trägt das Gewicht einer Person für einen Tag ein. Ein Tag hat ein Gewicht, ein neuer Eintrag ersetzt es.",
+      "fields": {
+        "day": {
+          "description": "Heute, wenn leer gelassen. Künftige Tage sind nicht erlaubt.",
+          "name": "Tag"
+        },
+        "device_id": {
+          "description": "Die Person, als ihr Gerät in ZPMyFitnessCards.",
+          "name": "Person"
+        },
+        "weight": {
+          "description": "In kg, von 20 bis 400.",
+          "name": "Gewicht"
+        }
+      },
+      "name": "Gewicht eintragen"
     }
   }
 }

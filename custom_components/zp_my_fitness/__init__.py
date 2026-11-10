@@ -17,7 +17,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from . import websocket
+from . import services, websocket
 from .const import CARDS_URL, CONF_DB_URL, DB_FILE, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
 from .coordinator import PersonCoordinator
 from .data import FitnessData, Person
@@ -42,7 +42,7 @@ type FitnessConfigEntry = ConfigEntry[RuntimeData]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Serve the cards and register the websocket commands."""
+    """Serve the cards, and register the websocket commands and the actions."""
     integration = await async_get_integration(hass, DOMAIN)
     await hass.http.async_register_static_paths(
         [StaticPathConfig(CARDS_URL, str(CARDS_FILE), cache_headers=True)]
@@ -52,6 +52,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         # fetch the cards again after an update.
         add_extra_js_url(hass, f"{CARDS_URL}?v={integration.version}")
     websocket.async_register(hass)
+    services.async_register(hass)
     return True
 
 

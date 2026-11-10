@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "有 {count} 种已保存的食物名为 {food}。请重命名，或改用条形码。"
+    },
+    "future_day": {
+      "message": "{day} 是未来的日期。"
+    },
+    "grams_required": {
+      "message": "请填写已保存食物的克数。"
+    },
+    "kcal_required": {
+      "message": "快速添加需要填写千卡。"
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards 未加载。"
+    },
+    "nutrients_with_saved_food": {
+      "message": "千卡、蛋白质、碳水化合物和脂肪仅用于快速添加。已保存的食物有自己的数值。"
+    },
+    "one_food": {
+      "message": "请只提供一项：已保存的食物、条形码或名称。"
+    },
+    "unknown_barcode": {
+      "message": "没有已保存的食物使用条形码 {barcode}。"
+    },
+    "unknown_food": {
+      "message": "没有名为 {food} 的已保存食物。"
+    },
+    "unknown_person": {
+      "message": "请选择已添加到 ZPMyFitnessCards 的人员。"
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite（推荐）"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "早餐",
+        "dinner": "晚餐",
+        "lunch": "午餐",
+        "snacks": "零食"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "每周减重 0.25 千克",
@@ -235,6 +275,90 @@
         "female": "女",
         "male": "男"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "返回某人某一天的情况：每餐的条目和合计、当天合计、目标和体重。",
+      "fields": {
+        "day": {
+          "description": "留空则为今天。不允许未来的日期。",
+          "name": "日期"
+        },
+        "device_id": {
+          "description": "该人员在 ZPMyFitnessCards 中对应的设备。",
+          "name": "人员"
+        }
+      },
+      "name": "获取当天"
+    },
+    "log_food": {
+      "description": "在某人的饮食日记中记录食物：按名称或条形码选择已保存的食物并填写克数，或快速添加名称和千卡。",
+      "fields": {
+        "barcode": {
+          "description": "已保存食物的条形码，可代替名称。",
+          "name": "条形码"
+        },
+        "carbs": {
+          "description": "快速添加时使用，单位为 g。可选。",
+          "name": "碳水化合物"
+        },
+        "day": {
+          "description": "留空则为今天。不允许未来的日期。",
+          "name": "日期"
+        },
+        "device_id": {
+          "description": "该人员在 ZPMyFitnessCards 中对应的设备。",
+          "name": "人员"
+        },
+        "fat": {
+          "description": "快速添加时使用，单位为 g。可选。",
+          "name": "脂肪"
+        },
+        "food": {
+          "description": "已保存食物的名称，不区分大小写。",
+          "name": "已保存的食物"
+        },
+        "grams": {
+          "description": "已保存食物的分量。快速添加时可选。",
+          "name": "克"
+        },
+        "kcal": {
+          "description": "快速添加时使用。填写名称时必填。",
+          "name": "千卡"
+        },
+        "meal": {
+          "description": "记录到哪一餐。",
+          "name": "餐次"
+        },
+        "name": {
+          "description": "快速添加时使用，代替已保存的食物：吃了什么。",
+          "name": "名称"
+        },
+        "protein": {
+          "description": "快速添加时使用，单位为 g。可选。",
+          "name": "蛋白质"
+        }
+      },
+      "name": "记录食物"
+    },
+    "log_weight": {
+      "description": "记录某人某一天的体重。每天只保留一个体重，再次记录会替换它。",
+      "fields": {
+        "day": {
+          "description": "留空则为今天。不允许未来的日期。",
+          "name": "日期"
+        },
+        "device_id": {
+          "description": "该人员在 ZPMyFitnessCards 中对应的设备。",
+          "name": "人员"
+        },
+        "weight": {
+          "description": "单位为 kg，20 到 400。",
+          "name": "体重"
+        }
+      },
+      "name": "记录体重"
     }
   }
 }

@@ -9,6 +9,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `goals.py`: calorie, macro and BMI maths, with no Home Assistant code.
   - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
   - `websocket.py`: the commands the cards call.
+  - `services.py`: the actions, `log_weight`, `log_food` and `get_day`, which name a person by their device. `services.yaml` gives their fields and selectors, and `translations/` their names, descriptions and errors; `tests/integration/test_services.py` checks the three agree.
   - `config_flow.py`: the integration and its people, one config sub-entry each.
   - `backup.py`: pauses writes while Home Assistant backs up.
   - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.

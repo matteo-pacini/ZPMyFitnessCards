@@ -47,6 +47,41 @@ The weight sensor also has these attributes: `underweight_below_kg`, `overweight
 
 The daily totals keep long-term statistics, so a statistics graph with `stat_types: change` and `period: day` shows each day's intake. Changing a past day in the diary also corrects its statistics.
 
+## Actions
+
+Automations, scripts and Assist can log and read with three actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
+
+- `zp_my_fitness.log_weight` records a weight in kg, from 20 to 400. A day keeps one weight, so logging again replaces it.
+- `zp_my_fitness.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
+- `zp_my_fitness.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1.
+
+Choose the person in the action editor, which fills in their `device_id`. For example, to log each new reading from a smart scale:
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: sensor.bathroom_scale_weight
+    not_to: [unavailable, unknown]
+actions:
+  - action: zp_my_fitness.log_weight
+    data:
+      device_id: 5f1c0d7e9a2b4c6d8e0f1a2b3c4d5e6f
+      weight: "{{ trigger.to_state.state }}"
+```
+
+And to send the day's calories at night:
+
+```yaml
+actions:
+  - action: zp_my_fitness.get_day
+    data:
+      device_id: 5f1c0d7e9a2b4c6d8e0f1a2b3c4d5e6f
+    response_variable: day
+  - action: notify.notify
+    data:
+      message: "{{ day.totals.kcal | round }} of {{ day.goals.kcal | round }} kcal today"
+```
+
 ## Database
 
 When you add the integration, you choose where its data lives:

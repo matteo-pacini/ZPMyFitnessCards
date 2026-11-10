@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "{count} sparade livsmedel heter {food}. Byt namn på dem eller använd en streckkod."
+    },
+    "future_day": {
+      "message": "{day} ligger i framtiden."
+    },
+    "grams_required": {
+      "message": "Ange gram för den sparade maten."
+    },
+    "kcal_required": {
+      "message": "En snabbinmatning behöver kcal."
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards är inte inläst."
+    },
+    "nutrients_with_saved_food": {
+      "message": "kcal, protein, kolhydrater och fett gäller bara snabbinmatning. Sparad mat har egna värden."
+    },
+    "one_food": {
+      "message": "Ange exakt en av: sparad mat, en streckkod eller ett namn."
+    },
+    "unknown_barcode": {
+      "message": "Ingen sparad mat har streckkoden {barcode}."
+    },
+    "unknown_food": {
+      "message": "Det finns ingen sparad mat som heter {food}."
+    },
+    "unknown_person": {
+      "message": "Välj en person som har lagts till i ZPMyFitnessCards."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (rekommenderas)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Frukost",
+        "dinner": "Middag",
+        "lunch": "Lunch",
+        "snacks": "Mellanmål"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "Gå ner 0,25 kg i veckan",
@@ -235,6 +275,90 @@
         "female": "Kvinna",
         "male": "Man"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Returnerar en persons dag: varje måltids poster och summor, dagens summor, målen och vikten.",
+      "fields": {
+        "day": {
+          "description": "I dag om det lämnas tomt. Framtida dagar är inte tillåtna.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "Personen, som dess enhet i ZPMyFitnessCards.",
+          "name": "Person"
+        }
+      },
+      "name": "Hämta dag"
+    },
+    "log_food": {
+      "description": "Loggar mat i en persons dagbok: sparad mat, efter namn eller streckkod, med gram, eller en snabbinmatning av ett namn och kcal.",
+      "fields": {
+        "barcode": {
+          "description": "Streckkoden för sparad mat, i stället för namnet.",
+          "name": "Streckkod"
+        },
+        "carbs": {
+          "description": "Vid snabbinmatning, i g. Valfritt.",
+          "name": "Kolhydrater"
+        },
+        "day": {
+          "description": "I dag om det lämnas tomt. Framtida dagar är inte tillåtna.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "Personen, som dess enhet i ZPMyFitnessCards.",
+          "name": "Person"
+        },
+        "fat": {
+          "description": "Vid snabbinmatning, i g. Valfritt.",
+          "name": "Fett"
+        },
+        "food": {
+          "description": "Namnet på sparad mat. Stora och små bokstäver spelar ingen roll.",
+          "name": "Sparad mat"
+        },
+        "grams": {
+          "description": "Hur mycket av den sparade maten. Valfritt vid snabbinmatning.",
+          "name": "Gram"
+        },
+        "kcal": {
+          "description": "Vid snabbinmatning. Krävs med ett namn.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "Måltiden att logga under.",
+          "name": "Måltid"
+        },
+        "name": {
+          "description": "Vid snabbinmatning, i stället för sparad mat: vad som åts.",
+          "name": "Namn"
+        },
+        "protein": {
+          "description": "Vid snabbinmatning, i g. Valfritt.",
+          "name": "Protein"
+        }
+      },
+      "name": "Logga mat"
+    },
+    "log_weight": {
+      "description": "Registrerar en persons vikt för en dag. En dag har en vikt, så en ny loggning ersätter den.",
+      "fields": {
+        "day": {
+          "description": "I dag om det lämnas tomt. Framtida dagar är inte tillåtna.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "Personen, som dess enhet i ZPMyFitnessCards.",
+          "name": "Person"
+        },
+        "weight": {
+          "description": "I kg, från 20 till 400.",
+          "name": "Vikt"
+        }
+      },
+      "name": "Logga vikt"
     }
   }
 }

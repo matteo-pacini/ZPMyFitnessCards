@@ -286,6 +286,17 @@ class Database:
         with self._db.connect() as conn:
             return _food(conn.execute(select(FOODS).where(FOODS.c.barcode == barcode)).first())
 
+    def foods_named(self, name: str) -> list[dict[str, Any]]:
+        """Foods called `name`, ignoring case, oldest first.
+
+        On SQLite, only the case of ASCII letters is ignored.
+        """
+        # The database's lower() on both sides, not Python's on `name`, so that
+        # both go through the same rules.
+        query = select(FOODS).where(func.lower(FOODS.c.name) == func.lower(name))
+        with self._db.connect() as conn:
+            return [_food(r) for r in conn.execute(query.order_by(FOODS.c.id))]
+
     def search_foods(self, query: str, limit: int) -> list[dict[str, Any]]:
         """Foods whose name contains `query`, ignoring case, or whose barcode is `query`."""
         escaped = query.lower().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

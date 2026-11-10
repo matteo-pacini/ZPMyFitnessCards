@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time
 from typing import Any
 
-from homeassistant.config_entries import ConfigSubentry
+from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -124,6 +124,28 @@ def today() -> date:
 def day_sums(meals: Mapping[str, Mapping[str, float]]) -> dict[str, float]:
     """Each daily total sensor's value for one day's meal totals."""
     return {key: read(meals) for key, (_unit, read) in DAY_TOTALS.items()}
+
+
+def food_entry(food: Mapping[str, Any], grams: float) -> dict[str, Any]:
+    """An entry's fields for `grams` of a saved food.
+
+    The entry copies the food's name and its nutrients scaled to the grams,
+    so later changes to the food leave the entry as it was.
+    """
+    return {
+        "food_id": food["id"],
+        "name": food["name"],
+        "grams": grams,
+        **{n: None if food[n] is None else food[n] * grams / 100 for n in NUTRIENTS},
+    }
+
+
+def loaded_data(hass: HomeAssistant) -> FitnessData | None:
+    """The loaded integration's FitnessData, or None while it is not loaded."""
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.state is ConfigEntryState.LOADED:
+            return entry.runtime_data.data
+    return None
 
 
 class FitnessData:

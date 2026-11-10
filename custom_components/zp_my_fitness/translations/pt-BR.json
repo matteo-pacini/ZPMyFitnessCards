@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "Há {count} alimentos salvos chamados {food}. Renomeie-os ou use um código de barras."
+    },
+    "future_day": {
+      "message": "{day} está no futuro."
+    },
+    "grams_required": {
+      "message": "Informe os gramas do alimento salvo."
+    },
+    "kcal_required": {
+      "message": "Uma adição rápida precisa das kcal."
+    },
+    "not_loaded": {
+      "message": "O ZPMyFitnessCards não está carregado."
+    },
+    "nutrients_with_saved_food": {
+      "message": "kcal, proteína, carboidratos e gordura são só para uma adição rápida. Um alimento salvo tem os próprios valores."
+    },
+    "one_food": {
+      "message": "Informe só um: um alimento salvo, um código de barras ou um nome."
+    },
+    "unknown_barcode": {
+      "message": "Nenhum alimento salvo tem o código de barras {barcode}."
+    },
+    "unknown_food": {
+      "message": "Não há nenhum alimento salvo chamado {food}."
+    },
+    "unknown_person": {
+      "message": "Escolha uma pessoa adicionada ao ZPMyFitnessCards."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (recomendado)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Café da manhã",
+        "dinner": "Jantar",
+        "lunch": "Almoço",
+        "snacks": "Lanches"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "Perder 0,25 kg por semana",
@@ -235,6 +275,90 @@
         "female": "Feminino",
         "male": "Masculino"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Retorna o dia de uma pessoa: as entradas e os totais de cada refeição, os totais do dia, as metas e o peso.",
+      "fields": {
+        "day": {
+          "description": "Hoje, se ficar em branco. Dias futuros não são permitidos.",
+          "name": "Dia"
+        },
+        "device_id": {
+          "description": "A pessoa, como o dispositivo dela no ZPMyFitnessCards.",
+          "name": "Pessoa"
+        }
+      },
+      "name": "Obter dia"
+    },
+    "log_food": {
+      "description": "Registra um alimento no diário de uma pessoa: um alimento salvo, pelo nome ou código de barras, com os gramas, ou uma adição rápida de um nome e kcal.",
+      "fields": {
+        "barcode": {
+          "description": "O código de barras de um alimento salvo, em vez do nome.",
+          "name": "Código de barras"
+        },
+        "carbs": {
+          "description": "Em uma adição rápida, em g. Opcional.",
+          "name": "Carboidratos"
+        },
+        "day": {
+          "description": "Hoje, se ficar em branco. Dias futuros não são permitidos.",
+          "name": "Dia"
+        },
+        "device_id": {
+          "description": "A pessoa, como o dispositivo dela no ZPMyFitnessCards.",
+          "name": "Pessoa"
+        },
+        "fat": {
+          "description": "Em uma adição rápida, em g. Opcional.",
+          "name": "Gordura"
+        },
+        "food": {
+          "description": "O nome de um alimento salvo. Maiúsculas e minúsculas não importam.",
+          "name": "Alimento salvo"
+        },
+        "grams": {
+          "description": "Quanto do alimento salvo. Opcional em uma adição rápida.",
+          "name": "Gramas"
+        },
+        "kcal": {
+          "description": "Em uma adição rápida. Obrigatório com um nome.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "A refeição em que registrar.",
+          "name": "Refeição"
+        },
+        "name": {
+          "description": "Em uma adição rápida, em vez de um alimento salvo: o que foi comido.",
+          "name": "Nome"
+        },
+        "protein": {
+          "description": "Em uma adição rápida, em g. Opcional.",
+          "name": "Proteína"
+        }
+      },
+      "name": "Registrar alimento"
+    },
+    "log_weight": {
+      "description": "Registra o peso de uma pessoa em um dia. Cada dia guarda um peso, então registrar de novo o substitui.",
+      "fields": {
+        "day": {
+          "description": "Hoje, se ficar em branco. Dias futuros não são permitidos.",
+          "name": "Dia"
+        },
+        "device_id": {
+          "description": "A pessoa, como o dispositivo dela no ZPMyFitnessCards.",
+          "name": "Pessoa"
+        },
+        "weight": {
+          "description": "Em kg, de 20 a 400.",
+          "name": "Peso"
+        }
+      },
+      "name": "Registrar peso"
     }
   }
 }

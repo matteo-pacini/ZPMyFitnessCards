@@ -206,6 +206,38 @@
       }
     }
   },
+  "exceptions": {
+    "ambiguous_food": {
+      "message": "{count} aliments enregistrés s’appellent {food}. Renommez-les ou utilisez un code-barres."
+    },
+    "future_day": {
+      "message": "{day} est dans le futur."
+    },
+    "grams_required": {
+      "message": "Indiquez les grammes de l’aliment enregistré."
+    },
+    "kcal_required": {
+      "message": "Un ajout rapide nécessite les kcal."
+    },
+    "not_loaded": {
+      "message": "ZPMyFitnessCards n’est pas chargé."
+    },
+    "nutrients_with_saved_food": {
+      "message": "Les kcal, protéines, glucides et lipides servent uniquement à un ajout rapide. Un aliment enregistré a les siens."
+    },
+    "one_food": {
+      "message": "Indiquez un seul élément : un aliment enregistré, un code-barres ou un nom."
+    },
+    "unknown_barcode": {
+      "message": "Aucun aliment enregistré n’a le code-barres {barcode}."
+    },
+    "unknown_food": {
+      "message": "Aucun aliment enregistré ne s’appelle {food}."
+    },
+    "unknown_person": {
+      "message": "Choisissez une personne ajoutée à ZPMyFitnessCards."
+    }
+  },
   "selector": {
     "activity": {
       "options": {
@@ -222,6 +254,14 @@
         "sqlite": "SQLite (recommandé)"
       }
     },
+    "meal": {
+      "options": {
+        "breakfast": "Petit-déjeuner",
+        "dinner": "Dîner",
+        "lunch": "Déjeuner",
+        "snacks": "En-cas"
+      }
+    },
     "pace": {
       "options": {
         "lose_0_25": "Perdre 0,25 kg par semaine",
@@ -235,6 +275,90 @@
         "female": "Femme",
         "male": "Homme"
       }
+    }
+  },
+  "services": {
+    "get_day": {
+      "description": "Renvoie la journée d’une personne : les entrées et les totaux de chaque repas, les totaux du jour, les objectifs et le poids.",
+      "fields": {
+        "day": {
+          "description": "Aujourd’hui s’il est laissé vide. Les jours futurs ne sont pas autorisés.",
+          "name": "Jour"
+        },
+        "device_id": {
+          "description": "La personne, sous la forme de son appareil dans ZPMyFitnessCards.",
+          "name": "Personne"
+        }
+      },
+      "name": "Obtenir la journée"
+    },
+    "log_food": {
+      "description": "Enregistre un aliment dans le journal d’une personne : un aliment enregistré, par son nom ou son code-barres, avec ses grammes, ou un ajout rapide d’un nom et de kcal.",
+      "fields": {
+        "barcode": {
+          "description": "Le code-barres d’un aliment enregistré, au lieu de son nom.",
+          "name": "Code-barres"
+        },
+        "carbs": {
+          "description": "Pour un ajout rapide, en g. Facultatif.",
+          "name": "Glucides"
+        },
+        "day": {
+          "description": "Aujourd’hui s’il est laissé vide. Les jours futurs ne sont pas autorisés.",
+          "name": "Jour"
+        },
+        "device_id": {
+          "description": "La personne, sous la forme de son appareil dans ZPMyFitnessCards.",
+          "name": "Personne"
+        },
+        "fat": {
+          "description": "Pour un ajout rapide, en g. Facultatif.",
+          "name": "Lipides"
+        },
+        "food": {
+          "description": "Le nom d’un aliment enregistré. Majuscules et minuscules sont équivalentes.",
+          "name": "Aliment enregistré"
+        },
+        "grams": {
+          "description": "La quantité de l’aliment enregistré. Facultatif pour un ajout rapide.",
+          "name": "Grammes"
+        },
+        "kcal": {
+          "description": "Pour un ajout rapide. Obligatoire avec un nom.",
+          "name": "kcal"
+        },
+        "meal": {
+          "description": "Le repas sous lequel l’enregistrer.",
+          "name": "Repas"
+        },
+        "name": {
+          "description": "Pour un ajout rapide, au lieu d’un aliment enregistré : ce qui a été mangé.",
+          "name": "Nom"
+        },
+        "protein": {
+          "description": "Pour un ajout rapide, en g. Facultatif.",
+          "name": "Protéines"
+        }
+      },
+      "name": "Enregistrer un aliment"
+    },
+    "log_weight": {
+      "description": "Enregistre le poids d’une personne pour un jour. Un jour garde un seul poids : un nouvel enregistrement le remplace.",
+      "fields": {
+        "day": {
+          "description": "Aujourd’hui s’il est laissé vide. Les jours futurs ne sont pas autorisés.",
+          "name": "Jour"
+        },
+        "device_id": {
+          "description": "La personne, sous la forme de son appareil dans ZPMyFitnessCards.",
+          "name": "Personne"
+        },
+        "weight": {
+          "description": "En kg, de 20 à 400.",
+          "name": "Poids"
+        }
+      },
+      "name": "Enregistrer le poids"
     }
   }
 }
