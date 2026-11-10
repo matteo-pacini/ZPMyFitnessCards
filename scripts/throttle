@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Runs a command once enough of this machine's test budget is free, so that
+# test runs from several worktrees at once use at most half of the machine.
+#
+#   scripts/throttle TOKENS COMMAND [ARG...]
+#
+# The budget is one token per CPU thread for half the threads (8 on a 16-thread
+# machine). Take 4 tokens for a web VM check, whose VM has 4 cores and 6 GiB,
+# 2 for scripts/e2e and 1 for pytest. Tokens are files in the repository's git
+# directory, which every worktree shares. Each is held with flock until the
+# command and everything it started have exited, killed or not.
+set -euo pipefail
+
+usage="usage: scripts/throttle TOKENS COMMAND [ARG...]"
+(($# >= 2)) || { echo "$usage" >&2; exit 2; }
+tokens=$1
+shift
+budget=$(($(nproc) / 2))
+if ! [[ $tokens =~ ^[1-9][0-9]*$ ]] || ((tokens > budget)); then
+  echo "throttle: TOKENS must be from 1 to $budget" >&2
+  exit 2
+fi
+
+dir="$(git rev-parse --path-format=absolute --git-common-dir)/throttle"
+mkdir -p "$dir"
+
+# Tokens are taken under one mutex, all or none, so two runs that each hold
+# some of what they need can never wait on each other.
+exec {mutex}>"$dir/mutex"
+held=()
+waiting=false
+while true; do
+  flock "$mutex"
+  for ((i = 1; i <= budget && ${#held[@]} < tokens; i++)); do
+    exec {fd}>"$dir/token-$i"
+    if flock -n "$fd"; then held+=("$fd"); else exec {fd}>&-; fi
+  done
+  ((${#held[@]} == tokens)) && break
+  for fd in "${held[@]}"; do exec {fd}>&-; done
+  held=()
+  flock -u "$mutex"
+  $waiting || echo "throttle: waiting for $tokens of $budget tokens" >&2
+  waiting=true
+  sleep 5
+done
+exec {mutex}>&-
+
+# The command inherits the tokens' file descriptors, so they stay locked for as
+# long as it, or anything it started, is still running.
+exec "$@"
