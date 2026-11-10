@@ -322,8 +322,10 @@ def browser() -> Iterator[Browser]:
         f"Playwright for Python is {version('playwright')}, but the Nix shell's driver is "
         f"{driver}: set playwright=={driver} in pyproject.toml"
     )
+    # The shell's fonts in place of the host's, so pages render alike everywhere.
+    env = {**os.environ, "FONTCONFIG_FILE": os.environ["ZPMF_FONTCONFIG_FILE"]}
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        browser = playwright.chromium.launch(env=env)
         yield browser
         browser.close()
 

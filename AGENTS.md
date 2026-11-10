@@ -19,7 +19,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` loads a card script into a `vm` context with a stubbed DOM, for the pure functions and the markup they build. Interaction is tested end to end.
 - `tests/e2e/test_card_states.py`: cards mounted straight into the running Home Assistant page, with a connection that fails on purpose, for the loading, failure and retry paths a dashboard rarely shows.
-- `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres. Tests share one Home Assistant per database, so give the data each test adds unique names. `screenshots.py` takes the README images.
+- `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres. Chromium sees only the fonts in `nix/fonts.nix`, never the host's. Tests share one Home Assistant per database, so give the data each test adds unique names. `screenshots.py` takes the README images.
 - `images/`: the README screenshots, from `scripts/screenshots`.
 
 ## Commands

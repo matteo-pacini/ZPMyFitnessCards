@@ -34,6 +34,7 @@ let
       PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
       # The Playwright wheel's bundled Node is a generic Linux binary.
       PLAYWRIGHT_NODEJS_PATH = "${pkgs.nodejs_24}/bin/node";
+      ZPMF_FONTCONFIG_FILE = import ./fonts.nix { inherit pkgs; };
     };
   };
 

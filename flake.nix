@@ -89,6 +89,8 @@
               # The driver bundled in the Python wheel runs its own Node, a
               # generic Linux binary that NixOS cannot start.
               PLAYWRIGHT_NODEJS_PATH = "${pkgs.nodejs_24}/bin/node";
+              # Fonts for that Chromium alone, not for the whole shell.
+              ZPMF_FONTCONFIG_FILE = import ./nix/fonts.nix { inherit pkgs; };
             };
 
             shellHook = ''
