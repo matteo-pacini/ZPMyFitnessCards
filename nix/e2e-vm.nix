@@ -1,5 +1,6 @@
 # The end-to-end tests inside NixOS VMs, built from this flake, with no
-# network. `web` runs tests/e2e in Chromium. `android` runs the cards inside
+# network. `web-sqlite` and `web-postgresql` run tests/e2e in Chromium, each
+# against one database. `android` runs the cards inside
 # the Companion app on an Android emulator, which needs nested KVM on the
 # host, and copies its screenshots to $out/screenshots.
 {
@@ -44,20 +45,27 @@ let
   pytest = args: ''
     machine.succeed("su - tester -c 'cd repo && pytest -p no:homeassistant -p no:cacheprovider -q ${args}' >&2")
   '';
+
+  # tests/e2e on one database. Deselecting the other database's tests, rather
+  # than selecting this one's, keeps a test that uses no database in both.
+  web =
+    database: other:
+    pkgs.testers.runNixOSTest {
+      name = "zp-my-fitness-e2e-${database}";
+      nodes.machine = {
+        imports = [ common ];
+        virtualisation = {
+          cores = 4;
+          memorySize = 6144;
+          diskSize = 8192;
+        };
+      };
+      testScript = copySource + pytest ''tests/e2e --ignore=tests/e2e/test_android.py -k \"not ${other}\"'';
+    };
 in
 {
-  web = pkgs.testers.runNixOSTest {
-    name = "zp-my-fitness-e2e";
-    nodes.machine = {
-      imports = [ common ];
-      virtualisation = {
-        cores = 4;
-        memorySize = 6144;
-        diskSize = 8192;
-      };
-    };
-    testScript = copySource + pytest "tests/e2e --ignore=tests/e2e/test_android.py";
-  };
+  web-sqlite = web "sqlite" "postgresql";
+  web-postgresql = web "postgresql" "sqlite";
 
   android = pkgs.testers.runNixOSTest {
     name = "zp-my-fitness-android";

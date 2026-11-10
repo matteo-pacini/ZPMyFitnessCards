@@ -148,7 +148,7 @@
         inherit pyproject-nix uv2nix pyproject-build-systems;
       };
 
-      # nix build .#checks.x86_64-linux.e2e-vm (or .android-vm)
+      # nix build .#checks.x86_64-linux.e2e-vm-sqlite (or e2e-vm-postgresql, android-vm)
       checks.x86_64-linux =
         let
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
@@ -160,7 +160,8 @@
           };
         in
         {
-          e2e-vm = vms.web;
+          e2e-vm-sqlite = vms.web-sqlite;
+          e2e-vm-postgresql = vms.web-postgresql;
           android-vm = vms.android;
         };
     };

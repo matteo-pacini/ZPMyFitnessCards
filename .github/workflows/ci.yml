@@ -86,11 +86,17 @@ jobs:
       - name: End-to-end tests
         run: nix develop -c scripts/e2e
 
-  # The end-to-end tests again, inside a NixOS VM with no network, built from
-  # uv.lock. The Android VM test is left out: it needs nested KVM, which the
-  # runners, themselves VMs, run far too slowly.
+  # The end-to-end tests again, inside NixOS VMs with no network, built from
+  # uv.lock: one VM, and one job, per database. The Android VM test is left
+  # out: it needs nested KVM, which the runners, themselves VMs, run far too
+  # slowly.
   e2e-vm:
+    name: e2e-vm (${{ matrix.database }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgresql]
     permissions:
       contents: read
     steps:
@@ -119,4 +125,4 @@ jobs:
             system-features = nixos-test benchmark big-parallel kvm
 
       - name: End-to-end tests in a VM
-        run: nix build -L .#checks.x86_64-linux.e2e-vm
+        run: nix build -L .#checks.x86_64-linux.e2e-vm-${{ matrix.database }}
