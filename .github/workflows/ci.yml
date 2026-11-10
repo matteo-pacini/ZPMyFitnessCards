@@ -18,9 +18,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # The integration ships its icons in brand/ (Home Assistant 2026.3
-          # and later) instead of in the home-assistant/brands repo.
-          ignore: brands
 
   hassfest:
     runs-on: ubuntu-latest
