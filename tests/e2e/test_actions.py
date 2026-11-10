@@ -96,7 +96,10 @@ def open_action(home: Home, page: Page, name: str, action: str, person: str) -> 
     page.goto(home.url + "/config/tools/action")
     page.get_by_text("Action", exact=True).first.click()
     page.get_by_placeholder("Search").fill(name)
-    page.get_by_text(f"zp_my_fitness.{action}", exact=True).click()
+    # By its name: its ID is in the monospace font, which a machine without one
+    # draws zero-wide, and Playwright does not click what it cannot see.
+    page.get_by_text(name, exact=True).click()
+    expect(page.get_by_text(f"zp_my_fitness.{action}", exact=True)).to_be_attached()
     page.get_by_text("Select a device").click()
     # Only the people are offered.
     expect(page.get_by_text("ZPMyFitnessCards", exact=True)).to_have_count(2)
