@@ -198,7 +198,9 @@ def test_screenshots(sample: Home, browser: Browser) -> None:
     shoot(sample, browser, TRENDS, "trends-week")
     shoot(sample, browser, SUMMARY, "summary")
     shoot(sample, browser, SUMMARY, "summary-dark", dark=True)
-    assert sorted(p.name for p in IMAGES.glob("*.png")) == sorted(
+    # The phone-*.png images come from scripts/phone-screenshots.
+    taken = (p.name for p in IMAGES.glob("*.png") if not p.name.startswith("phone-"))
+    assert sorted(taken) == sorted(
         f"{n}.png"
         for n in (
             "food-diary",
