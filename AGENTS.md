@@ -44,9 +44,10 @@ The same tests also run inside NixOS VMs with no network (`nix/e2e-vm.nix`), wit
 ```sh
 nix build .#checks.x86_64-linux.e2e-vm       # tests/e2e in Chromium, SQLite and Postgres
 nix build .#checks.x86_64-linux.android-vm   # tests/e2e/test_android.py; needs nested KVM
+scripts/android-vm [dir]                     # the same, keeping screenshots and logs in dir
 ```
 
-`tests/e2e/test_android.py` boots a fresh AVD, installs the Companion app, takes it through its first run against a Home Assistant that lets 127.0.0.1 in without a password, turns on the app's WebView remote debugging, and drives the cards in the app through Playwright over `adb forward`. The emulator's camera cannot show a barcode, so the scan test checks that the app's scanner opens, then sends the result the app would. It is skipped unless `COMPANION_APK` is set. To keep its screenshots when it fails, run the VM through its driver: `nix build .#checks.x86_64-linux.android-vm.driver`, then `result/bin/nixos-test-driver --output_directory <dir>`.
+`tests/e2e/test_android.py` boots a fresh AVD, installs the Companion app, takes it through its first run against a Home Assistant that lets 127.0.0.1 in without a password, turns on the app's WebView remote debugging, and drives the cards in the app through Playwright over `adb forward`. The emulator's camera cannot show a barcode, so the scan test checks that the app's scanner opens, then sends the result the app would. It is skipped unless `COMPANION_APK` is set. CI does not run it: nested KVM on the runners is far too slow. Run it locally with `scripts/android-vm`, which keeps its screenshots, logcat and emulator log whether it passes or fails.
 
 ## Rules that are easy to break
 

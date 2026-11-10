@@ -101,18 +101,31 @@ class Device:
         return found
 
     def find(self, text: str, timeout: float = 30) -> tuple[int, int]:
-        """The centre of the first node whose label contains `text`."""
+        """The centre of the first node whose label contains `text`.
+
+        Brings the Companion app back to the front if something else took
+        over the screen meanwhile.
+        """
         deadline = time.monotonic() + timeout
         while True:
             nodes = self.nodes()
             for label, centre in nodes:
                 if text in label:
                     return centre
+            # On a new image, system apps' first-run screens and a launcher
+            # restart can push the app aside; monkey resumes it as it was.
+            if APP not in self.foreground():
+                self.adb("shell", "monkey", "-p", APP, "1")
             if time.monotonic() > deadline:
                 self.screenshot("failed-" + "".join(c if c.isalnum() else "-" for c in text))
                 labels = "\n".join(label for label, _ in nodes)
                 raise TimeoutError(f"{text!r} is not on screen. On screen:\n{labels}")
             time.sleep(1)
+
+    def foreground(self) -> str:
+        """The resumed activity, as dumpsys names it."""
+        activities = self.adb("shell", "dumpsys", "activity", "activities")
+        return next((line for line in activities.splitlines() if "ResumedActivity" in line), "")
 
     def tap(self, text: str, timeout: float = 30) -> None:
         x, y = self.find(text, timeout)
@@ -246,45 +259,49 @@ def app(device: Device, app_home: Home, browser: Browser) -> Iterator[Page]:
     """The app's WebView, under Playwright's control."""
     _connect_app(device, app_home)
     _set_up_app(device)
-    deadline = time.monotonic() + 120
-    while True:
-        try:
-            pid = device.adb("shell", "pidof", APP).strip()
-        except AdbError:
-            pid = ""  # pidof fails while the app is not running
-        sockets = device.adb("shell", "cat", "/proc/net/unix")
-        if pid and f"webview_devtools_remote_{pid}" in sockets:
-            break
-        if time.monotonic() > deadline:
-            device.screenshot("failed-devtools")
-            found = sorted({w for w in sockets.split() if "devtools" in w})
-            raise TimeoutError(f"The app ({pid or 'not running'}) offers no DevTools: {found}")
-        time.sleep(1)
     port = _free_port()
-    device.adb("forward", f"tcp:{port}", f"localabstract:webview_devtools_remote_{pid}")
     try:
-        # The socket opens before the WebView loads Home Assistant, and the
-        # app can replace that first page while it starts. A connection lists
-        # only the pages there were when it was made, so connect again until
-        # a page has Home Assistant connected and stays open.
-        deadline = time.monotonic() + 180
+        # The app's DevTools socket is named after its process and opens
+        # before the WebView loads Home Assistant; the app can also restart,
+        # or replace its first page, while it starts. A connection lists only
+        # the pages there were when it was made. So until a page has Home
+        # Assistant connected and stays open: find the socket, forward to
+        # it, and connect again.
+        deadline = time.monotonic() + 240
         while True:
-            # The session's Playwright: a second sync instance cannot run beside it.
-            cdp = browser.browser_type.connect_over_cdp(f"http://127.0.0.1:{port}")
-            pages = [p for c in cdp.contexts for p in c.pages if p.url.startswith("http")]
+            cdp = None
             try:
-                if pages:
-                    page = pages[0]
-                    page.wait_for_function(
-                        "document.querySelector('home-assistant')?.hass?.connected",
-                        timeout=30_000,
-                    )
-                    page.wait_for_timeout(3000)
-                    if not page.is_closed():
-                        break
-            except PlaywrightError:
-                pass
-            cdp.close()
+                pid = device.adb("shell", "pidof", APP).strip()
+                socket = f"webview_devtools_remote_{pid}"
+                if device.adb("shell", "cat", "/proc/net/unix").count(socket):
+                    device.adb("forward", f"tcp:{port}", f"localabstract:{socket}")
+                    # The session's Playwright: a second sync instance cannot
+                    # run beside it.
+                    cdp = browser.browser_type.connect_over_cdp(f"http://127.0.0.1:{port}")
+                    pages = [p for c in cdp.contexts for p in c.pages if p.url.startswith("http")]
+                    if pages:
+                        page = pages[0]
+                        page.wait_for_function(
+                            "document.querySelector('home-assistant')?.hass?.connected",
+                            timeout=30_000,
+                        )
+                        page.wait_for_timeout(3000)
+                        if not page.is_closed():
+                            break
+            except AdbError, PlaywrightError:
+                pass  # pidof fails while the app is not running
+            if cdp:
+                cdp.close()
+            # The emulator's WebView sometimes crashes the app as it starts.
+            if APP not in device.foreground():
+                close_dialogs = [
+                    "am",
+                    "broadcast",
+                    "-a",
+                    "android.intent.action.CLOSE_SYSTEM_DIALOGS",
+                ]
+                device.adb("shell", *close_dialogs)
+                device.adb("shell", "monkey", "-p", APP, "1")
             if time.monotonic() > deadline:
                 device.screenshot("failed-webview")
                 raise TimeoutError("The app's WebView did not load Home Assistant")
@@ -294,7 +311,8 @@ def app(device: Device, app_home: Home, browser: Browser) -> Iterator[Page]:
         finally:
             cdp.close()
     finally:
-        device.adb("forward", "--remove", f"tcp:{port}")
+        with contextlib.suppress(AdbError):  # never forwarded if it timed out
+            device.adb("forward", "--remove", f"tcp:{port}")
 
 
 def _open(home: Home, page: Page, card: dict) -> Locator:

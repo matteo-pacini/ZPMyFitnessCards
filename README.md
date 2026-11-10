@@ -167,7 +167,8 @@ See [AGENTS.md](AGENTS.md) for the layout and commands. Everything runs in the N
 nix develop
 pytest --cov && scripts/e2e
 scripts/screenshots         # retake the desktop images in images/
-scripts/phone-screenshots   # retake the phone images (Android emulator in a VM; needs nested KVM)
+scripts/android-vm          # the cards in the Home Assistant app (Android emulator in a VM; needs nested KVM)
+scripts/phone-screenshots   # retake the phone images with it
 ```
 
 ## Licence

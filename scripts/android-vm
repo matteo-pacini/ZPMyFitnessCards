@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs tests/e2e/test_android.py in its NixOS VM: the cards inside the
+# Companion app on a Pixel 8 emulator. Needs x86_64-linux with nested KVM;
+# CI does not run it. Screenshots, logcat and the emulator's log go to the
+# directory given (default: a new temporary one), whether or not it passes.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+out=${1:-$(mktemp -d -t zpmf-android-vm-XXXXXX)}
+mkdir -p "$out"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+nix build .#checks.x86_64-linux.android-vm.driver -o "$work/driver"
+# The driver keeps the VM's state, and the files it copies out of the VM,
+# under XDG_RUNTIME_DIR, where they outlive the run; fresh ones keep runs apart.
+status=0
+(cd "$work" && TMPDIR="$work" XDG_RUNTIME_DIR="$work" ./driver/bin/nixos-test-driver --output_directory "$out") || status=$?
+echo "Screenshots and logs: $out"
+exit "$status"
