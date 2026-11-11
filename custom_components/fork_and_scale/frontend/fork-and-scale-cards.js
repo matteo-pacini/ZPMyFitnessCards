@@ -1886,6 +1886,10 @@ class FitnessCard extends HTMLElement {
       });
   }
 
+  // The rest is for the cards with a food form, the food diary and saved
+  // foods. Errors show in the card's open panel, `_panel`, which it draws
+  // with `_renderPanel`.
+
   _showError(err, key = "error_failed") {
     if (!this._panel) return;
     this._panel.error = fill(this._t[key], { message: err?.message ?? "" });
