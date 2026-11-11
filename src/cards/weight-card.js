@@ -12,13 +12,6 @@ const weightRange = (unit) => [Math.ceil(fromKg(MIN_KG, unit) * 10) / 10, Math.f
 // from, obese from.
 const bandLimits = (person, unit) => [person.underweight_below_kg, person.overweight_from_kg, person.obese_from_kg].map((kg) => fromKg(kg, unit));
 
-// The first day a range shows, ending today. "all" starts at the first
-// weigh-in, or the person's start date before there is one.
-function rangeStart(range, today, firstDay) {
-  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
-  return shiftDay(today, -(Number(range) - 1));
-}
-
 // The weight chart in `unit`: BMI bands, the goal, and the weigh-ins from
 // `start` to `today`.
 function weightChartHTML(weights, person, start, today, locale, t, unit) {

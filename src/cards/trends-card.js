@@ -104,7 +104,7 @@ class TrendsCard extends PersonCard {
 
   async _fetch() {
     const today = this._today;
-    return this._call({ type: "fork_and_scale/days", person: this._person.id, start: shiftDay(today, -(Number(this._range) - 1)), end: today });
+    return this._call({ type: "fork_and_scale/days", person: this._person.id, start: rangeStart(this._range, today), end: today });
   }
 
   _renderBody() {

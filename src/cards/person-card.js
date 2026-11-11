@@ -1,3 +1,10 @@
+// The first day a range shows, ending today. "all" starts at `firstDay`,
+// the first day with data, or 30 days back when there is none before today.
+function rangeStart(range, today, firstDay) {
+  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
+  return shiftDay(today, -(Number(range) - 1));
+}
+
 const rangeButtons = (ranges, selected, t) =>
   !ranges.length ? "" : `<div class="ranges" role="group">${ranges
     .map((r) => `<button data-action="range" data-range="${r}" aria-pressed="${String(r) === String(selected)}">${esc(t[`range_${r}`])}</button>`)

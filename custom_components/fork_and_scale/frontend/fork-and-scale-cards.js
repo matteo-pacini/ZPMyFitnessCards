@@ -2963,6 +2963,13 @@ const BAND_STYLE = `
 `;
 
 // src/cards/person-card.js
+// The first day a range shows, ending today. "all" starts at `firstDay`,
+// the first day with data, or 30 days back when there is none before today.
+function rangeStart(range, today, firstDay) {
+  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
+  return shiftDay(today, -(Number(range) - 1));
+}
+
 const rangeButtons = (ranges, selected, t) =>
   !ranges.length ? "" : `<div class="ranges" role="group">${ranges
     .map((r) => `<button data-action="range" data-range="${r}" aria-pressed="${String(r) === String(selected)}">${esc(t[`range_${r}`])}</button>`)
@@ -3035,13 +3042,6 @@ const weightRange = (unit) => [Math.ceil(fromKg(MIN_KG, unit) * 10) / 10, Math.f
 // Where a person's BMI bands end, in `unit`: underweight below, overweight
 // from, obese from.
 const bandLimits = (person, unit) => [person.underweight_below_kg, person.overweight_from_kg, person.obese_from_kg].map((kg) => fromKg(kg, unit));
-
-// The first day a range shows, ending today. "all" starts at the first
-// weigh-in, or the person's start date before there is one.
-function rangeStart(range, today, firstDay) {
-  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
-  return shiftDay(today, -(Number(range) - 1));
-}
 
 // The weight chart in `unit`: BMI bands, the goal, and the weigh-ins from
 // `start` to `today`.
@@ -3295,7 +3295,7 @@ class TrendsCard extends PersonCard {
 
   async _fetch() {
     const today = this._today;
-    return this._call({ type: "fork_and_scale/days", person: this._person.id, start: shiftDay(today, -(Number(this._range) - 1)), end: today });
+    return this._call({ type: "fork_and_scale/days", person: this._person.id, start: rangeStart(this._range, today), end: today });
   }
 
   _renderBody() {
