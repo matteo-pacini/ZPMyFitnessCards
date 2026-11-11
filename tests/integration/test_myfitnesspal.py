@@ -90,12 +90,37 @@ def test_reads_the_export_zip(tmp_path: Path) -> None:
 
 def test_reads_kilojoules_and_dates_excel_wrote(tmp_path: Path) -> None:
     diary = read(MYFITNESSPAL / "Nutrition-Summary-kilojoules.csv", TODAY)
+    # 10/10/2025 and 10/11/2025: with no part over 12, slash dates are month first.
     assert totals(diary) == [
         ("2025-10-10", "breakfast", 500),
         ("2025-10-10", "lunch", 1000),
         ("2025-10-11", "snacks", 200),
     ]
     assert diary.weight_unit is None
+
+
+@pytest.mark.parametrize(
+    "name", ["Nutrition-Summary-day-first.csv", "Nutrition-Summary-month-first.csv"]
+)
+def test_reads_slash_dates_in_the_order_the_file_shows(name: str) -> None:
+    # 25/10/2025 can only be day first, and 10/25/2025 month first: the
+    # ambiguous 9/10/2025 and 10/9/2025 follow them.
+    assert totals(read(MYFITNESSPAL / name, TODAY)) == [
+        ("2025-10-09", "breakfast", 300),
+        ("2025-10-09", "lunch", 500),
+        ("2025-10-25", "dinner", 650),
+    ]
+
+
+def test_reads_weights_with_the_day_first(tmp_path: Path) -> None:
+    diary = read(write(tmp_path, "w.csv", "Date,Weight\n1/10/2025,81\n13/10/2025,80\n"), TODAY)
+    assert weights_kg(diary, "kg") == [("2025-10-01", 81), ("2025-10-13", 80)]
+
+
+def test_refuses_a_file_with_slash_dates_in_both_orders() -> None:
+    name = "Nutrition-Summary-mixed-dates.csv"
+    # 25/10/2025 on line 3 is day first; 10/26/2025 on line 4 is month first.
+    assert refusal(MYFITNESSPAL / name) == ("mixed_date_orders", {"file": name, "line": "4"})
 
 
 def test_reads_weights_in_pounds(tmp_path: Path) -> None:
@@ -155,10 +180,11 @@ def test_refuses_weights_outside_the_range_in_the_unit_chosen(tmp_path: Path) ->
         # Line numbers count the lines a quoted note spans.
         ('Date,Meal,Calories,Note\n2025-10-01,Lunch,1,"a\nb"\n2025-10-02,Lunch,x,\n', "4"),
         ("Date,Meal,Calories\n2025-02-30,Lunch,1\n", "2"),
+        ("Date,Meal,Calories\n1/10/2025,Lunch,1\n13/13/2025,Lunch,1\n", "3"),
         ("Date,Meal,Calories\n2025-10-01,Lunch\n", "2"),
         ('Date,Meal,Calories,Note\n2025-10-01,Lunch,1,"' + "x" * 200_000 + '"\n', "2"),
     ],
-    ids=["not a number", "no such date", "too few cells", "a cell too long"],
+    ids=["not a number", "no such date", "no such slash date", "too few cells", "a cell too long"],
 )
 def test_names_the_line_it_cannot_read(tmp_path: Path, text: str, line: str) -> None:
     assert refusal(write(tmp_path, "Nutrition.csv", text)) == (

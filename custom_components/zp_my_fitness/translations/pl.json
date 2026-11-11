@@ -49,6 +49,7 @@
         "birth_date_future": "Data urodzenia musi być w przeszłości.",
         "date_not_english": "Daty w dzienniku nie są po angielsku. Przełącz MyFitnessPal na angielski i zapisz stronę ponownie.",
         "macros_not_100": "Białko, węglowodany i tłuszcz muszą razem dawać 100%.",
+        "mixed_date_orders": "Wiersz {line} pliku {file} ma dzień i miesiąc w odwrotnej kolejności niż wcześniejsze wiersze. Użyj pliku w postaci, w jakiej wysłał go MyFitnessPal.",
         "name_empty": "Wpisz imię.",
         "name_taken": "Inna osoba ma już to imię.",
         "no_calories": "Dziennik nie ma kolumny Calories.",

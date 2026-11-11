@@ -49,6 +49,7 @@
         "birth_date_future": "De geboortedatum moet in het verleden liggen.",
         "date_not_english": "De datums in het dagboek zijn niet in het Engels. Zet MyFitnessPal op Engels en sla de pagina opnieuw op.",
         "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",
+        "mixed_date_orders": "Regel {line} van {file} heeft dag en maand andersom dan eerdere regels. Gebruik het bestand zoals MyFitnessPal het heeft gestuurd.",
         "name_empty": "Voer een naam in.",
         "name_taken": "Iemand anders heeft deze naam al.",
         "no_calories": "Het dagboek heeft geen kolom Calories.",

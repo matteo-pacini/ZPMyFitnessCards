@@ -49,6 +49,7 @@
         "birth_date_future": "Das Geburtsdatum muss in der Vergangenheit liegen.",
         "date_not_english": "Die Daten im Tagebuch sind nicht auf Englisch. Stelle MyFitnessPal auf Englisch um und speichere die Seite erneut.",
         "macros_not_100": "Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
+        "mixed_date_orders": "Zeile {line} von {file} hat Tag und Monat andersherum als frühere Zeilen. Verwende die Datei so, wie MyFitnessPal sie geschickt hat.",
         "name_empty": "Gib einen Namen ein.",
         "name_taken": "Eine andere Person hat bereits diesen Namen.",
         "no_calories": "Das Tagebuch hat keine Spalte „Calories“.",

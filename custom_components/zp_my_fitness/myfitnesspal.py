@@ -35,6 +35,9 @@ DIGITS = {"kcal": 1, "salt": 3}
 
 GRAM_WORDS = {"g", "gr", "gram", "grams", "grama"}
 
+# A date as Excel writes it on re-saving a CSV, D/M/YYYY or M/D/YYYY by region.
+SLASH_DATE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
+
 MONTHS = {
     name: number
     for number, names in enumerate(
@@ -292,16 +295,41 @@ def _dated(name: str, lines):
     MyFitnessPal writes notes with line breaks unquoted, so their later lines
     come as rows of their own, which this leaves out.
     """
-    for line, row in lines:
-        if row and (day := _csv_day(name, line, row[0].strip())):
+    rows = list(lines)
+    day_first = _day_first(name, rows)
+    for line, row in rows:
+        if row and (day := _csv_day(name, line, row[0].strip(), day_first)):
             yield day, line, row
 
 
-def _csv_day(name: str, line: int, text: str) -> date | None:
+def _day_first(name: str, rows: list[tuple[int, list[str]]]) -> bool:
+    """Whether the file's slash dates, which Excel writes, are D/M/YYYY rather than M/D/YYYY.
+
+    Excel writes them in its region's order, which the file does not say. A
+    first part over 12 can only be a day, as can a second part over 12. A
+    file with neither is read as M/D/YYYY. Raises Unreadable for a file with
+    both, naming the line that contradicts the lines before it.
+    """
+    day_first = month_first = 0
+    for line, row in rows:
+        if row and (match := SLASH_DATE.fullmatch(row[0].strip())):
+            first, second = int(match[1]), int(match[2])
+            # Both over 12 is no date at all, which _csv_day refuses.
+            if first > 12 >= second:
+                day_first = day_first or line
+            elif second > 12 >= first:
+                month_first = month_first or line
+    if day_first and month_first:
+        raise Unreadable("mixed_date_orders", file=name, line=str(max(day_first, month_first)))
+    return bool(day_first)
+
+
+def _csv_day(name: str, line: int, text: str, day_first: bool) -> date | None:
     if iso := re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", text):
         year, month, day = iso.groups()
-    elif excel := re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4})", text):
-        month, day, year = excel.groups()
+    elif slash := SLASH_DATE.fullmatch(text):
+        first, second, year = slash.groups()
+        day, month = (first, second) if day_first else (second, first)
     else:
         return None
     try:

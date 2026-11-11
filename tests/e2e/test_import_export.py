@@ -156,9 +156,20 @@ def test_imports_the_printable_diary(home: Home, page: Page) -> None:
     assert len(rows) == 6
 
 
-def test_refuses_a_page_saved_before_the_diary_loaded(home: Home, page: Page) -> None:
-    dialog = upload(home, page, "Debora", FIXTURES / "printable-diary-html-only.html")
-    expect(dialog.get_by_text("The page has no diary rows.")).to_be_visible(timeout=TIMEOUT)
+@pytest.mark.parametrize(
+    ("name", "message"),
+    [
+        # Saved before the diary loaded.
+        ("printable-diary-html-only.html", "The page has no diary rows."),
+        (
+            "Nutrition-Summary-mixed-dates.csv",
+            "Line 4 of Nutrition-Summary-mixed-dates.csv has the day and month the other way round",
+        ),
+    ],
+)
+def test_refuses_files_it_cannot_import(home: Home, page: Page, name: str, message: str) -> None:
+    dialog = upload(home, page, "Debora", FIXTURES / name)
+    expect(dialog.get_by_text(message)).to_be_visible(timeout=TIMEOUT)
     expect(dialog.get_by_text("Import from MyFitnessPal")).to_be_visible()
 
 

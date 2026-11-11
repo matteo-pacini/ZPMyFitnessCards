@@ -196,6 +196,7 @@ async def test_refuses_weights_outside_the_range(
     ("name", "content", "error"),
     [
         ("printable-diary-html-only.html", None, "save_complete"),
+        ("Nutrition-Summary-mixed-dates.csv", None, "mixed_date_orders"),
         ("notes.csv", "Date,Steps\n2025-10-01,100\n", "not_myfitnesspal"),
         ("Nutrition.csv", "Date,Meal,Calories\n2025-10-01,Lunch,lots\n", "bad_line"),
         ("Exercise.csv", "Date,Exercise,Kilograms\n2025-10-01,Run,\n", "nothing_to_import"),

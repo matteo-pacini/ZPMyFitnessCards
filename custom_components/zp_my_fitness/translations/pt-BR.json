@@ -49,6 +49,7 @@
         "birth_date_future": "A data de nascimento precisa estar no passado.",
         "date_not_english": "As datas do diário não estão em inglês. Mude o MyFitnessPal para inglês e salve a página de novo.",
         "macros_not_100": "Proteína, carboidratos e gordura precisam somar 100%.",
+        "mixed_date_orders": "A linha {line} de {file} tem o dia e o mês invertidos em relação às linhas anteriores. Use o arquivo como o MyFitnessPal enviou.",
         "name_empty": "Digite um nome.",
         "name_taken": "Outra pessoa já tem esse nome.",
         "no_calories": "O diário não tem a coluna Calories.",

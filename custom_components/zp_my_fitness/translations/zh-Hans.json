@@ -49,6 +49,7 @@
         "birth_date_future": "出生日期必须早于今天。",
         "date_not_english": "日记中的日期不是英文。请将 MyFitnessPal 切换为英文，然后重新保存页面。",
         "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",
+        "mixed_date_orders": "{file} 第 {line} 行的日和月顺序与前面的行相反。请使用 MyFitnessPal 发送的原始文件。",
         "name_empty": "请输入名称。",
         "name_taken": "已有其他人使用此名称。",
         "no_calories": "日记中没有 Calories 列。",

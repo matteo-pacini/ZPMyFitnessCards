@@ -49,6 +49,7 @@
         "birth_date_future": "The birth date must be in the past.",
         "date_not_english": "The diary's dates are not in English. Switch MyFitnessPal to English, then save the page again.",
         "macros_not_100": "Protein, carbs and fat must add up to 100%.",
+        "mixed_date_orders": "Line {line} of {file} has the day and month the other way round from earlier lines. Use the file as MyFitnessPal sent it.",
         "name_empty": "Enter a name.",
         "name_taken": "Another person already has this name.",
         "no_calories": "The diary has no Calories column.",

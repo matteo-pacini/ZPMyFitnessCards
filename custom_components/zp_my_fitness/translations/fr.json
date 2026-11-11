@@ -49,6 +49,7 @@
         "birth_date_future": "La date de naissance doit être dans le passé.",
         "date_not_english": "Les dates du journal ne sont pas en anglais. Passez MyFitnessPal en anglais, puis enregistrez de nouveau la page.",
         "macros_not_100": "Protéines, glucides et lipides doivent totaliser 100 %.",
+        "mixed_date_orders": "La ligne {line} de {file} inverse le jour et le mois par rapport aux lignes précédentes. Utilisez le fichier tel que MyFitnessPal l’a envoyé.",
         "name_empty": "Saisissez un nom.",
         "name_taken": "Une autre personne porte déjà ce nom.",
         "no_calories": "Le journal n’a pas de colonne Calories.",
