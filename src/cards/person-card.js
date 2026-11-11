@@ -5,20 +5,7 @@ const rangeButtons = (ranges, selected, t) =>
 
 // Base for the cards that show one person.
 class PersonCard extends FitnessCard {
-  static getStubConfig() {
-    return {};
-  }
-
-  static getConfigForm() {
-    return {
-      schema: [
-        { name: "person", selector: { text: {} } },
-        { name: "title", selector: { text: {} } },
-        { name: "locale", selector: { text: {} } },
-      ],
-      computeLabel: (s) => ({ person: "Person (empty: the logged-in user's)", title: "Title", locale: "Language" })[s.name],
-    };
-  }
+  static options = ["person", "title", "locale"];
 
   set hass(hass) {
     const unit = this._hass && weightUnit(this._hass);

@@ -1,10 +1,26 @@
-// Base for every card: config, language, loading and live updates.
+// Throws unless each of `keys` that `config` sets is text.
+function assertText(config, keys) {
+  for (const key of keys) {
+    if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key}: must be text`);
+  }
+}
+
+// Base for every card: config, its editor, language, loading and live updates.
 class FitnessCard extends HTMLElement {
+  // The visual editor, with a field for each of the card's static `options`.
+  static getConfigElement() {
+    const editor = document.createElement(EDITOR);
+    editor.options = this.options;
+    return editor;
+  }
+
+  static getStubConfig() {
+    return {};
+  }
+
   setConfig(config) {
     if (!config || typeof config !== "object") throw new Error("Invalid configuration");
-    for (const key of ["person", "title", "locale"]) {
-      if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key}: must be text`);
-    }
+    assertText(config, ["person", "title", "locale"]);
     this._config = config;
     if (this._card) this._render();
   }

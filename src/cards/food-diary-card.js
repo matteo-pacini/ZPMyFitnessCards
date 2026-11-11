@@ -36,20 +36,7 @@ class FoodDiaryCard extends FitnessCard {
     .preview small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
   `;
 
-  static getStubConfig() {
-    return {};
-  }
-
-  static getConfigForm() {
-    return {
-      schema: [
-        { name: "person", selector: { text: {} } },
-        { name: "title", selector: { text: {} } },
-        { name: "locale", selector: { text: {} } },
-      ],
-      computeLabel: (s) => ({ person: "Person (empty: the logged-in user's)", title: "Title", locale: "Language" })[s.name],
-    };
-  }
+  static options = ["person", "title", "locale"];
 
   getCardSize() {
     return 8;

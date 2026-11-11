@@ -4,6 +4,7 @@
 // own <home-assistant> element, which it defines once that registry is in
 // place.
 customElements.whenDefined("home-assistant").then(() => {
+  window.customElements.define(EDITOR, CardEditor);
   window.customElements.define("fork-and-scale-food-diary-card", FoodDiaryCard);
   window.customElements.define("fork-and-scale-foods-card", FoodsCard);
   window.customElements.define("fork-and-scale-weight-card", WeightCard);

@@ -7,19 +7,7 @@ class FoodsCard extends FitnessCard {
     .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
   `;
 
-  static getStubConfig() {
-    return {};
-  }
-
-  static getConfigForm() {
-    return {
-      schema: [
-        { name: "title", selector: { text: {} } },
-        { name: "locale", selector: { text: {} } },
-      ],
-      computeLabel: (s) => ({ title: "Title", locale: "Language" })[s.name],
-    };
-  }
+  static options = ["title", "locale"];
 
   getCardSize() {
     return 6;

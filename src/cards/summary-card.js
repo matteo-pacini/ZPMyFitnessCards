@@ -113,13 +113,7 @@ class SummaryCard extends PersonCard {
     ha-card.link { cursor: pointer; }
   `;
 
-  static getConfigForm() {
-    const form = super.getConfigForm();
-    return {
-      schema: [...form.schema, { name: "navigation_path", selector: { text: {} } }],
-      computeLabel: (s) => (s.name === "navigation_path" ? "Open on tap (a dashboard path)" : form.computeLabel(s)),
-    };
-  }
+  static options = ["person", "title", "locale", "navigation_path"];
 
   getCardSize() {
     return 5;

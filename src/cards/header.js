@@ -13,7 +13,8 @@
 // They talk to the integration over its websocket commands, and redraw when
 // its fork_and_scale/subscribe events say something changed.
 //
-// Config for the cards that show one person (all but saved foods):
+// Config, which each card's visual editor also sets (editor.js). For the cards
+// that show one person (all but saved foods):
 //   person  a person's name; defaults to the person linked to the logged-in user
 //   title   optional heading
 //   locale  optional language code; defaults to Home Assistant's language

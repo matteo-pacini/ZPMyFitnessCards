@@ -17,7 +17,8 @@
 // They talk to the integration over its websocket commands, and redraw when
 // its fork_and_scale/subscribe events say something changed.
 //
-// Config for the cards that show one person (all but saved foods):
+// Config, which each card's visual editor also sets (editor.js). For the cards
+// that show one person (all but saved foods):
 //   person  a person's name; defaults to the person linked to the logged-in user
 //   title   optional heading
 //   locale  optional language code; defaults to Home Assistant's language
@@ -33,12 +34,16 @@
 // one language each, as the bundle loads.
 const STRINGS = {};
 
+// The tag in STRINGS of the language `locale` names, ignoring case, if the
+// cards have it.
+const knownLanguage = (locale) => Object.keys(STRINGS).find((k) => k.toLowerCase() === locale.toLowerCase());
+
 // The strings for `locale`: the exact language, then its base language
 // (pt-BR falls back to pt for keys it does not override, and any Chinese to
 // zh-Hans), then English.
 function translate(locale) {
   const base = locale.split("-")[0];
-  const exact = Object.keys(STRINGS).find((k) => k.toLowerCase() === locale.toLowerCase());
+  const exact = knownLanguage(locale);
   const zh = base === "zh" ? STRINGS["zh-Hans"] : undefined;
   return { ...STRINGS.en, ...STRINGS[base], ...zh, ...(exact && STRINGS[exact]) };
 }
@@ -167,6 +172,16 @@ STRINGS.en = {
   off_stale: "Filled in from an Open Food Facts search, whose values may be out of date. Check them against the label.",
   more: "More",
   try_again: "Try again",
+  language_name: "English",
+  editor_person: "Person",
+  editor_person_linked: "The person linked to whoever is logged in",
+  editor_person_helper: "Add people in Settings, Devices & services, Fork & Scale.",
+  editor_title: "Title",
+  editor_title_helper: "Leave empty for the card's own title.",
+  editor_locale: "Language",
+  editor_locale_default: "Home Assistant's language",
+  editor_navigation_path: "Open on tap",
+  editor_navigation_path_helper: "The dashboard or page to open when the card is tapped.",
 };
 
 // src/cards/strings/de.js
@@ -293,6 +308,16 @@ STRINGS.de = {
   off_stale: "Aus einer Suche bei Open Food Facts übernommen, deren Werte veraltet sein können. Prüfe sie anhand des Etiketts.",
   more: "Mehr",
   try_again: "Erneut versuchen",
+  language_name: "Deutsch",
+  editor_person: "Person",
+  editor_person_linked: "Die Person, die mit dem angemeldeten Benutzer verknüpft ist",
+  editor_person_helper: "Personen fügst du unter Einstellungen, Geräte & Dienste, Fork & Scale hinzu.",
+  editor_title: "Titel",
+  editor_title_helper: "Leer lassen für den eigenen Titel der Karte.",
+  editor_locale: "Sprache",
+  editor_locale_default: "Sprache von Home Assistant",
+  editor_navigation_path: "Beim Antippen öffnen",
+  editor_navigation_path_helper: "Das Dashboard oder die Seite, die sich öffnet, wenn du die Karte antippst.",
 };
 
 // src/cards/strings/es.js
@@ -419,6 +444,16 @@ STRINGS.es = {
   off_stale: "Rellenado con una búsqueda de Open Food Facts, cuyos valores pueden estar desactualizados. Compruébalos con la etiqueta.",
   more: "Más",
   try_again: "Reintentar",
+  language_name: "Español",
+  editor_person: "Persona",
+  editor_person_linked: "La persona vinculada a quien haya iniciado sesión",
+  editor_person_helper: "Añade personas en Ajustes, Dispositivos y servicios, Fork & Scale.",
+  editor_title: "Título",
+  editor_title_helper: "Déjalo vacío para usar el título propio de la tarjeta.",
+  editor_locale: "Idioma",
+  editor_locale_default: "El idioma de Home Assistant",
+  editor_navigation_path: "Abrir al tocar",
+  editor_navigation_path_helper: "El panel o la página que se abre al tocar la tarjeta.",
 };
 
 // src/cards/strings/fr.js
@@ -545,6 +580,16 @@ STRINGS.fr = {
   off_stale: "Rempli depuis une recherche Open Food Facts, dont les valeurs peuvent être périmées. Vérifiez-les sur l’étiquette.",
   more: "Plus",
   try_again: "Réessayer",
+  language_name: "Français",
+  editor_person: "Personne",
+  editor_person_linked: "La personne liée à l’utilisateur connecté",
+  editor_person_helper: "Ajoutez des personnes dans Paramètres, Appareils et services, Fork & Scale.",
+  editor_title: "Titre",
+  editor_title_helper: "Laissez vide pour garder le titre de la carte.",
+  editor_locale: "Langue",
+  editor_locale_default: "La langue de Home Assistant",
+  editor_navigation_path: "Ouvrir au toucher",
+  editor_navigation_path_helper: "Le tableau de bord ou la page à ouvrir quand on touche la carte.",
 };
 
 // src/cards/strings/it.js
@@ -671,6 +716,16 @@ STRINGS.it = {
   off_stale: "Compilato da una ricerca su Open Food Facts, i cui valori potrebbero non essere aggiornati. Controllali sull'etichetta.",
   more: "Altri",
   try_again: "Riprova",
+  language_name: "Italiano",
+  editor_person: "Persona",
+  editor_person_linked: "La persona collegata a chi ha effettuato l'accesso",
+  editor_person_helper: "Aggiungi le persone in Impostazioni, Dispositivi e servizi, Fork & Scale.",
+  editor_title: "Titolo",
+  editor_title_helper: "Lascia vuoto per il titolo predefinito della scheda.",
+  editor_locale: "Lingua",
+  editor_locale_default: "La lingua di Home Assistant",
+  editor_navigation_path: "Apri al tocco",
+  editor_navigation_path_helper: "La plancia o la pagina da aprire quando si tocca la scheda.",
 };
 
 // src/cards/strings/nl.js
@@ -797,6 +852,16 @@ STRINGS.nl = {
   off_stale: "Ingevuld vanuit een zoekopdracht op Open Food Facts, waarvan de waarden verouderd kunnen zijn. Controleer ze met het etiket.",
   more: "Meer",
   try_again: "Opnieuw proberen",
+  language_name: "Nederlands",
+  editor_person: "Persoon",
+  editor_person_linked: "De persoon die gekoppeld is aan wie er is ingelogd",
+  editor_person_helper: "Voeg personen toe via Instellingen, Apparaten en diensten, Fork & Scale.",
+  editor_title: "Titel",
+  editor_title_helper: "Laat leeg voor de eigen titel van de kaart.",
+  editor_locale: "Taal",
+  editor_locale_default: "De taal van Home Assistant",
+  editor_navigation_path: "Openen bij tikken",
+  editor_navigation_path_helper: "Het dashboard of de pagina die opent als je op de kaart tikt.",
 };
 
 // src/cards/strings/pl.js
@@ -923,6 +988,16 @@ STRINGS.pl = {
   off_stale: "Uzupełniono z wyszukiwania w Open Food Facts, którego wartości mogą być nieaktualne. Sprawdź je na etykiecie.",
   more: "Więcej",
   try_again: "Spróbuj ponownie",
+  language_name: "Polski",
+  editor_person: "Osoba",
+  editor_person_linked: "Osoba powiązana z zalogowanym użytkownikiem",
+  editor_person_helper: "Dodaj osoby w Ustawienia, Urządzenia oraz usługi, Fork & Scale.",
+  editor_title: "Tytuł",
+  editor_title_helper: "Zostaw puste, aby użyć własnego tytułu karty.",
+  editor_locale: "Język",
+  editor_locale_default: "Język Home Assistanta",
+  editor_navigation_path: "Otwórz po dotknięciu",
+  editor_navigation_path_helper: "Dashboard lub strona otwierana po dotknięciu karty.",
 };
 
 // src/cards/strings/pt.js
@@ -1049,6 +1124,16 @@ STRINGS.pt = {
   off_stale: "Preenchido a partir de uma pesquisa no Open Food Facts, cujos valores podem estar desatualizados. Confirme-os no rótulo.",
   more: "Mais",
   try_again: "Tentar de novo",
+  language_name: "Português",
+  editor_person: "Pessoa",
+  editor_person_linked: "A pessoa associada a quem tem sessão iniciada",
+  editor_person_helper: "Adicione pessoas em Definições, Dispositivos e serviços, Fork & Scale.",
+  editor_title: "Título",
+  editor_title_helper: "Deixe vazio para usar o título do próprio cartão.",
+  editor_locale: "Idioma",
+  editor_locale_default: "O idioma do Home Assistant",
+  editor_navigation_path: "Abrir ao tocar",
+  editor_navigation_path_helper: "O painel ou a página a abrir quando se toca no cartão.",
 };
 
 // src/cards/strings/pt-BR.js
@@ -1102,6 +1187,11 @@ STRINGS["pt-BR"] = {
   off_search_failed: "Não foi possível buscar no Open Food Facts: {message}",
   off_stale: "Preenchido a partir de uma busca no Open Food Facts, cujos valores podem estar desatualizados. Confira-os no rótulo.",
   try_again: "Tentar novamente",
+  language_name: "Português (Brasil)",
+  editor_person_linked: "A pessoa vinculada a quem está conectado",
+  editor_person_helper: "Adicione pessoas em Configurações, Dispositivos e serviços, Fork & Scale.",
+  editor_title_helper: "Deixe vazio para usar o título do próprio card.",
+  editor_navigation_path_helper: "O painel ou a página para abrir ao tocar no card.",
 };
 
 // src/cards/strings/sv.js
@@ -1228,6 +1318,16 @@ STRINGS.sv = {
   off_stale: "Ifyllt från en sökning på Open Food Facts, vars värden kan vara inaktuella. Kontrollera dem mot etiketten.",
   more: "Fler",
   try_again: "Försök igen",
+  language_name: "Svenska",
+  editor_person: "Person",
+  editor_person_linked: "Personen som är kopplad till den som är inloggad",
+  editor_person_helper: "Lägg till personer under Inställningar, Enheter och tjänster, Fork & Scale.",
+  editor_title: "Rubrik",
+  editor_title_helper: "Lämna tomt för kortets egen rubrik.",
+  editor_locale: "Språk",
+  editor_locale_default: "Home Assistants språk",
+  editor_navigation_path: "Öppna vid tryck",
+  editor_navigation_path_helper: "Instrumentpanelen eller sidan som öppnas när du trycker på kortet.",
 };
 
 // src/cards/strings/zh-Hans.js
@@ -1354,6 +1454,16 @@ STRINGS["zh-Hans"] = {
   off_stale: "已根据 Open Food Facts 的搜索结果填写，数值可能已过时。请对照标签核对。",
   more: "更多",
   try_again: "重试",
+  language_name: "简体中文",
+  editor_person: "人员",
+  editor_person_linked: "与当前登录用户关联的人员",
+  editor_person_helper: "请在“设置 > 设备与服务 > Fork & Scale”中添加人员。",
+  editor_title: "标题",
+  editor_title_helper: "留空则使用卡片自己的标题。",
+  editor_locale: "语言",
+  editor_locale_default: "Home Assistant 的语言",
+  editor_navigation_path: "点按时打开",
+  editor_navigation_path_helper: "点按卡片时打开的仪表盘或页面。",
 };
 
 // src/cards/helpers.js
@@ -1674,13 +1784,29 @@ function scannerFor(hass, win = window) {
 const barcodeError = (err) => (err?.code === "barcode_taken" ? "error_barcode_taken" : "error_failed");
 
 // src/cards/fitness-card.js
-// Base for every card: config, language, loading and live updates.
+// Throws unless each of `keys` that `config` sets is text.
+function assertText(config, keys) {
+  for (const key of keys) {
+    if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key}: must be text`);
+  }
+}
+
+// Base for every card: config, its editor, language, loading and live updates.
 class FitnessCard extends HTMLElement {
+  // The visual editor, with a field for each of the card's static `options`.
+  static getConfigElement() {
+    const editor = document.createElement(EDITOR);
+    editor.options = this.options;
+    return editor;
+  }
+
+  static getStubConfig() {
+    return {};
+  }
+
   setConfig(config) {
     if (!config || typeof config !== "object") throw new Error("Invalid configuration");
-    for (const key of ["person", "title", "locale"]) {
-      if (config[key] != null && typeof config[key] !== "string") throw new Error(`${key}: must be text`);
-    }
+    assertText(config, ["person", "title", "locale"]);
     this._config = config;
     if (this._card) this._render();
   }
@@ -1841,6 +1967,119 @@ class FitnessCard extends HTMLElement {
   }
 }
 
+// src/cards/editor.js
+// The cards' visual editor, which FitnessCard.getConfigElement opens for each
+// card. It shows a field for each of the card's `options`, drawn by Home
+// Assistant's own form and selectors, in the language of whoever is editing.
+const EDITOR = "fork-and-scale-card-editor";
+
+// The first choice of the person and language dropdowns, which leaves the
+// option out of the config. Not "", which the frontend's dropdown shows as no
+// choice at all. No person's name starts with a space, since names are
+// trimmed, and no language tag does.
+const DEFAULT_CHOICE = " default";
+
+// A dropdown showing `value`, of the default choice, labelled `defaultLabel`,
+// then `choices`, as [value, label] pairs. A value that is none of these is
+// added as typed, so a config written by hand still shows what it says.
+function dropdown(value, defaultLabel, choices) {
+  const all = [[DEFAULT_CHOICE, defaultLabel], ...choices];
+  if (!all.some(([v]) => v === value)) all.push([value, value]);
+  return { value, selector: { select: { mode: "dropdown", options: all.map(([v, label]) => ({ value: v, label })) } } };
+}
+
+// Each option's field for a config: the value it shows, and its selector. A
+// person or language the config names in another case, or with spaces around
+// it, shows as the one the card finds.
+const EDITOR_FIELDS = {
+  person: (config, people, t) =>
+    dropdown(
+      config.person ? (findPerson(people, config)?.name ?? config.person) : DEFAULT_CHOICE,
+      t.editor_person_linked,
+      people.map((p) => [p.name, p.name]),
+    ),
+  title: (config) => ({ value: config.title, selector: { text: {} } }),
+  locale: (config, people, t) =>
+    dropdown(
+      config.locale ? (knownLanguage(config.locale) ?? config.locale) : DEFAULT_CHOICE,
+      t.editor_locale_default,
+      Object.keys(STRINGS).map((tag) => [tag, STRINGS[tag].language_name]),
+    ),
+  navigation_path: (config) => ({ value: config.navigation_path, selector: { navigation: {} } }),
+};
+
+// The form for a card that takes `options`, showing `config`, with the
+// integration's `people` and the strings `t`: ha-form's schema and data.
+function editorForm(options, config, people, t) {
+  const fields = options.map((name) => ({ name, ...EDITOR_FIELDS[name](config, people, t) }));
+  return {
+    schema: fields.map(({ name, selector }) => ({ name, selector })),
+    data: Object.fromEntries(fields.map(({ name, value }) => [name, value])),
+  };
+}
+
+// `config` with the form's `data`. A field emptied, or set to the default
+// choice, is left out.
+function editedConfig(config, data) {
+  const edited = { ...config };
+  for (const [name, value] of Object.entries(data)) {
+    if (value == null || value === "" || value === DEFAULT_CHOICE) delete edited[name];
+    else edited[name] = value;
+  }
+  return edited;
+}
+
+// Home Assistant's card editor contract: it sets `hass` and calls setConfig,
+// and listens for config-changed. `options` comes from getConfigElement.
+class CardEditor extends HTMLElement {
+  setConfig(config) {
+    assertText(config, this.options);
+    this._config = config;
+    this._render();
+  }
+
+  set hass(hass) {
+    const relabel = this._hass?.locale?.language !== hass.locale?.language;
+    if (!this._hass) this._loadPeople(hass);
+    this._hass = hass;
+    // Every state change sets hass. Only a new language changes the form:
+    // redrawing it for any other would close an open dropdown.
+    if (relabel) this._render();
+    else if (this._form) this._form.hass = hass;
+  }
+
+  async _loadPeople(hass) {
+    this._people = await hass.callWS({ type: "fork_and_scale/people" }).catch(() => []);
+    this._render();
+  }
+
+  _render() {
+    if (!this._hass || !this._config) return;
+    if (!this._form) {
+      // The frontend loads its form with the first editor that needs it. Its
+      // button card's editor does, so ask for that one if nothing has yet.
+      if (!customElements.get("ha-form")) customElements.get("hui-button-card")?.getConfigElement();
+      this._form = document.createElement("ha-form");
+      this._form.addEventListener("value-changed", (e) => this._changed(e.detail.value));
+      this.append(this._form);
+    }
+    const t = translate(this._hass.locale?.language || "en");
+    const { schema, data } = editorForm(this.options, this._config, this._people ?? [], t);
+    Object.assign(this._form, {
+      hass: this._hass,
+      schema,
+      data,
+      computeLabel: (s) => t[`editor_${s.name}`],
+      computeHelper: (s) => t[`editor_${s.name}_helper`],
+    });
+  }
+
+  _changed(data) {
+    const config = editedConfig(this._config, data);
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config }, bubbles: true, composed: true }));
+  }
+}
+
 // src/cards/food-diary-card.js
 class FoodDiaryCard extends FitnessCard {
   static style = `
@@ -1880,20 +2119,7 @@ class FoodDiaryCard extends FitnessCard {
     .preview small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
   `;
 
-  static getStubConfig() {
-    return {};
-  }
-
-  static getConfigForm() {
-    return {
-      schema: [
-        { name: "person", selector: { text: {} } },
-        { name: "title", selector: { text: {} } },
-        { name: "locale", selector: { text: {} } },
-      ],
-      computeLabel: (s) => ({ person: "Person (empty: the logged-in user's)", title: "Title", locale: "Language" })[s.name],
-    };
-  }
+  static options = ["person", "title", "locale"];
 
   getCardSize() {
     return 8;
@@ -2417,19 +2643,7 @@ class FoodsCard extends FitnessCard {
     .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
   `;
 
-  static getStubConfig() {
-    return {};
-  }
-
-  static getConfigForm() {
-    return {
-      schema: [
-        { name: "title", selector: { text: {} } },
-        { name: "locale", selector: { text: {} } },
-      ],
-      computeLabel: (s) => ({ title: "Title", locale: "Language" })[s.name],
-    };
-  }
+  static options = ["title", "locale"];
 
   getCardSize() {
     return 6;
@@ -2683,20 +2897,7 @@ const rangeButtons = (ranges, selected, t) =>
 
 // Base for the cards that show one person.
 class PersonCard extends FitnessCard {
-  static getStubConfig() {
-    return {};
-  }
-
-  static getConfigForm() {
-    return {
-      schema: [
-        { name: "person", selector: { text: {} } },
-        { name: "title", selector: { text: {} } },
-        { name: "locale", selector: { text: {} } },
-      ],
-      computeLabel: (s) => ({ person: "Person (empty: the logged-in user's)", title: "Title", locale: "Language" })[s.name],
-    };
-  }
+  static options = ["person", "title", "locale"];
 
   set hass(hass) {
     const unit = this._hass && weightUnit(this._hass);
@@ -3180,13 +3381,7 @@ class SummaryCard extends PersonCard {
     ha-card.link { cursor: pointer; }
   `;
 
-  static getConfigForm() {
-    const form = super.getConfigForm();
-    return {
-      schema: [...form.schema, { name: "navigation_path", selector: { text: {} } }],
-      computeLabel: (s) => (s.name === "navigation_path" ? "Open on tap (a dashboard path)" : form.computeLabel(s)),
-    };
-  }
+  static options = ["person", "title", "locale", "navigation_path"];
 
   getCardSize() {
     return 5;
@@ -3251,6 +3446,7 @@ class SummaryCard extends PersonCard {
 // own <home-assistant> element, which it defines once that registry is in
 // place.
 customElements.whenDefined("home-assistant").then(() => {
+  window.customElements.define(EDITOR, CardEditor);
   window.customElements.define("fork-and-scale-food-diary-card", FoodDiaryCard);
   window.customElements.define("fork-and-scale-foods-card", FoodsCard);
   window.customElements.define("fork-and-scale-weight-card", WeightCard);

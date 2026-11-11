@@ -1,5 +1,6 @@
 // Checks the bundle the integration serves: it matches src/, and it defines
-// every card when loaded as Home Assistant loads it, as strict module code.
+// every card and their editor when loaded as Home Assistant loads it, as
+// strict module code.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -22,6 +23,6 @@ test("the bundle defines every card", async () => {
   await mod.link(() => {});
   await mod.evaluate();
   await new Promise((r) => setImmediate(r));
-  assert.deepEqual(defined.sort(), ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-summary-card", "fork-and-scale-trends-card", "fork-and-scale-weight-card"]);
+  assert.deepEqual(defined.sort(), ["fork-and-scale-card-editor", "fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-summary-card", "fork-and-scale-trends-card", "fork-and-scale-weight-card"]);
   assert.deepEqual(Array.from(ctx.window.customCards, (c) => c.type).sort(), ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-summary-card", "fork-and-scale-trends-card", "fork-and-scale-weight-card"]);
 });

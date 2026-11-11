@@ -1,4 +1,4 @@
-// Reading the food form, the cards' editor configs and config errors, and
+// Reading the food form, the cards' editor options and config errors, and
 // chart and summary edge cases.
 
 const test = require("node:test");
@@ -126,21 +126,24 @@ test("dates show the year only when asked", () => {
 
 const ELEMENTS = ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-weight-card", "fork-and-scale-trends-card", "fork-and-scale-summary-card"];
 
-test("every card has a visual editor form with English labels, and a stub config", () => {
+test("every card opens the visual editor on its options, which have labels, and has a stub config", () => {
+  const options = Object.fromEntries(ELEMENTS.map((name) => [name, plain(ctx.customElements.defined[name].options)]));
+  assert.deepEqual(options, {
+    "fork-and-scale-food-diary-card": ["person", "title", "locale"],
+    "fork-and-scale-foods-card": ["title", "locale"],
+    "fork-and-scale-weight-card": ["person", "title", "locale"],
+    "fork-and-scale-trends-card": ["person", "title", "locale"],
+    "fork-and-scale-summary-card": ["person", "title", "locale", "navigation_path"],
+  });
+  ctx.document = { createElement: (tag) => ({ tag }) };
   for (const name of ELEMENTS) {
     const Card = ctx.customElements.defined[name];
-    const { schema, computeLabel } = Card.getConfigForm();
-    assert.ok(schema.some((s) => s.name === "locale"), name);
-    for (const s of schema) assert.match(computeLabel(s), /^[A-Z]/, `${name}.${s.name}`);
+    for (const option of Card.options) assert.ok(en()[`editor_${option}`], `${name}.${option}`);
+    const editor = Card.getConfigElement();
+    assert.equal(editor.tag, "fork-and-scale-card-editor", name);
+    assert.equal(editor.options, Card.options, name);
     assert.deepEqual(plain(Card.getStubConfig()), {}, name);
   }
-  const people = ELEMENTS.filter((n) => n !== "fork-and-scale-foods-card");
-  for (const name of people) {
-    const { schema } = ctx.customElements.defined[name].getConfigForm();
-    assert.ok(schema.some((s) => s.name === "person"), name);
-  }
-  const summary = ctx.customElements.defined["fork-and-scale-summary-card"].getConfigForm();
-  assert.ok(summary.schema.some((s) => s.name === "navigation_path"));
 });
 
 test("cards say which option is wrong", () => {

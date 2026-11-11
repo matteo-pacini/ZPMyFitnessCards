@@ -48,4 +48,9 @@ STRINGS["pt-BR"] = {
   off_search_failed: "Não foi possível buscar no Open Food Facts: {message}",
   off_stale: "Preenchido a partir de uma busca no Open Food Facts, cujos valores podem estar desatualizados. Confira-os no rótulo.",
   try_again: "Tentar novamente",
+  language_name: "Português (Brasil)",
+  editor_person_linked: "A pessoa vinculada a quem está conectado",
+  editor_person_helper: "Adicione pessoas em Configurações, Dispositivos e serviços, Fork & Scale.",
+  editor_title_helper: "Deixe vazio para usar o título do próprio card.",
+  editor_navigation_path_helper: "O painel ou a página para abrir ao tocar no card.",
 };

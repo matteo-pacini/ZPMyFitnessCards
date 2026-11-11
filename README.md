@@ -159,6 +159,15 @@ A new release may upgrade the database when Home Assistant starts. Each step of 
 
 ## Cards
 
+To add a card, edit a dashboard, tap **Add card**, and search for the card on the **By card** tab. Its visual editor offers:
+
+- **Person**: anyone added to the integration, or the person linked to whoever is logged in.
+- **Title**: in place of the card's own.
+- **Language**: one of the cards' languages, or Home Assistant's.
+- **Open on tap**, on the summary card only: a dashboard or page to open when the card is tapped.
+
+The editor saves the options below, so a card can also be written in YAML.
+
 ### Food diary card
 
 One person's day, meal by meal: the calorie goal, what they have eaten and what is left, protein, carbs and fat against their goals, and each meal's entries.
