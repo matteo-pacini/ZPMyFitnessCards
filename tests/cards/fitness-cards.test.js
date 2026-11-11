@@ -1,6 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const vm = require("node:vm");
+const { sources } = require("../../scripts/build.js");
 const { load, plain, text } = require("./harness.js");
 
 let ctx;
@@ -163,5 +166,15 @@ test("every language has every English key, with the same placeholders", () => {
       assert.ok(key in STRINGS.en, `${lang}.${key}`);
       assert.deepEqual(holes(value), holes(STRINGS.en[key]), `${lang}.${key}`);
     }
+  }
+});
+
+test("each language file is in the bundle, and holds that language alone", () => {
+  const dir = path.join(__dirname, "..", "..", "src", "cards", "strings");
+  const files = fs.readdirSync(dir).map((name) => path.join(dir, name));
+  assert.deepEqual(files.filter((file) => !sources.includes(file)), [], "add them to SOURCES in scripts/build.js");
+  for (const file of files) {
+    const strings = vm.runInNewContext(`const STRINGS = {};\n${fs.readFileSync(file, "utf8")}\nSTRINGS`);
+    assert.deepEqual(Object.keys(strings), [path.basename(file, ".js")], file);
   }
 });
