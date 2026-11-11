@@ -84,7 +84,7 @@ const dayLabelShort = (day, locale) => new Intl.DateTimeFormat(locale, { weekday
 class TrendsCard extends PersonCard {
   static titleKey = "title_trends";
   static ranges = ["7", "30", "90", "365"];
-  static style = `${super.style}${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}${MEAL_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
     .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
@@ -92,14 +92,7 @@ class TrendsCard extends PersonCard {
     .chart .bar .hit { fill: transparent; }
     .chart .bar[data-action] { cursor: pointer; }
     .chart .bar[data-action]:hover .hit { fill: var(--secondary-background-color); }
-    .chart .meal0, .legend .meal0 { fill: var(--amber-color, var(--primary-color)); background: var(--amber-color, var(--primary-color)); }
-    .chart .meal1, .legend .meal1 { fill: var(--light-blue-color, var(--primary-color)); background: var(--light-blue-color, var(--primary-color)); }
-    .chart .meal2, .legend .meal2 { fill: var(--indigo-color, var(--primary-color)); background: var(--indigo-color, var(--primary-color)); }
-    .chart .meal3, .legend .meal3 { fill: var(--teal-color, var(--primary-color)); background: var(--teal-color, var(--primary-color)); }
     .chart .goaltick { stroke: var(--primary-text-color); stroke-width: 2; }
-    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
     .legend .goalkey { width: 14px; height: 2px; background: var(--primary-text-color); border-radius: 0; }
   `;
 

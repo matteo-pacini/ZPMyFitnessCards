@@ -70,15 +70,11 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
 class WeightCard extends PersonCard {
   static titleKey = "title_weight";
   static ranges = ["90", "365", "all"];
-  static style = `${super.style}${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}${BAND_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
     .now { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .now b { font-size: 1.8rem; font-weight: var(--ha-font-weight-medium, 500); }
     .chip { border-radius: 12px; padding: 2px 10px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--text-primary-color); }
-    .chip.underweight, .band.underweight { background: var(--info-color, var(--blue-color)); fill: var(--info-color, var(--blue-color)); }
-    .chip.healthy, .band.healthy { background: var(--success-color, var(--green-color)); fill: var(--success-color, var(--green-color)); }
-    .chip.overweight, .band.overweight { background: var(--warning-color, var(--amber-color)); fill: var(--warning-color, var(--amber-color)); }
-    .chip.obese, .band.obese { background: var(--error-color); fill: var(--error-color); }
     .band { fill-opacity: 0.13; }
     .chart .line { fill: none; stroke: var(--primary-color); stroke-width: 2.5; stroke-linejoin: round; }
     .chart .point { fill: var(--card-background-color, var(--primary-background-color)); stroke: var(--primary-color); stroke-width: 2; }

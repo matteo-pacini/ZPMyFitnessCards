@@ -72,7 +72,7 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
 class SummaryCard extends PersonCard {
   static titleKey = "title_summary";
   static ranges = [];
-  static style = `${super.style}
+  static style = `${super.style}${MEAL_STYLE}${BAND_STYLE}
     .body { display: flex; flex-direction: column; gap: 12px; }
     .rings { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
     .big { position: relative; width: 132px; height: 132px; }
@@ -91,21 +91,10 @@ class SummaryCard extends PersonCard {
     .ring.over .fill { stroke: var(--error-color); }
     .stack { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--divider-color); }
     .stack i { display: block; height: 100%; }
-    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-    .meal0 { background: var(--amber-color, var(--primary-color)); }
-    .meal1 { background: var(--light-blue-color, var(--primary-color)); }
-    .meal2 { background: var(--indigo-color, var(--primary-color)); }
-    .meal3 { background: var(--teal-color, var(--primary-color)); }
     .weight { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; border-top: 1px solid var(--divider-color); padding-top: 12px; }
     .weight b { font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
     .weight small { display: block; }
     .chip { border-radius: 12px; padding: 1px 8px; font-size: var(--ha-font-size-xs, 0.75rem); color: var(--text-primary-color); vertical-align: middle; }
-    .chip.underweight { background: var(--info-color, var(--blue-color)); }
-    .chip.healthy { background: var(--success-color, var(--green-color)); }
-    .chip.overweight { background: var(--warning-color, var(--amber-color)); }
-    .chip.obese { background: var(--error-color); }
     .spark { width: 100%; height: auto; max-height: 64px; display: block; }
     .spark .area { fill: var(--primary-color); fill-opacity: 0.12; }
     .spark .line { fill: none; stroke: var(--primary-color); stroke-width: 2; }

@@ -25,3 +25,15 @@ const CHART_STYLE = `
   .chart .axis, .chart .bandlabel, .chart .goallabel { font-size: 11px; fill: var(--secondary-text-color); }
   .chart .grid { stroke: var(--divider-color); stroke-width: 1; }
 `;
+
+// The meals' colours, as a fill in charts and a background elsewhere, and
+// the legend that names them.
+const MEAL_STYLE = `
+  .meal0 { fill: var(--amber-color, var(--primary-color)); background: var(--amber-color, var(--primary-color)); }
+  .meal1 { fill: var(--light-blue-color, var(--primary-color)); background: var(--light-blue-color, var(--primary-color)); }
+  .meal2 { fill: var(--indigo-color, var(--primary-color)); background: var(--indigo-color, var(--primary-color)); }
+  .meal3 { fill: var(--teal-color, var(--primary-color)); background: var(--teal-color, var(--primary-color)); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+`;

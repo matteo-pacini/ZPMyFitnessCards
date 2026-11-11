@@ -2903,6 +2903,18 @@ const CHART_STYLE = `
   .chart .grid { stroke: var(--divider-color); stroke-width: 1; }
 `;
 
+// The meals' colours, as a fill in charts and a background elsewhere, and
+// the legend that names them.
+const MEAL_STYLE = `
+  .meal0 { fill: var(--amber-color, var(--primary-color)); background: var(--amber-color, var(--primary-color)); }
+  .meal1 { fill: var(--light-blue-color, var(--primary-color)); background: var(--light-blue-color, var(--primary-color)); }
+  .meal2 { fill: var(--indigo-color, var(--primary-color)); background: var(--indigo-color, var(--primary-color)); }
+  .meal3 { fill: var(--teal-color, var(--primary-color)); background: var(--teal-color, var(--primary-color)); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+`;
+
 // src/cards/weights.js
 // Weights are stored, sent and received in kg. On an install whose unit
 // system is US customary, the cards show and take them in lb instead.
@@ -2925,6 +2937,14 @@ function bandOf(kg, person) {
   if (kg < person.obese_from_kg) return "overweight";
   return "obese";
 }
+
+// The BMI bands' colours, as a chip's background and a chart band's fill.
+const BAND_STYLE = `
+  .chip.underweight, .band.underweight { background: var(--info-color, var(--blue-color)); fill: var(--info-color, var(--blue-color)); }
+  .chip.healthy, .band.healthy { background: var(--success-color, var(--green-color)); fill: var(--success-color, var(--green-color)); }
+  .chip.overweight, .band.overweight { background: var(--warning-color, var(--amber-color)); fill: var(--warning-color, var(--amber-color)); }
+  .chip.obese, .band.obese { background: var(--error-color); fill: var(--error-color); }
+`;
 
 // src/cards/person-card.js
 const rangeButtons = (ranges, selected, t) =>
@@ -3058,15 +3078,11 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
 class WeightCard extends PersonCard {
   static titleKey = "title_weight";
   static ranges = ["90", "365", "all"];
-  static style = `${super.style}${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}${BAND_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
     .now { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .now b { font-size: 1.8rem; font-weight: var(--ha-font-weight-medium, 500); }
     .chip { border-radius: 12px; padding: 2px 10px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--text-primary-color); }
-    .chip.underweight, .band.underweight { background: var(--info-color, var(--blue-color)); fill: var(--info-color, var(--blue-color)); }
-    .chip.healthy, .band.healthy { background: var(--success-color, var(--green-color)); fill: var(--success-color, var(--green-color)); }
-    .chip.overweight, .band.overweight { background: var(--warning-color, var(--amber-color)); fill: var(--warning-color, var(--amber-color)); }
-    .chip.obese, .band.obese { background: var(--error-color); fill: var(--error-color); }
     .band { fill-opacity: 0.13; }
     .chart .line { fill: none; stroke: var(--primary-color); stroke-width: 2.5; stroke-linejoin: round; }
     .chart .point { fill: var(--card-background-color, var(--primary-background-color)); stroke: var(--primary-color); stroke-width: 2; }
@@ -3245,7 +3261,7 @@ const dayLabelShort = (day, locale) => new Intl.DateTimeFormat(locale, { weekday
 class TrendsCard extends PersonCard {
   static titleKey = "title_trends";
   static ranges = ["7", "30", "90", "365"];
-  static style = `${super.style}${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}${MEAL_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
     .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
@@ -3253,14 +3269,7 @@ class TrendsCard extends PersonCard {
     .chart .bar .hit { fill: transparent; }
     .chart .bar[data-action] { cursor: pointer; }
     .chart .bar[data-action]:hover .hit { fill: var(--secondary-background-color); }
-    .chart .meal0, .legend .meal0 { fill: var(--amber-color, var(--primary-color)); background: var(--amber-color, var(--primary-color)); }
-    .chart .meal1, .legend .meal1 { fill: var(--light-blue-color, var(--primary-color)); background: var(--light-blue-color, var(--primary-color)); }
-    .chart .meal2, .legend .meal2 { fill: var(--indigo-color, var(--primary-color)); background: var(--indigo-color, var(--primary-color)); }
-    .chart .meal3, .legend .meal3 { fill: var(--teal-color, var(--primary-color)); background: var(--teal-color, var(--primary-color)); }
     .chart .goaltick { stroke: var(--primary-text-color); stroke-width: 2; }
-    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
     .legend .goalkey { width: 14px; height: 2px; background: var(--primary-text-color); border-radius: 0; }
   `;
 
@@ -3383,7 +3392,7 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
 class SummaryCard extends PersonCard {
   static titleKey = "title_summary";
   static ranges = [];
-  static style = `${super.style}
+  static style = `${super.style}${MEAL_STYLE}${BAND_STYLE}
     .body { display: flex; flex-direction: column; gap: 12px; }
     .rings { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
     .big { position: relative; width: 132px; height: 132px; }
@@ -3402,21 +3411,10 @@ class SummaryCard extends PersonCard {
     .ring.over .fill { stroke: var(--error-color); }
     .stack { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--divider-color); }
     .stack i { display: block; height: 100%; }
-    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--secondary-text-color); }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-    .meal0 { background: var(--amber-color, var(--primary-color)); }
-    .meal1 { background: var(--light-blue-color, var(--primary-color)); }
-    .meal2 { background: var(--indigo-color, var(--primary-color)); }
-    .meal3 { background: var(--teal-color, var(--primary-color)); }
     .weight { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; border-top: 1px solid var(--divider-color); padding-top: 12px; }
     .weight b { font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
     .weight small { display: block; }
     .chip { border-radius: 12px; padding: 1px 8px; font-size: var(--ha-font-size-xs, 0.75rem); color: var(--text-primary-color); vertical-align: middle; }
-    .chip.underweight { background: var(--info-color, var(--blue-color)); }
-    .chip.healthy { background: var(--success-color, var(--green-color)); }
-    .chip.overweight { background: var(--warning-color, var(--amber-color)); }
-    .chip.obese { background: var(--error-color); }
     .spark { width: 100%; height: auto; max-height: 64px; display: block; }
     .spark .area { fill: var(--primary-color); fill-opacity: 0.12; }
     .spark .line { fill: none; stroke: var(--primary-color); stroke-width: 2; }

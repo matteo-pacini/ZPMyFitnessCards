@@ -19,3 +19,11 @@ function bandOf(kg, person) {
   if (kg < person.obese_from_kg) return "overweight";
   return "obese";
 }
+
+// The BMI bands' colours, as a chip's background and a chart band's fill.
+const BAND_STYLE = `
+  .chip.underweight, .band.underweight { background: var(--info-color, var(--blue-color)); fill: var(--info-color, var(--blue-color)); }
+  .chip.healthy, .band.healthy { background: var(--success-color, var(--green-color)); fill: var(--success-color, var(--green-color)); }
+  .chip.overweight, .band.overweight { background: var(--warning-color, var(--amber-color)); fill: var(--warning-color, var(--amber-color)); }
+  .chip.obese, .band.obese { background: var(--error-color); fill: var(--error-color); }
+`;
