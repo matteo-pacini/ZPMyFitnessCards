@@ -2,6 +2,7 @@
   "domain": "fork_and_scale",
   "name": "Fork & Scale",
   "after_dependencies": ["frontend", "recorder"],
+  "categories": ["health_wellbeing"],
   "codeowners": ["@matteo-pacini"],
   "config_flow": true,
   "dependencies": ["file_upload", "http", "websocket_api"],
