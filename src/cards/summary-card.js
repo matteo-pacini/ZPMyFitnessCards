@@ -48,7 +48,7 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
   const stack = byMeal.map((kcal, i) => (kcal > 0 ? `<i class="meal${i}" style="width:${((kcal / scale) * 100).toFixed(2)}%"></i>` : "")).join("");
   const legend = MEALS.map((meal, i) => `<span><i class="meal${i}"></i>${esc(t[meal])} <span class="num">${number(byMeal[i], locale)}</span></span>`).join("");
 
-  const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
+  const latest = latestKg(weights, person);
   const band = bandOf(latest, person);
   let change = "";
   if (weights.length >= 2) {

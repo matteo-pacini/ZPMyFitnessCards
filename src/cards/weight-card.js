@@ -97,7 +97,7 @@ class WeightCard extends PersonCard {
     const today = this._today;
     const unit = weightUnit(this._hass);
     const weights = this._data;
-    const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
+    const latest = latestKg(weights, person);
     const change = latest - person.start_weight_kg;
     const start = rangeStart(this._range, today, weights[0]?.day ?? person.start_date);
     const shown = weights.filter((w) => w.day >= start);

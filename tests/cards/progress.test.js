@@ -9,7 +9,7 @@ let fn;
 test.before(async () => {
   const ctx = await load();
   fn = vm.runInContext(
-    "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, niceStep, ticks, dayScale, linePath, gridHTML, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
+    "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, latestKg, niceStep, ticks, dayScale, linePath, gridHTML, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
     ctx,
   );
 });
@@ -91,6 +91,11 @@ test("grid lines are labelled on the axis", () => {
   assert.equal((grid.match(/class="grid"/g) ?? []).length, 2);
   assert.match(grid, /y1="14.5" y2="14.5"\/><text class="axis" x="38" y="18.5" text-anchor="end">85.5</);
   assert.equal(text(fn.gridHTML([1234.5], (v) => v, "en-GB")), "1,235");
+});
+
+test("the weight now is the last weigh-in, or the start weight before any", () => {
+  assert.equal(fn.latestKg([{ day: "2026-11-02", kg: 88.9 }, { day: "2026-11-09", kg: 88.6 }], MATTEO), 88.6);
+  assert.equal(fn.latestKg([], MATTEO), 89);
 });
 
 test("a weight's BMI band comes from the person's limits", () => {

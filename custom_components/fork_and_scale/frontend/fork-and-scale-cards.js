@@ -2946,6 +2946,10 @@ const weightText = (kg, unit, locale, t) => `${number(fromKg(kg, unit), locale, 
 // "+1.2 kg", "−0.5 lb" or "±0 kg": a change of weight in kg, in `unit`.
 const changeText = (kg, unit, locale, t) => `${kg > 0 ? "+" : kg < 0 ? "−" : "±"}${weightText(Math.abs(kg), unit, locale, t)}`;
 
+// A person's weight now, in kg: their last weigh-in in `weights`, oldest
+// first, or their start weight before there is one.
+const latestKg = (weights, person) => (weights.length ? weights[weights.length - 1].kg : person.start_weight_kg);
+
 // The BMI band a weight falls in, from a person's band limits in kg.
 function bandOf(kg, person) {
   if (kg < person.underweight_below_kg) return "underweight";
@@ -3128,7 +3132,7 @@ class WeightCard extends PersonCard {
     const today = this._today;
     const unit = weightUnit(this._hass);
     const weights = this._data;
-    const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
+    const latest = latestKg(weights, person);
     const change = latest - person.start_weight_kg;
     const start = rangeStart(this._range, today, weights[0]?.day ?? person.start_date);
     const shown = weights.filter((w) => w.day >= start);
@@ -3380,7 +3384,7 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
   const stack = byMeal.map((kcal, i) => (kcal > 0 ? `<i class="meal${i}" style="width:${((kcal / scale) * 100).toFixed(2)}%"></i>` : "")).join("");
   const legend = MEALS.map((meal, i) => `<span><i class="meal${i}"></i>${esc(t[meal])} <span class="num">${number(byMeal[i], locale)}</span></span>`).join("");
 
-  const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
+  const latest = latestKg(weights, person);
   const band = bandOf(latest, person);
   let change = "";
   if (weights.length >= 2) {
