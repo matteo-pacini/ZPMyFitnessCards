@@ -176,7 +176,7 @@ One person's day, meal by meal: the calorie goal, what they have eaten and what 
 
 <img src="images/food-diary.png" alt="Food diary" width="400">
 
-- **Add food** under a meal opens three tabs. **Saved foods** searches your saved foods, or lists the ones you logged recently; choose one, then type the grams or tap a portion. **Quick add** logs a name and calories without saving a food. **New food** saves a food and logs it.
+- **Add food** under a meal opens three tabs. **Saved foods** searches only your saved foods, or lists the ones you logged recently; choose one, then type the grams or tap a portion. **Quick add** logs a name and calories without saving a food. **New food** finds a product on [Open Food Facts](#open-food-facts-search) by name or barcode, or takes the values from the label, then saves the food and logs it.
 - Tap an entry to change its grams or meal, or to delete it.
 - **Copy** fills a meal from any meal on another day.
 - The arrows and the calendar move between days. Future days are not allowed.
@@ -217,8 +217,10 @@ type: custom:fork-and-scale-foods-card
 
 Both the saved foods card and the food diary's **Add food** panel know barcodes.
 
-- **Typing one** works on every device. In the saved foods card, type it in a food's Barcode field and tap **Look up barcode**. In the diary, type it in the search box: a saved food with that barcode shows up, and if there is none, **Look up … on Open Food Facts** fills in a new food.
-- **Scanning one** shows a **Scan** button where the device can. In the Home Assistant app (Android 2024.6.1 or later, iOS 2024.5 or later) it opens the app's own scanner. In a browser that has a barcode reader built in, such as Chrome on Android, it opens the camera in the card.
+- **A new food** (the diary's **New food** tab, or **+ Add food** in the saved foods card) has a **Search Open Food Facts** box. Type a barcode in it and press Enter, or tap **Scan barcode** under it: the barcode goes into the form, which fills in from Open Food Facts straight away.
+- **Saved foods** find a barcode too: type it in their search box, or tap **Scan** beside it in the diary, to find the saved food that has it. If none has it, **Look up … on Open Food Facts** opens a new food filled in from it.
+- **A saved food** you are changing has **Look up barcode** and **Scan** under its Barcode field.
+- **Scanning** needs a device that can. In the Home Assistant app (Android 2024.6.1 or later, iOS 2024.5 or later) it opens the app's own scanner. In a browser that has a barcode reader built in, such as Chrome on Android, it opens the camera in the card. Elsewhere there is no Scan button, and typing still works.
 - **Open Food Facts** fills in the name, the values per 100 g and a serving size from the barcode, straight from your browser. Check them against the label before saving. A barcode that a saved food already has opens that food instead.
 
 <img src="images/barcode-lookup.png" alt="A food filled in from its barcode" width="400">
@@ -227,14 +229,16 @@ Scanning in the app relies on an undocumented part of Home Assistant's frontend;
 
 ### Open Food Facts search
 
-The search boxes in the saved foods card and in the food diary's **Add food** panel can also search Open Food Facts by name.
+A new food's **Search Open Food Facts** box, in the diary's **New food** tab and under the saved foods card's **+ Add food**, also searches by name.
 
-- Type a name, then tap **Search Open Food Facts for "…"** under your saved foods. It searches only when you tap it, never as you type.
+- Type a name, then press Enter or tap **Search Open Food Facts for "…"**. It searches only when asked, never as you type.
+- Searching your saved foods shows only saved foods. Under them, the same **Search Open Food Facts for "…"** takes what you typed to a new food and searches it there.
 - It shows ten products at a time, and **More** shows the next ten. Each row has the name, brand, pack size and kcal per 100 g. Names are in the card's language when the product has one, else in English.
 - It only finds products that give kcal, protein, carbs and fat per 100 g.
-- Tap a product to open **New food**, filled in as from its barcode. If the barcode lookup fails, the values come from the search instead, with a warning. The search can be months behind Open Food Facts, and has no serving sizes.
+- Tap a product to fill in the form, as from its barcode; the products stay listed, so you can pick another. If the barcode lookup fails, the values come from the search instead, with a warning. The search can be months behind Open Food Facts, and has no serving sizes.
+- Nothing is saved until you tap **Save and choose** in the diary, or **Save food** in the saved foods card.
 
-<img src="images/food-search.png" alt="Searching Open Food Facts from the food diary" width="400">
+<img src="images/food-search.png" alt="Searching Open Food Facts from the food diary's New food tab" width="400">
 
 Home Assistant runs this search, not your browser, so the Home Assistant server needs internet access. It sends Open Food Facts the words you typed and the card's language.
 

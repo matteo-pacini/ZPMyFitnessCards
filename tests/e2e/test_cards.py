@@ -344,6 +344,16 @@ OFF_PRODUCTS = {
             "fat_100g": 2,
         },
     },
+    "40000000000501": {
+        "product_name": "Kefir",
+        "brands": "Mountain farm",
+        "nutriments": {
+            "energy-kcal_100g": 41,
+            "proteins_100g": 3.4,
+            "carbohydrates_100g": 4,
+            "fat_100g": 1,
+        },
+    },
     "7613035974685": {
         "product_name": "Skyr nature",
         "brands": "Siggi's",
@@ -383,7 +393,8 @@ CORS = {"Access-Control-Allow-Origin": "*"}
 def fake_camera(page: Page, code: str | None, *, refuse: bool = False) -> None:
     """A browser barcode reader that sees `code` (or nothing), and a camera.
 
-    With `refuse`, the camera is denied, as when a person blocks it.
+    With `refuse`, the camera is denied, as when a person blocks it. Each
+    stream the camera opens is kept in `window.cameraStreams`.
     """
     script = """
         (() => {
@@ -395,7 +406,9 @@ def fake_camera(page: Page, code: str | None, *, refuse: bool = False) -> None:
             if (REFUSE) throw new DOMException("Permission denied", "NotAllowedError");
             const canvas = document.createElement("canvas");
             canvas.getContext("2d").fillRect(0, 0, 10, 10);
-            return canvas.captureStream();
+            const stream = canvas.captureStream();
+            (window.cameraStreams ??= []).push(stream);
+            return stream;
           };
         })();
     """
@@ -404,19 +417,29 @@ def fake_camera(page: Page, code: str | None, *, refuse: bool = False) -> None:
     )
 
 
+def wait_for_camera_off(page: Page) -> None:
+    """Wait until every stream fake_camera's camera opened has stopped."""
+    page.wait_for_function(
+        "window.cameraStreams?.length && window.cameraStreams.every("
+        "(s) => s.getTracks().every((t) => t.readyState === 'ended'))",
+        timeout=TIMEOUT,
+    )
+
+
 def test_the_saved_foods_card_fills_a_food_from_its_barcode(home: Home, page: Page) -> None:
     asked = mock_open_food_facts(page)
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
+    search = card.locator('.panel [data-action="off-query"]')
+    expect(search).to_be_focused()
+    search.fill("5201054017111")
+    look_up = card.locator('.panel .off [data-action="off-find"]')
+    expect(look_up).to_have_text("Look up 5201054017111 on Open Food Facts")
+    look_up.click()
     form = card.locator(".foodform")
-    form.locator('[data-field="barcode"]').fill("123")
-    card.locator('[data-action="lookup"]').click()
-    expect(card.locator(".panel .error")).to_contain_text("8 to 14 digits")
-
-    form.locator('[data-field="barcode"]').fill("5201054017111")
-    card.locator('[data-action="lookup"]').click()
     expect(card.locator(".panel .note")).to_contain_text("Filled in from Open Food Facts")
     expect(form.locator('[data-field="name"]')).to_have_value(f"Greek yogurt 2% {DASH} Fage")
+    expect(form.locator('[data-field="barcode"]')).to_have_value("5201054017111")
     expect(form.locator('[data-field="kcal"]')).to_have_value("73")
     expect(form.locator('[data-portion="grams"]')).to_have_value("170")
     assert asked == ["5201054017111"]
@@ -426,12 +449,17 @@ def test_the_saved_foods_card_fills_a_food_from_its_barcode(home: Home, page: Pa
     assert saved["name"] == f"Greek yogurt 2% {DASH} Fage"
     assert saved["portions"] == [{"name": "Serving", "grams": 170}]
 
-    # Looking the same barcode up again opens the saved food.
+    # Looking the same barcode up again, with Enter, opens the saved food.
     card.locator('[data-action="new"]').click()
-    card.locator('.foodform [data-field="barcode"]').fill("5201054017111")
-    card.locator('[data-action="lookup"]').click()
+    search.fill("5201054017111")
+    search.press("Enter")
     expect(card.locator(".panel .note")).to_contain_text("already has this barcode")
     expect(card.locator('[data-action="delete"]')).to_be_visible()
+
+    # A saved food looks its barcode up from its form.
+    form.locator('[data-field="barcode"]').fill("123")
+    form.locator('[data-action="lookup"]').click()
+    expect(card.locator(".panel .error")).to_contain_text("8 to 14 digits")
 
 
 def test_the_diary_looks_up_a_typed_barcode_it_does_not_have(home: Home, page: Page) -> None:
@@ -439,7 +467,16 @@ def test_the_diary_looks_up_a_typed_barcode_it_does_not_have(home: Home, page: P
     card = diary(home, page, "Debora")
     meal(card, "dinner").locator('[data-action="add"]').click()
     card.locator('[data-action="query"]').fill("8076809513753")
-    card.locator('[data-action="lookup-query"]').click()
+    expect(card.locator(".results")).to_contain_text("No saved food matches", timeout=TIMEOUT)
+    link = card.locator('.find [data-action="off-find"]')
+    expect(link).to_have_text("Look up 8076809513753 on Open Food Facts")
+    link.click()
+    expect(card.locator('[data-action="tab"][data-tab="new"]')).to_have_attribute(
+        "aria-selected", "true"
+    )
+    # The barcode goes into the form, and the search box empties.
+    expect(card.locator('[data-action="off-query"]')).to_have_value("")
+    expect(card.locator('.foodform [data-field="barcode"]')).to_have_value("8076809513753")
     expect(card.locator('.foodform [data-field="name"]')).to_have_value(
         f"Spaghetti n.5 {DASH} Barilla"
     )
@@ -461,7 +498,7 @@ def test_the_diary_says_when_open_food_facts_does_not_know_a_barcode(
     card = diary(home, page, "Debora")
     meal(card, "snacks").locator('[data-action="add"]').click()
     card.locator('[data-action="query"]').fill("40000000000099")
-    card.locator('[data-action="lookup-query"]').click()
+    card.locator('.find [data-action="off-find"]').click()
     expect(card.locator(".panel .error")).to_contain_text("does not know barcode 40000000000099")
     expect(card.locator('.foodform [data-field="barcode"]')).to_have_value("40000000000099")
 
@@ -471,7 +508,8 @@ def test_scanning_with_the_browser_reads_the_barcode(home: Home, page: Page) -> 
     fake_camera(page, "8076809513753")
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
-    card.locator('[data-action="scan"]').click()
+    expect(card.locator('.foodform [data-action="scan"]')).to_have_count(0)
+    card.locator('[data-action="off-scan"]').click()
     form = card.locator(".foodform")
     expect(form.locator('[data-field="barcode"]')).to_have_value("8076809513753", timeout=TIMEOUT)
     expect(form.locator('[data-field="name"]')).to_have_value(f"Spaghetti n.5 {DASH} Barilla")
@@ -490,10 +528,26 @@ def test_scanning_a_saved_food_in_the_diary_chooses_it(home: Home, page: Page) -
 
 def test_without_a_scanner_there_is_no_scan_button(home: Home, page: Page) -> None:
     page.add_init_script("delete window.BarcodeDetector")
+    save_food(home, "No scanner e2e")
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
-    expect(card.locator('[data-action="lookup"]')).to_be_visible()
-    expect(card.locator('[data-action="scan"]')).to_have_count(0)
+    expect(card.locator('.panel [data-action="off-query"]')).to_be_visible()
+    expect(card.locator('.panel [data-action="off-scan"]')).to_have_count(0)
+    expect(card.locator('.panel [data-action="lookup"]')).to_have_count(0)
+    card.locator('.panel [data-action="close"]').click()
+    card.locator('[data-action="query"]').fill("No scanner e2e")
+    card.locator(".row", has_text="No scanner e2e").click()
+    expect(card.locator('.panel [data-action="lookup"]')).to_be_visible()
+    expect(card.locator('.panel [data-action="scan"]')).to_have_count(0)
+    expect(card.locator('.panel [data-action="off-query"]')).to_have_count(0)
+
+    card = diary(home, page, "Debora")
+    meal(card, "lunch").locator('[data-action="add"]').click()
+    expect(card.locator('.panel [data-action="query"]')).to_be_visible()
+    expect(card.locator('.panel [data-action="scan"]')).to_have_count(0)
+    card.locator('[data-action="tab"][data-tab="new"]').click()
+    expect(card.locator('.panel [data-action="off-query"]')).to_be_visible()
+    expect(card.locator('.panel [data-action="off-scan"]')).to_have_count(0)
 
 
 def test_the_diary_s_calendar_and_cancel(home: Home, page: Page) -> None:
@@ -537,51 +591,68 @@ def test_the_new_food_tab_edits_portions_and_finds_saved_barcodes(home: Home, pa
     card.locator('[data-action="remove-portion"]').click()
     expect(card.locator(".foodform .portion")).to_have_count(0)
 
-    card.locator('.foodform [data-field="barcode"]').fill("96385074")
-    card.locator('.foodform [data-action="lookup"]').click()
+    # The search box takes a barcode, and a saved food's opens that food.
+    expect(card.locator('.foodform [data-action="lookup"]')).to_have_count(0)
+    card.locator('[data-action="off-query"]').fill("96385074")
+    card.locator('[data-action="off-query"]').press("Enter")
     expect(card.locator(".panel .note")).to_contain_text("Known oats e2e already has this barcode")
+    expect(card.locator('[data-action="tab"][data-tab="search"]')).to_have_attribute(
+        "aria-selected", "true"
+    )
     expect(card.locator(".picked")).to_contain_text("Known oats e2e")
 
 
-def test_the_new_food_tab_scans_with_the_camera(home: Home, page: Page) -> None:
-    mock_open_food_facts(page)
+def test_the_new_food_tab_scans_a_barcode_straight_into_its_form(home: Home, page: Page) -> None:
+    asked = mock_open_food_facts(page)
     # A product no other test saves, so the scan fills a new food.
     fake_camera(page, "4000417025005")
     card = diary(home, page, "Debora")
     meal(card, "dinner").locator('[data-action="add"]').click()
     card.locator('[data-action="tab"][data-tab="new"]').click()
-    card.locator('.foodform [data-action="scan"]').click()
-    expect(card.locator('.foodform [data-field="barcode"]')).to_have_value(
-        "4000417025005", timeout=TIMEOUT
+    expect(card.locator('.foodform [data-action="scan"]')).to_have_count(0)
+    search = card.locator('[data-action="off-query"]')
+    search.fill("dark chocolate")
+    card.locator('[data-action="off-scan"]').click()
+    form = card.locator(".foodform")
+    expect(form.locator('[data-field="barcode"]')).to_have_value("4000417025005", timeout=TIMEOUT)
+    expect(form.locator('[data-field="kcal"]')).to_have_value("598")
+    expect(card.locator(".panel .note")).to_contain_text("Filled in from Open Food Facts")
+    # The scan replaces what was typed in the search box.
+    expect(search).to_have_value("")
+    expect(card.locator(".panel .off")).to_have_text(
+        "Type a product's name or barcode, or fill in the form from the label."
     )
-    expect(card.locator('.foodform [data-field="kcal"]')).to_have_value("598")
+    expect(card.locator(".scanner")).to_be_hidden()
+    assert asked == ["4000417025005"]
 
 
-@pytest.mark.parametrize("where", ["diary", "foods"])
+@pytest.mark.parametrize("where", ["diary", "new food", "foods"])
 def test_a_scan_can_be_cancelled(home: Home, page: Page, where: str) -> None:
     fake_camera(page, None)
-    if where == "diary":
-        card = diary(home, page, "Debora")
-        meal(card, "lunch").locator('[data-action="add"]').click()
-        query = card.locator('[data-action="query"]')
-        query.fill("before")
-    else:
+    if where == "foods":
         card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
         card.locator('[data-action="new"]').click()
-        query = card.locator('.foodform [data-field="barcode"]')
-        query.fill("12345670")
-    card.locator('.panel [data-action="scan"]').first.click()
+    else:
+        card = diary(home, page, "Debora")
+        meal(card, "lunch").locator('[data-action="add"]').click()
+    if where == "new food":
+        card.locator('[data-action="tab"][data-tab="new"]').click()
+    query = card.locator('.panel [data-action="query"], .panel [data-action="off-query"]')
+    query.fill("before")
+    scan = '[data-action="scan"]' if where == "diary" else '[data-action="off-scan"]'
+    card.locator(f".panel {scan}").click()
     expect(card.locator(".scanner video")).to_be_visible(timeout=TIMEOUT)
     card.locator('[data-action="stop-scan"]').click()
     expect(card.locator(".scanner")).to_be_hidden(timeout=TIMEOUT)
-    expect(query).to_have_value("before" if where == "diary" else "12345670")
+    expect(query).to_have_value("before")
+    wait_for_camera_off(page)
 
 
 def test_a_blocked_camera_is_explained(home: Home, page: Page) -> None:
     fake_camera(page, "12345670", refuse=True)
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
-    card.locator('[data-action="scan"]').click()
+    card.locator('[data-action="off-scan"]').click()
     expect(card.locator(".panel .error")).to_contain_text(
         "Could not use the camera: Permission denied", timeout=TIMEOUT
     )
@@ -591,11 +662,12 @@ def test_an_unreachable_open_food_facts_is_explained(home: Home, page: Page) -> 
     page.route("https://world.openfoodfacts.org/**", lambda route: route.abort())
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
-    card.locator('.foodform [data-field="barcode"]').fill("40000000000105")
-    card.locator('[data-action="lookup"]').click()
+    card.locator('.panel [data-action="off-query"]').fill("40000000000105")
+    card.locator('.panel [data-action="off-query"]').press("Enter")
     expect(card.locator(".panel .error")).to_contain_text(
         "Could not reach Open Food Facts", timeout=TIMEOUT
     )
+    expect(card.locator('.foodform [data-field="barcode"]')).to_have_value("40000000000105")
 
 
 def hit(code: str, name: str, kcal: float, **more) -> dict:
@@ -626,16 +698,23 @@ def test_the_diary_searches_open_food_facts_by_name(
     search.find(products)
     card = diary(home, page, "Debora")
     meal(card, "breakfast").locator('[data-action="add"]').click()
-    expect(card.locator(".off")).to_have_text("Type a name to search Open Food Facts too.")
+    expect(card.locator(".results")).to_contain_text("Recent", timeout=TIMEOUT)
+    expect(card.locator(".find")).to_be_empty()
 
+    # Saved foods searches only saved foods, and links to Open Food Facts.
     card.locator('[data-action="query"]').fill("skyr e2e")
     expect(card.locator(".results")).to_contain_text("No saved food matches", timeout=TIMEOUT)
-    button = card.locator('[data-action="off-search"]')
-    expect(button).to_have_text("Search Open Food Facts for \u201cskyr e2e\u201d")
-    # Typing searches saved foods only.
+    link = card.locator('.find [data-action="off-find"]')
+    expect(link).to_have_text("Search Open Food Facts for “skyr e2e”")
+    expect(card.locator('[data-action="off-pick"]')).to_have_count(0)
     assert search.asked == []
 
-    button.click()
+    # The link searches from New food.
+    link.click()
+    expect(card.locator('[data-action="tab"][data-tab="new"]')).to_have_attribute(
+        "aria-selected", "true"
+    )
+    expect(card.locator('[data-action="off-query"]')).to_have_value("skyr e2e")
     rows = card.locator('[data-action="off-pick"]')
     expect(rows).to_have_count(10, timeout=TIMEOUT)
     expect(rows.first).to_have_text(
@@ -656,12 +735,16 @@ def test_the_diary_searches_open_food_facts_by_name(
     expect(form.locator('[data-field="name"]')).to_have_value(
         f"Skyr nature {DASH} Siggi's", timeout=TIMEOUT
     )
+    expect(form.locator('[data-field="name"]')).to_be_focused()
     expect(form.locator('[data-field="kcal"]')).to_have_value("63")
     expect(form.locator('[data-field="barcode"]')).to_have_value("7613035974685")
     expect(form.locator('[data-portion="grams"]')).to_have_value("150")
     expect(card.locator(".panel .note")).to_contain_text("Filled in from Open Food Facts")
     expect(card.locator(".panel .warning")).to_have_count(0)
     assert looked_up == ["7613035974685"]
+    # The products stay, to pick another, and nothing is saved until asked.
+    expect(rows).to_have_count(12)
+    assert home.ws({"type": "fork_and_scale/food/barcode", "barcode": "7613035974685"}) is None
 
     card.locator('[data-action="save-new-food"]').click()
     card.locator('[data-field="grams"]').fill("100")
@@ -683,7 +766,7 @@ def test_a_failed_lookup_fills_the_food_from_the_search_with_a_warning(
     search.find([hit(code, f"Old crackers e2e {lookup}", 421, brands=["Crunchy"], quantity="")])
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="query"]').fill(f"crackers e2e {lookup}")
-    card.locator('[data-action="off-search"]').click()
+    card.locator('.find [data-action="off-find"]').click()
     card.locator('[data-action="off-pick"]').click()
 
     form = card.locator(".panel .foodform")
@@ -710,7 +793,7 @@ def test_a_failed_search_can_be_retried_and_may_find_nothing(
     meal(card, "lunch").locator('[data-action="add"]').click()
     card.locator('[data-action="query"]').fill("nothing e2e")
     # The fake fails every search until it is told what to find.
-    card.locator('[data-action="off-search"]').click()
+    card.locator('.find [data-action="off-find"]').click()
     expect(card.locator(".off .error")).to_have_text(
         "Could not search Open Food Facts: HTTP 503", timeout=TIMEOUT
     )
@@ -745,7 +828,7 @@ def test_searches_open_food_facts_in_the_card_s_language(
     )
     meal(card, "dinner").locator('[data-action="add"]').click()
     card.locator('[data-action="query"]').fill("yogurt greco")
-    card.locator('[data-action="off-search"]').click()
+    card.locator('.find [data-action="off-find"]').click()
     expect(card.locator('[data-action="off-pick"]')).to_contain_text(
         "Yogurt greco e2e", timeout=TIMEOUT
     )
@@ -763,12 +846,200 @@ def test_picking_a_product_already_saved_opens_the_saved_food(
     search.find([hit("40000000000341", "Skyr e2e already saved", 60)])
     card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="query"]').fill("skyr e2e already saved")
-    card.locator('[data-action="off-search"]').click()
+    card.locator('.find [data-action="off-find"]').click()
     card.locator('[data-action="off-pick"]').click()
     expect(card.locator(".panel .note")).to_contain_text(
         "Saved skyr e2e already has this barcode", timeout=TIMEOUT
     )
     expect(card.locator('[data-action="delete"]')).to_be_visible()
+
+
+@pytest.mark.parametrize("where", ["diary", "foods"])
+def test_searching_saved_foods_shows_only_saved_foods(
+    home: Home, page: Page, search: FakeSearch, where: str
+) -> None:
+    code = {"diary": "40000000000440", "foods": "40000000000457"}[where]
+    name = f"Crunchy oats e2e {where}"
+    save_food(home, name, barcode=code)
+    search.find([hit("40000000000464", "Crunchy oats e2e elsewhere", 420)])
+    if where == "diary":
+        card = diary(home, page, "Matteo")
+        meal(card, "breakfast").locator('[data-action="add"]').click()
+        found = card.locator(".results")
+    else:
+        card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
+        found = card.locator(".list")
+    query = card.locator('[data-action="query"]')
+    link = card.locator('.find [data-action="off-find"]')
+
+    # A saved food that matches still leaves a way to other products.
+    query.fill(f"crunchy oats e2e {where}")
+    expect(found).to_contain_text(name, timeout=TIMEOUT)
+    expect(link).to_have_text(f"Search Open Food Facts for “crunchy oats e2e {where}”")
+    # A barcode that a saved food has needs no lookup.
+    query.fill(code)
+    expect(found).to_contain_text(name, timeout=TIMEOUT)
+    expect(link).to_have_count(0)
+    # What was typed reaches the search as it is.
+    query.fill('oats "<e2e>"')
+    expect(link).to_have_text('Search Open Food Facts for “oats "<e2e>"”', timeout=TIMEOUT)
+    expect(card.locator('[data-action="off-pick"]')).to_have_count(0)
+    assert search.asked == []
+    link.click()
+    expect(card.locator('.panel [data-action="off-query"]')).to_have_value('oats "<e2e>"')
+    expect(card.locator('[data-action="off-pick"]')).to_have_count(1, timeout=TIMEOUT)
+    assert len(search.asked) == 1
+
+
+def test_new_food_searches_on_enter_and_keeps_the_form(
+    home: Home, page: Page, search: FakeSearch
+) -> None:
+    search.find(
+        [
+            hit("40000000000471", "Quark e2e plain", 67),
+            hit("40000000000488", "Quark e2e vanilla", 98),
+        ]
+    )
+    card = diary(home, page, "Matteo")
+    meal(card, "snacks").locator('[data-action="add"]').click()
+    card.locator('[data-action="tab"][data-tab="new"]').click()
+    hint = "Type a product's name or barcode, or fill in the form from the label."
+    expect(card.locator(".panel .off")).to_have_text(hint)
+    form = card.locator(".foodform")
+    form.locator('[data-field="name"]').fill("My own quark e2e")
+    form.locator('[data-field="kcal"]').fill("70")
+    box = card.locator('[data-action="off-query"]')
+    button = card.locator('.panel .off [data-action="off-find"]')
+
+    # Enter on an empty box does nothing.
+    box.press("Enter")
+    expect(card.locator(".panel .off")).to_have_text(hint)
+    box.fill("quark e2e")
+    expect(button).to_have_text("Search Open Food Facts for “quark e2e”")
+    assert search.asked == []
+    box.press("Enter")
+    rows = card.locator('[data-action="off-pick"]')
+    expect(rows).to_have_count(2, timeout=TIMEOUT)
+    assert len(search.asked) == 1
+    # Searching keeps what was typed in the form.
+    expect(form.locator('[data-field="name"]')).to_have_value("My own quark e2e")
+    expect(form.locator('[data-field="kcal"]')).to_have_value("70")
+
+    # Another tab and back keeps the search.
+    card.locator('[data-action="tab"][data-tab="quick"]').click()
+    card.locator('[data-action="tab"][data-tab="new"]').click()
+    expect(box).to_have_value("quark e2e")
+    expect(rows).to_have_count(2)
+
+    # Typing more puts the results out of date until searched again.
+    box.fill("quark e2e vanilla")
+    expect(rows).to_have_count(0)
+    expect(button).to_have_text("Search Open Food Facts for “quark e2e vanilla”")
+    assert len(search.asked) == 1
+    button.click()
+    expect(rows).to_have_count(2, timeout=TIMEOUT)
+    assert len(search.asked) == 2
+
+
+def test_scanning_a_saved_food_on_new_food_chooses_it(home: Home, page: Page) -> None:
+    save_food(
+        home,
+        "Scanned muesli e2e",
+        barcode="40000000000495",
+        portions=[{"name": "Bowl", "grams": 45}],
+    )
+    fake_camera(page, "40000000000495")
+    card = diary(home, page, "Matteo")
+    meal(card, "breakfast").locator('[data-action="add"]').click()
+    card.locator('[data-action="tab"][data-tab="new"]').click()
+    card.locator('[data-action="off-scan"]').click()
+    expect(card.locator(".panel .note")).to_contain_text(
+        "Scanned muesli e2e already has this barcode", timeout=TIMEOUT
+    )
+    expect(card.locator('[data-action="tab"][data-tab="search"]')).to_have_attribute(
+        "aria-selected", "true"
+    )
+    expect(card.locator(".picked")).to_contain_text("Scanned muesli e2e")
+    expect(card.locator('[data-field="grams"]')).to_have_value("45")
+
+
+@pytest.mark.parametrize("how", ["diary", "diary tab", "foods", "foods edit"])
+def test_leaving_a_scan_stops_the_camera(home: Home, page: Page, how: str) -> None:
+    fake_camera(page, None)
+    if how.startswith("diary"):
+        card = diary(home, page, "Debora")
+        meal(card, "lunch").locator('[data-action="add"]').click()
+        card.locator('[data-action="tab"][data-tab="new"]').click()
+        scan = '[data-action="off-scan"]'
+    elif how == "foods":
+        card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
+        card.locator('[data-action="new"]').click()
+        scan = '[data-action="off-scan"]'
+    else:
+        save_food(home, "Scan then close e2e")
+        card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
+        card.locator('[data-action="query"]').fill("Scan then close e2e")
+        card.locator(".row", has_text="Scan then close e2e").click()
+        scan = '[data-action="scan"]'
+    # Errors from here on: the scan, and leaving it.
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    card.locator(f".panel {scan}").click()
+    expect(card.locator(".scanner video")).to_be_visible(timeout=TIMEOUT)
+    if how == "diary tab":
+        card.locator('[data-action="tab"][data-tab="quick"]').click()
+        expect(card.locator(".scanner")).to_have_count(0)
+    else:
+        card.locator('.panel [data-action="close"]').first.click()
+        expect(card.locator(".panel")).to_be_hidden()
+    wait_for_camera_off(page)
+    assert errors == []
+
+
+def test_the_saved_foods_card_finds_a_new_food_on_open_food_facts(
+    home: Home, page: Page, search: FakeSearch
+) -> None:
+    looked_up = mock_open_food_facts(page)
+    search.find([hit("40000000000501", "Kefir e2e", 41)])
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
+    card.locator('[data-action="query"]').fill("kefir e2e")
+    expect(card.locator(".list")).to_contain_text("No saved food matches", timeout=TIMEOUT)
+    expect(card.locator('[data-action="off-pick"]')).to_have_count(0)
+    card.locator('.find [data-action="off-find"]').click()
+    panel = card.locator(".panel")
+    expect(panel.locator(".title")).to_have_text("New food")
+    expect(panel.locator('[data-action="off-query"]')).to_have_value("kefir e2e")
+    rows = panel.locator('[data-action="off-pick"]')
+    expect(rows).to_have_count(1, timeout=TIMEOUT)
+    rows.click()
+    form = panel.locator(".foodform")
+    expect(form.locator('[data-field="name"]')).to_have_value(
+        f"Kefir {DASH} Mountain farm", timeout=TIMEOUT
+    )
+    expect(form.locator('[data-field="name"]')).to_be_focused()
+    expect(rows).to_have_count(1)
+    assert looked_up == ["40000000000501"]
+    card.locator('[data-action="save"]').click()
+    expect(panel).to_be_hidden(timeout=TIMEOUT)
+    card.locator('[data-action="query"]').fill("Mountain farm")
+    expect(card.locator(".list")).to_contain_text("Kefir", timeout=TIMEOUT)
+
+    # An open new food keeps what was typed in it when the link searches.
+    card.locator('[data-action="new"]').click()
+    form.locator('[data-field="name"]').fill("Half typed e2e")
+    card.locator('[data-action="query"]').fill("kefir again e2e")
+    link = card.locator('.find [data-action="off-find"]')
+    expect(link).to_have_text("Search Open Food Facts for “kefir again e2e”", timeout=TIMEOUT)
+    link.click()
+    expect(panel.locator('[data-action="off-query"]')).to_have_value("kefir again e2e")
+    expect(form.locator('[data-field="name"]')).to_have_value("Half typed e2e")
+
+    # A saved food has no search, and looks barcodes up from its form.
+    panel.locator('[data-action="close"]').click()
+    card.locator('[data-action="query"]').fill("Mountain farm")
+    card.locator(".row", has_text="Kefir").click()
+    expect(panel.locator('[data-action="off-query"]')).to_have_count(0)
+    expect(panel.locator('[data-action="lookup"]')).to_be_visible()
 
 
 def test_the_saved_foods_form_removes_portions_and_cancels(home: Home, page: Page) -> None:

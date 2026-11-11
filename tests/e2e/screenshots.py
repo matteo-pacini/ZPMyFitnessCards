@@ -125,10 +125,24 @@ def signed_in(home: Home, browser: Browser, *, dark=False, width=480, height=140
     return page
 
 
+# A browser barcode reader, so the cards show their Scan buttons, as on a phone.
+SCANNER = "window.BarcodeDetector = class {};"
+
+
 def shoot(
-    home: Home, browser: Browser, card: dict, name: str, *, dark=False, width=480, setup=None
+    home: Home,
+    browser: Browser,
+    card: dict,
+    name: str,
+    *,
+    dark=False,
+    width=480,
+    setup=None,
+    scanner=False,
 ):
     page = signed_in(home, browser, dark=dark, width=width)
+    if scanner:
+        page.add_init_script(SCANNER)
     home.dashboard([card])
     page.goto(home.url + "/" + home.DASHBOARD + "/0")
     element = page.locator(card["type"].removeprefix("custom:"))
@@ -192,8 +206,8 @@ def look_up_barcode(card) -> None:
         ),
     )
     card.locator('[data-action="new"]').click()
-    card.locator('.foodform [data-field="barcode"]').fill("5201054017111")
-    card.locator('[data-action="lookup"]').click()
+    card.locator('.panel [data-action="off-query"]').fill("5201054017111")
+    card.locator('.panel [data-action="off-query"]').press("Enter")
     card.locator(".panel .note").wait_for()
 
 
@@ -247,7 +261,7 @@ def search_open_food_facts(search: FakeSearch):
         card.locator('.meal[data-meal="breakfast"] [data-action="add"]').click()
         card.locator('[data-action="query"]').fill("greek yogurt")
         card.locator('[data-action="choose"]', has_text="Greek yogurt 2%").wait_for()
-        card.locator('[data-action="off-search"]').click()
+        card.locator('.find [data-action="off-find"]').click()
         card.locator('[data-action="off-next"]').wait_for()
 
     return setup
@@ -257,10 +271,10 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     shoot_editor(sample, browser, "card-editor")
     shoot(sample, browser, DIARY, "food-diary")
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
-    shoot(sample, browser, DIARY, "food-diary-add", setup=open_add)
-    shoot(sample, browser, DIARY, "food-search", setup=search_open_food_facts(search))
+    shoot(sample, browser, DIARY, "food-diary-add", setup=open_add, scanner=True)
+    shoot(sample, browser, DIARY, "food-search", setup=search_open_food_facts(search), scanner=True)
     shoot(sample, browser, FOODS_CARD, "saved-foods")
-    shoot(sample, browser, FOODS_CARD, "barcode-lookup", setup=look_up_barcode)
+    shoot(sample, browser, FOODS_CARD, "barcode-lookup", setup=look_up_barcode, scanner=True)
     shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
     with sample.us_customary():
         shoot(sample, browser, WEIGHT, "weight-lb", setup=pick_range("365"))

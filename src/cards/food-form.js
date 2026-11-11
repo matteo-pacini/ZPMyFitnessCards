@@ -1,8 +1,9 @@
 // The attributes of an input for an amount, in grams or kcal.
 const NUMBER_INPUT = `type="number" min="0" step="any" inputmode="decimal"`;
 
-// Shared by the diary's "New food" tab and the saved foods card.
-function foodFormHTML(food, t, scan = false) {
+// Shared by the diary's "New food" tab and the saved foods card. Without
+// `lookUp`, it has no barcode buttons: a new food's search box has them.
+function foodFormHTML(food, t, scan = false, lookUp = true) {
   const field = (key, label, value, extra = "") =>
     `<label>${esc(label)}<input data-field="${key}" ${extra} value="${value == null ? "" : esc(value)}"></label>`;
   const nutrient = (n) =>
@@ -19,8 +20,8 @@ function foodFormHTML(food, t, scan = false) {
       ${field("name", t.name, food.name)}
       ${field("barcode", `${t.barcode} (${t.optional})`, food.barcode, `inputmode="numeric"`)}
     </div>
-    <div class="barcodes"><button type="button" class="text" data-action="lookup">${esc(t.look_up)}</button>${scan ? `<button type="button" class="text" data-action="scan">${esc(t.scan)}</button>` : ""}</div>
-    <div class="scanner" hidden></div>
+    ${lookUp ? `<div class="barcodes"><button type="button" class="text" data-action="lookup">${esc(t.look_up)}</button>${scan ? `<button type="button" class="text" data-action="scan">${esc(t.scan)}</button>` : ""}</div>
+    <div class="scanner" hidden></div>` : ""}
     <div class="sub">${esc(t.per_100g)}</div>
     <div class="grid">${REQUIRED_NUTRIENTS.map(nutrient).join("")}</div>
     <div class="sub">${esc(t.optional)}</div>
@@ -127,15 +128,39 @@ function offRowHTML(product, locale, t) {
     <small class="num">${esc(fill(t.per_100g_value, { kcal: number(product.nutriments["energy-kcal_100g"], locale) }))}</small></button>`;
 }
 
-// What goes under the saved foods a card found for `query`: a button to
-// search Open Food Facts for it, then that search, from `off`. A search for
+// A button to find `text` on Open Food Facts from a new food's form: look up
+// a barcode, or search for a name. Its handler reads `data-query`.
+function offFindHTML(text, t) {
+  const label = BARCODE.test(text) ? fill(t.look_up_barcode, { code: text }) : fill(t.off_search, { query: text });
+  return `<button class="text" data-action="off-find" data-query="${esc(text)}">${esc(label)}</button>`;
+}
+
+// What follows the saved foods found for `query`: a button to find it on
+// Open Food Facts instead. A barcode gets one only if no saved food has it,
+// that is, if `found` is false.
+function offLinkHTML(query, found, t) {
+  const text = query.trim();
+  if (!text || (found && BARCODE.test(text))) return "";
+  return offFindHTML(text, t);
+}
+
+// The top of a new food's form: a box to search Open Food Facts by name or
+// barcode, Scan barcode where the device can scan, and a `.off` box for
+// offSearchHTML.
+function offFinderHTML(query, t, scan = false) {
+  const scanButton = scan ? `<div class="barcodes"><button type="button" class="text" data-action="off-scan">${esc(t.scan_barcode)}</button></div><div class="scanner" hidden></div>` : "";
+  return `<div class="finder">
+    <input type="search" data-action="off-query" value="${esc(query ?? "")}" placeholder="${esc(t.off_placeholder)}" aria-label="${esc(t.off_placeholder)}">
+    ${scanButton}<div class="off"></div></div>`;
+}
+
+// What a new food's search box shows under it for `query`: a hint while it
+// is empty, else a button to find it, then the search in `off`. A search for
 // other text than the query is out of date, so the button shows instead.
-// A barcode has its own lookup, and an empty query gets a hint.
 function offSearchHTML(query, off, locale, t) {
   const text = query.trim();
   if (!text) return `<div class="muted">${esc(t.off_hint)}</div>`;
-  if (BARCODE.test(text)) return "";
-  if (off?.query !== text) return `<button class="text" data-action="off-search">${esc(fill(t.off_search, { query: text }))}</button>`;
+  if (BARCODE.test(text) || off?.query !== text) return offFindHTML(text, t);
   let end = "";
   if (off.busy) end = `<div class="muted">${esc(t.off_searching)}</div>`;
   else if (off.error != null) {
@@ -172,7 +197,8 @@ function scanWithApp(external, t) {
 }
 
 // Scan with the browser's barcode reader and the camera, shown in `box`.
-// Resolves to the code, or null once `signal` aborts.
+// Resolves to the code, or null once `signal` aborts or `box` leaves the
+// page, as it does when its panel closes or redraws.
 async function scanWithCamera(box, t, signal) {
   const supported = await BarcodeDetector.getSupportedFormats();
   const detector = new BarcodeDetector({ formats: SCAN_FORMATS.filter((f) => supported.includes(f)) });
@@ -184,7 +210,7 @@ async function scanWithCamera(box, t, signal) {
   try {
     video.srcObject = stream;
     await video.play();
-    while (!signal.aborted) {
+    while (!signal.aborted && box.isConnected) {
       const codes = await detector.detect(video);
       if (codes.length) return codes[0].rawValue;
       await new Promise((r) => setTimeout(r, SCAN_EVERY_MS));

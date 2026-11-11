@@ -70,6 +70,7 @@ class FitnessCard extends HTMLElement {
     root.addEventListener("click", (e) => this._onEvent(e, "click"));
     root.addEventListener("input", (e) => this._onEvent(e, "input"));
     root.addEventListener("change", (e) => this._onEvent(e, "change"));
+    root.addEventListener("keydown", (e) => this._onEvent(e, "keydown"));
   }
 
   _onEvent(event, kind) {

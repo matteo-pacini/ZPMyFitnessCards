@@ -16,7 +16,8 @@ class FoodCard extends FitnessCard {
     .note { color: var(--secondary-text-color); }
     .warning { color: var(--warning-color); }
     .row small { color: var(--secondary-text-color); }
-    .off { display: flex; flex-direction: column; }
+    .off { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
+    .finder { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--divider-color); }
   `;
 
   _showError(err, key = "error_failed") {

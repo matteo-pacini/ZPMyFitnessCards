@@ -39,20 +39,23 @@ class FoodsCard extends FoodCard {
     }
     this._card.innerHTML = `<div class="head">${title}<button class="fill" data-action="new">+ ${esc(t.add_food)}</button></div>
       <input type="search" data-action="query" value="${esc(this._query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">
-      <div class="panel" hidden></div><div class="list"></div><div class="off"></div>`;
+      <div class="panel" hidden></div><div class="list"></div><div class="find"></div>`;
     this._renderList();
-    this._renderOff();
     this._renderPanel();
   }
 
   _renderList() {
     const list = this._card?.querySelector(".list");
-    if (list) list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t);
+    if (!list) return;
+    list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t);
+    this._card.querySelector(".find").innerHTML = offLinkHTML(this._query, this._foods.length > 0, this._t);
   }
 
+  // A new food's search of Open Food Facts, when its panel is open.
   _renderOff() {
-    const box = this._card?.querySelector(".off");
-    if (box) box.innerHTML = offSearchHTML(this._query, this._off, this._locale, this._t);
+    const box = this._card?.querySelector(".panel .off");
+    const p = this._panel;
+    if (box && p) box.innerHTML = offSearchHTML(p.offQuery ?? "", p.off, this._locale, this._t);
   }
 
   _renderPanel() {
@@ -70,8 +73,39 @@ class FoodsCard extends FoodCard {
          ${cancelButtonHTML(t)}<button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
       : `${p.food.id ? `<button class="text" data-action="delete">${esc(t.delete)}</button>` : ""}
          ${cancelButtonHTML(t)}<button class="fill" data-action="save">${esc(t.save_food)}</button>`;
-    panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${foodFormHTML(p.food, t, Boolean(this._scanner))}
+    const scan = Boolean(this._scanner);
+    const finder = p.food.id ? "" : offFinderHTML(p.offQuery, t, scan);
+    panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${finder}${foodFormHTML(p.food, t, scan, Boolean(p.food.id))}
       ${panelMessagesHTML(p)}<div class="actions">${buttons}</div>`;
+    this._renderOff();
+  }
+
+  // The open new food's panel, keeping what was typed in it, or a new one.
+  _newFoodPanel() {
+    if (this._panel && !this._panel.food.id) this._keepForm();
+    else this._panel = { food: { portions: [] } };
+    return this._panel;
+  }
+
+  // Fill a new food's form from barcode `code`, typed or scanned, opening one
+  // if needed. Its search box empties: the barcode is in the form now.
+  async _lookUpBarcode(code) {
+    const p = this._newFoodPanel();
+    Object.assign(p, { offQuery: "", off: null, note: null, warning: null, error: null });
+    p.food.barcode = code;
+    this._renderPanel();
+    await this._fillFromBarcode();
+  }
+
+  // Find `query` on Open Food Facts from a new food's form, opening one if
+  // needed: look up a barcode, or search for a name.
+  async _findOnOff(query) {
+    if (BARCODE.test(query)) return this._lookUpBarcode(query);
+    const p = this._newFoodPanel();
+    const off = { query, products: [], page: 0, more: false };
+    Object.assign(p, { offQuery: query, off, note: null, warning: null, error: null });
+    this._renderPanel();
+    await this._searchOff(off);
   }
 
   // Fill the form from its barcode, or open the saved food that has it.
@@ -97,7 +131,7 @@ class FoodsCard extends FoodCard {
     "click:new"() {
       this._panel = { food: { portions: [] } };
       this._renderPanel();
-      this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
+      this._card.querySelector('.panel [data-action="off-query"]')?.focus?.();
     },
     "click:edit"(el) {
       const food = this._foods.find((f) => String(f.id) === el.dataset.id);
@@ -110,21 +144,34 @@ class FoodsCard extends FoodCard {
     },
     "input:query"(el) {
       this._query = el.value;
-      this._renderOff();
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this._refresh(), SEARCH_DELAY_MS);
     },
-    "click:off-search"() {
-      this._off = { query: this._query.trim(), products: [], page: 0, more: false };
-      this._searchOff(this._off);
+    "click:off-find"(el) {
+      this._findOnOff(el.dataset.query);
+    },
+    "input:off-query"(el) {
+      this._panel.offQuery = el.value;
+      this._renderOff();
+    },
+    "keydown:off-query"(el, event) {
+      if (event.key === "Enter" && el.value.trim()) this._findOnOff(el.value.trim());
     },
     "click:off-next"() {
-      this._searchOff(this._off);
+      this._searchOff(this._panel.off);
     },
-    // Opens New food, filled in, or the saved food with the product's barcode.
+    async "click:off-scan"() {
+      const panel = this._panel;
+      const code = await this._scan();
+      if (code && this._panel === panel) await this._lookUpBarcode(code);
+    },
+    // Fills the new food in, or opens the saved food with the product's barcode.
     async "click:off-pick"(el) {
-      const product = this._off.products.find((x) => x.code === el.dataset.code);
-      this._showLookedUp(await this._lookUpPicked(product), {});
+      const panel = this._panel;
+      const product = panel.off.products.find((x) => x.code === el.dataset.code);
+      const looked = await this._lookUpPicked(product);
+      if (this._panel !== panel) return;
+      this._showLookedUp(looked, panel);
       this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
     },
     "click:add-portion"() {
@@ -159,9 +206,10 @@ class FoodsCard extends FoodCard {
     },
     async "click:scan"() {
       this._keepForm();
+      const panel = this._panel;
       const code = await this._scan();
-      if (!code) return;
-      this._panel.food.barcode = code;
+      if (!code || this._panel !== panel) return;
+      panel.food.barcode = code;
       await this._fillFromBarcode();
     },
     "click:stop-scan"() {

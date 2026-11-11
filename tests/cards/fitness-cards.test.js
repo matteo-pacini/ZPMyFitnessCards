@@ -123,11 +123,10 @@ test("a meal lists its entries, or says nothing is logged", () => {
   assert.match(fn.mealHTML("lunch", [], en(), "en-GB"), /data-action="copy" data-meal="lunch"/);
 });
 
-test("search results say why they are empty, and offer to look up a barcode", () => {
+test("search results say why they are empty, and list only saved foods", () => {
   assert.equal(text(fn.resultsHTML({ query: "", results: undefined }, "en-GB", en())), "Loading…");
   assert.equal(text(fn.resultsHTML({ query: "kiwi", results: [] }, "en-GB", en())), "No saved food matches “kiwi”.");
-  assert.match(fn.resultsHTML({ query: "5000112637922", results: [] }, "en-GB", en()), /data-action="lookup-query"/);
-  assert.doesNotMatch(fn.resultsHTML({ query: "5000112637922", results: undefined }, "en-GB", en()), /lookup-query/);
+  assert.doesNotMatch(fn.resultsHTML({ query: "5000112637922", results: [] }, "en-GB", en()), /<button/);
 });
 
 test("search results list foods by kcal per 100 g, the chosen one pressed", () => {
@@ -202,11 +201,24 @@ test("the add panel has a tab for each way to add food", () => {
   assert.match(panel, /aria-selected="true">Quick add/);
 });
 
+test("New food starts with a search of Open Food Facts, and its form has no barcode buttons", () => {
+  const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "", offQuery: "skyr" }, en(), true);
+  assert.ok(panel.indexOf('data-action="off-query"') < panel.indexOf('class="foodform"'));
+  assert.match(panel, /data-action="off-query" value="skyr"/);
+  assert.match(panel, /data-action="off-scan">Scan barcode/);
+  assert.doesNotMatch(panel, /data-action="(lookup|scan)"/);
+  assert.equal(panel.match(/class="scanner"/g).length, 1);
+  assert.doesNotMatch(fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "" }, en(), false), /off-scan/);
+});
+
 test("the food form shows a food's values and portions, escaped", () => {
   const form = fn.foodFormHTML({ name: 'Oats "fine"', kcal: 389, protein: 16.9, carbs: 66, fat: 6.9, portions: [{ name: "Bowl", grams: 40 }] }, en());
   assert.match(form, /data-field="name"[^>]*value="Oats &quot;fine&quot;"/);
   assert.match(form, /data-portion="grams"[^>]*value="40"/);
   assert.match(form, /data-field="salt"[^>]*value=""/);
+  assert.match(form, /data-action="lookup"/);
+  assert.match(fn.foodFormHTML({}, en(), true), /data-action="scan"/);
+  assert.doesNotMatch(fn.foodFormHTML({}, en(), true, false), /data-action="(lookup|scan)"|class="scanner"/);
 });
 
 test("the foods list says when nothing matches", () => {

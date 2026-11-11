@@ -31,7 +31,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     .tabs button[aria-selected="true"] { color: var(--primary-color); box-shadow: inset 0 -2px 0 var(--primary-color); }
     .searchrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .results { display: flex; flex-direction: column; }
-    .results, .off { max-height: 240px; overflow-y: auto; }
+    .results { max-height: 240px; overflow-y: auto; }
     .results .row[aria-pressed="true"] { background: var(--secondary-background-color); }
     .picked { display: flex; flex-direction: column; gap: 10px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -122,9 +122,9 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     panel.innerHTML = html + panelMessagesHTML(p);
     if (this._onSearchTab) {
       this._renderResults();
-      this._renderOff();
       this._renderPicked();
     }
+    this._renderOff();
   }
 
   // Whether the open panel shows the add panel's search tab.
@@ -135,13 +135,16 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   _renderResults() {
     const box = this._card.querySelector(".results");
     const p = this._panel;
-    if (box && p) box.innerHTML = resultsHTML(p, this._locale, this._t);
+    if (!box || !p) return;
+    box.innerHTML = resultsHTML(p, this._locale, this._t);
+    this._card.querySelector(".find").innerHTML = p.results ? offLinkHTML(p.query, p.results.length > 0, this._t) : "";
   }
 
+  // The New food tab's search of Open Food Facts, when it shows.
   _renderOff() {
     const box = this._card?.querySelector(".panel .off");
     const p = this._panel;
-    if (box && p) box.innerHTML = offSearchHTML(p.query, p.off, this._locale, this._t);
+    if (box && p) box.innerHTML = offSearchHTML(p.offQuery ?? "", p.off, this._locale, this._t);
   }
 
   _renderPicked() {
@@ -196,6 +199,29 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   _field(key) {
     return this._card.querySelector(`.panel [data-field="${key}"]`);
+  }
+
+  // Fill the New food tab's form from barcode `code`, typed or scanned,
+  // switching to it. Its search box empties: the barcode is in the form now.
+  async _lookUpBarcode(code) {
+    const p = this._panel;
+    if (p.tab === "new") p.newFood = readFoodForm(this._card).food;
+    Object.assign(p, { tab: "new", offQuery: "", off: null, note: null, warning: null, error: null });
+    p.newFood = { ...(p.newFood ?? { portions: [] }), barcode: code };
+    this._renderPanel();
+    await this._fillNewFood();
+  }
+
+  // Find `query` on Open Food Facts from the New food tab, switching to it:
+  // look up a barcode, or search for a name.
+  async _findOnOff(query) {
+    if (BARCODE.test(query)) return this._lookUpBarcode(query);
+    const p = this._panel;
+    if (p.tab === "new") p.newFood = readFoodForm(this._card).food;
+    const off = { query, products: [], page: 0, more: false };
+    Object.assign(p, { tab: "new", offQuery: query, off, note: null, warning: null, error: null });
+    this._renderPanel();
+    await this._searchOff(off);
   }
 
   // Fill the New food form from its barcode, or choose the saved food that has it.
@@ -259,14 +285,18 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     },
     "input:query"(el) {
       this._panel.query = el.value;
-      this._renderOff();
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this._search(), SEARCH_DELAY_MS);
     },
-    "click:off-search"() {
-      const p = this._panel;
-      p.off = { query: p.query.trim(), products: [], page: 0, more: false };
-      this._searchOff(p.off);
+    "click:off-find"(el) {
+      this._findOnOff(el.dataset.query);
+    },
+    "input:off-query"(el) {
+      this._panel.offQuery = el.value;
+      this._renderOff();
+    },
+    "keydown:off-query"(el, event) {
+      if (event.key === "Enter" && el.value.trim()) this._findOnOff(el.value.trim());
     },
     "click:off-next"() {
       this._searchOff(this._panel.off);
@@ -274,8 +304,8 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     async "click:off-pick"(el) {
       const p = this._panel;
       const product = p.off.products.find((x) => x.code === el.dataset.code);
-      Object.assign(p, { tab: "new", newFood: { barcode: product.code, portions: [] } });
       this._showLookedUp(p, await this._lookUpPicked(product));
+      if (p.tab === "new") this._field("name")?.focus?.();
     },
     "click:choose"(el) {
       const p = this._panel;
@@ -335,15 +365,15 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       p.newFood.portions.splice(Number(el.dataset.index), 1);
       this._renderPanel();
     },
+    async "click:off-scan"() {
+      const p = this._panel;
+      const code = await this._scan();
+      if (code && this._panel === p) await this._lookUpBarcode(code);
+    },
     async "click:scan"() {
       const p = this._panel;
-      if (p.tab === "new") p.newFood = readFoodForm(this._card).food;
       const code = await this._scan();
       if (!code || this._panel !== p) return;
-      if (p.tab === "new") {
-        p.newFood.barcode = code;
-        return this._fillNewFood();
-      }
       p.query = code;
       p.results = undefined;
       this._renderPanel();
@@ -356,16 +386,6 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     },
     "click:stop-scan"() {
       this._scanAbort?.abort();
-    },
-    async "click:lookup"() {
-      this._panel.newFood = readFoodForm(this._card).food;
-      await this._fillNewFood();
-    },
-    async "click:lookup-query"() {
-      const p = this._panel;
-      p.tab = "new";
-      p.newFood = { barcode: p.query.trim(), portions: [] };
-      await this._fillNewFood();
     },
     async "click:save-new-food"() {
       const p = this._panel;
@@ -478,10 +498,7 @@ function resultsHTML(p, locale, t) {
   const foods = p.results ?? [];
   if (!foods.length) {
     const empty = p.results === undefined ? t.loading : query ? fill(t.no_results, { query }) : t.no_recent;
-    const lookUp = p.results && BARCODE.test(query)
-      ? `<button class="text" data-action="lookup-query">${esc(fill(t.look_up_barcode, { code: query }))}</button>`
-      : "";
-    return `<div class="muted">${esc(empty)}</div>${lookUp}`;
+    return `<div class="muted">${esc(empty)}</div>`;
   }
   return (
     `<div class="sub">${esc(query ? t.results : t.recent)}</div>` +
@@ -540,7 +557,7 @@ function addPanelHTML(p, t, scan = false) {
   if (p.tab === "search") {
     const scanButton = scan ? `<button class="text" data-action="scan">${esc(t.scan)}</button>` : "";
     content = `<div class="searchrow"><input type="search" data-action="query" value="${esc(p.query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">${scanButton}</div>
-      <div class="scanner" hidden></div><div class="results"></div><div class="off"></div><div class="picked"></div>`;
+      <div class="scanner" hidden></div><div class="results"></div><div class="find"></div><div class="picked"></div>`;
   } else if (p.tab === "quick") {
     const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" ${NUMBER_INPUT}></label>`;
     content = `<div class="grid"><label>${esc(t.name)}<input data-field="name"></label>${n("kcal", t.kcal)}</div>
@@ -548,7 +565,7 @@ function addPanelHTML(p, t, scan = false) {
       <label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
       <div class="actions">${cancel}<button class="fill" data-action="quick-add">${esc(t.add)}</button></div>`;
   } else {
-    content = `${foodFormHTML(p.newFood ?? {}, t, scan)}
+    content = `${offFinderHTML(p.offQuery, t, scan)}${foodFormHTML(p.newFood ?? {}, t, scan, false)}
       <div class="actions">${cancel}<button class="fill" data-action="save-new-food">${esc(t.save_and_choose)}</button></div>`;
   }
   return `<div class="mealhead"><span>${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</span>${cancel}</div>

@@ -8,7 +8,7 @@ const { load, plain, text } = require("./harness.js");
 let fn;
 test.before(async () => {
   const ctx = await load();
-  fn = vm.runInContext("({ translate, offLanguage, firstBrand, offName, searchedFood, offRowHTML, offSearchHTML })", ctx);
+  fn = vm.runInContext("({ translate, offLanguage, firstBrand, offName, searchedFood, offRowHTML, offSearchHTML, offLinkHTML, offFinderHTML })", ctx);
 });
 
 const en = () => fn.translate("en");
@@ -71,14 +71,16 @@ test("a result row shows the name, brand, pack size and kcal per 100 g, escaped"
 
 const search = (more) => ({ query: "yogurt", products: [], page: 0, more: false, ...more });
 
-test("an empty query gets a hint, and a barcode its own lookup", () => {
-  assert.equal(text(fn.offSearchHTML("  ", undefined, "en", en())), "Type a name to search Open Food Facts too.");
-  assert.equal(fn.offSearchHTML("5201054017111", undefined, "en", en()), "");
+test("an empty query gets a hint, and a barcode a lookup", () => {
+  assert.equal(text(fn.offSearchHTML("  ", undefined, "en", en())), "Type a product's name or barcode, or fill in the form from the label.");
+  const lookUp = fn.offSearchHTML(" 5201054017111 ", undefined, "en", en());
+  assert.match(lookUp, /data-action="off-find" data-query="5201054017111"/);
+  assert.equal(text(lookUp), "Look up 5201054017111 on Open Food Facts");
 });
 
 test("a typed name offers a search, and so does a name typed after one", () => {
   const button = fn.offSearchHTML(" greek yogurt ", undefined, "en", en());
-  assert.match(button, /data-action="off-search"/);
+  assert.match(button, /data-action="off-find" data-query="greek yogurt"/);
   assert.equal(text(button), "Search Open Food Facts for “greek yogurt”");
   const after = fn.offSearchHTML("yogurt 0%", search({ products: [YOGURT], page: 1 }), "en", en());
   assert.equal(text(after), "Search Open Food Facts for “yogurt 0%”");
@@ -104,4 +106,24 @@ test("a failed search, or a failed More, says why and offers to try again", () =
   assert.match(failed, /data-action="off-next">Try again/);
   const more = fn.offSearchHTML("yogurt", search({ products: [YOGURT], page: 1, more: true, error: "" }), "en", en());
   assert.equal(text(more), "From Open Food Facts Yogurt greco bianco Land · 150 g 70 kcal per 100 g Could not search Open Food Facts: Try again");
+});
+
+test("under saved foods, a name links to Open Food Facts, and a barcode only if no saved food has it", () => {
+  assert.equal(fn.offLinkHTML("  ", false, en()), "");
+  const name = fn.offLinkHTML(" skyr <plain> ", true, en());
+  assert.match(name, /data-action="off-find" data-query="skyr &lt;plain&gt;"/);
+  assert.equal(text(name), "Search Open Food Facts for “skyr <plain>”");
+  assert.equal(fn.offLinkHTML("5201054017111", true, en()), "");
+  assert.equal(text(fn.offLinkHTML("5201054017111", false, en())), "Look up 5201054017111 on Open Food Facts");
+});
+
+test("a new food's search box keeps what was typed, with Scan barcode where the device can scan", () => {
+  const finder = fn.offFinderHTML('yogurt "0%"', en(), true);
+  assert.match(finder, /data-action="off-query" value="yogurt &quot;0%&quot;" placeholder="Search Open Food Facts" aria-label="Search Open Food Facts"/);
+  assert.match(finder, /data-action="off-scan">Scan barcode<\/button>/);
+  assert.match(finder, /class="scanner" hidden/);
+  assert.match(finder, /<div class="off"><\/div>/);
+  const bare = fn.offFinderHTML(undefined, en());
+  assert.match(bare, /value=""/);
+  assert.doesNotMatch(bare, /off-scan|scanner/);
 });
