@@ -1835,12 +1835,15 @@ class FitnessCard extends HTMLElement {
 
   connectedCallback() {
     if (this._hass && this._card && !this._unsubscribe) this._subscribe();
+    // A try at loading is due, which removing the card may have cancelled: try now.
+    if (this._retry) this._start();
   }
 
   disconnectedCallback() {
     const unsubscribe = this._unsubscribe;
     this._unsubscribe = null;
     unsubscribe?.then((stop) => stop?.()).catch(() => {});
+    // A removed card stops trying, but keeps _retry for connectedCallback.
     clearTimeout(this._retry);
   }
 
@@ -1864,9 +1867,11 @@ class FitnessCard extends HTMLElement {
   }
 
   // Load what the card needs. While the integration reloads, it answers
-  // not_loaded, so try again shortly.
+  // not_loaded, so try again shortly. _retry is set from a failure until
+  // the next try starts.
   async _start() {
     clearTimeout(this._retry);
+    this._retry = null;
     try {
       await this._load();
       this._failure = null;

@@ -88,6 +88,27 @@ def test_cards_wait_and_retry_while_the_integration_reloads(home: Home, page: Pa
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
 
 
+def test_a_card_moved_while_it_waits_to_retry_tries_again(home: Home, page: Page) -> None:
+    open_home(home, page)
+    card = mount(
+        page,
+        "fork-and-scale-food-diary-card",
+        {"person": "Debora"},
+        fail={"*": "not_loaded"},
+        once=True,
+    )
+    expect(card.locator(".muted")).to_have_text("Loading…")
+    # Removing the card cancels its retry; putting it back must not leave it loading.
+    page.evaluate(
+        """() => {
+          const el = document.getElementById("mounted");
+          el.remove();
+          document.body.appendChild(el);
+        }"""
+    )
+    expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
+
+
 def test_a_failed_subscription_still_shows_the_card(home: Home, page: Page) -> None:
     open_home(home, page)
     card = mount(page, "fork-and-scale-foods-card", {}, subscribe_fails=True)
