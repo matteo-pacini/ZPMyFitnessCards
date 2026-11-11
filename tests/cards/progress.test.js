@@ -7,7 +7,7 @@ const { load, plain, text } = require("./harness.js");
 
 let fn;
 test.before(async () => {
-  const ctx = await load("fitness-cards.js");
+  const ctx = await load();
   fn = vm.runInContext(
     "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, niceStep, ticks, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
     ctx,

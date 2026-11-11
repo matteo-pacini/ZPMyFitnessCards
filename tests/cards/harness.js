@@ -1,14 +1,14 @@
-// Loads a card script for the tests. The cards are browser scripts, so each
-// runs in a vm context with just enough DOM stubbed for its elements to be
+// Loads the cards for the tests. The cards are browser scripts, so they run
+// in a vm context with just enough DOM stubbed for their elements to be
 // defined and configured. Interaction is covered by the end-to-end tests in
 // a real browser; these cover the pure functions and the markup they build.
 
 const fs = require("node:fs");
-const path = require("node:path");
 const vm = require("node:vm");
+const { sources } = require("../../scripts/build.js");
 
-// Loads `file`, and resolves once its cards are defined.
-async function load(file) {
+// Loads the cards' scripts, and resolves once the cards are defined.
+async function load() {
   const ctx = vm.createContext({ Intl, setTimeout, clearTimeout });
   vm.runInContext(
     `
@@ -24,9 +24,10 @@ async function load(file) {
     `,
     ctx,
   );
-  // The filename lets coverage tools attribute the code to the source file.
-  const source = path.join(__dirname, "..", "..", "src", file);
-  vm.runInContext(fs.readFileSync(source, "utf8"), ctx, { filename: source });
+  // Each script runs on its own, in the bundle's order, so that coverage tools
+  // attribute its code to its file. The top-level declarations of the scripts
+  // in one context share a scope, as they do in the bundle's block.
+  for (const source of sources) vm.runInContext(fs.readFileSync(source, "utf8"), ctx, { filename: source });
   await new Promise((r) => setImmediate(r));
   return ctx;
 }

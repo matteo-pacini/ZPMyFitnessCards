@@ -7,7 +7,7 @@ const { load, plain } = require("./harness.js");
 
 let fn;
 test.before(async () => {
-  const ctx = await load("fitness-cards.js");
+  const ctx = await load();
   fn = vm.runInContext("({ translate, offFood, lookUpBarcode, mergeFood, scanWithApp, scannerFor, BARCODE })", ctx);
 });
 

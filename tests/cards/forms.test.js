@@ -9,7 +9,7 @@ const { load, plain, text } = require("./harness.js");
 let ctx;
 let fn;
 test.before(async () => {
-  ctx = await load("fitness-cards.js");
+  ctx = await load();
   fn = vm.runInContext(
     "({ translate, readFoodForm, numberValue, optionList, rangeButtons, weightChartHTML, summaryHTML, shortDate, copyPanelHTML, MEALS })",
     ctx,
