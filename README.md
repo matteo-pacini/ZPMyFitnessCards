@@ -31,6 +31,37 @@ The integration loads the cards for you. There is no dashboard resource to add. 
 
 Requires Home Assistant 2025.3 or later.
 
+### NixOS
+
+On NixOS, build a release with `buildHomeAssistantComponent` instead of using HACS:
+
+```nix
+services.home-assistant.customComponents = [
+  (pkgs.buildHomeAssistantComponent rec {
+    owner = "matteo-pacini";
+    domain = "fork_and_scale";
+    version = "0.4.0";
+
+    src = pkgs.fetchFromGitHub {
+      inherit owner;
+      repo = "fork-and-scale";
+      tag = "v${version}";
+      hash = lib.fakeHash;
+    };
+  })
+];
+```
+
+To fill in `hash`, either run this and use the hash it prints:
+
+```sh
+nix flake prefetch github:matteo-pacini/fork-and-scale/v0.4.0
+```
+
+or rebuild with `lib.fakeHash` and copy the hash from the `got:` line of the error. Change `version` and `hash` together for each new release.
+
+The integration loads its cards itself, so nothing goes in `customLovelaceModules`. For Postgres, add the driver with `services.home-assistant.extraPackages = ps: [ ps.psycopg2 ];`, and make a database owned by the `hass` user. The URL `postgresql://@/fork_and_scale` then connects over the local socket as that user.
+
 ### Coming from ZPMyFitnessCards
 
 Fork & Scale was called ZPMyFitnessCards, with the domain `zp_my_fitness`, up to version 0.3.0. To move over and keep your data:

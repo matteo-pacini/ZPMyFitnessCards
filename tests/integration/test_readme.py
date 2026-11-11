@@ -53,3 +53,24 @@ def test_the_custom_repository_named_is_this_one() -> None:
     assert f"add `https://github.com/{repository()}` as a custom repository" in README
     assert MANIFEST["issue_tracker"] == f"https://github.com/{repository()}/issues"
 
+
+def nix_snippet() -> dict[str, str]:
+    """The string attributes of the README's buildHomeAssistantComponent snippet."""
+    [block] = [
+        b
+        for b in re.findall(r"```nix\n(.*?)```", README, re.S)
+        if "buildHomeAssistantComponent" in b
+    ]
+    return dict(re.findall(r'(\w+) = "([^"]*)";', block))
+
+
+def test_the_nix_snippet_builds_this_release() -> None:
+    owner, name = repository().split("/")
+    assert nix_snippet() == {
+        "owner": owner,
+        "domain": MANIFEST["domain"],
+        "version": MANIFEST["version"],
+        "repo": name,
+        "tag": "v${version}",
+    }
+    assert f"nix flake prefetch github:{repository()}/v{MANIFEST['version']}\n" in README
