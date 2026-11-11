@@ -2165,12 +2165,11 @@ class FoodDiaryCard extends FoodCard {
   _render() {
     if (!this._card) return;
     const t = this._t;
-    const title = `<div class="title">${esc(this._config.title || t.title_diary)}</div>`;
     if (!this._person) {
       let message = t.loading;
       if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
       else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
-      this._card.innerHTML = `${title}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
+      this._card.innerHTML = `${this._titleHTML}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
       return;
     }
     this._card.innerHTML = `<div class="head"></div><div class="body"></div><div class="panel" hidden></div>`;
@@ -2179,11 +2178,15 @@ class FoodDiaryCard extends FoodCard {
     this._renderPanel();
   }
 
+  get _titleHTML() {
+    return `<div class="title">${esc(this._config.title || this._t.title_diary)}</div>`;
+  }
+
   _renderHead() {
     const t = this._t;
     const today = this._today;
     this._card.querySelector(".head").innerHTML = `
-      <div><div class="title">${esc(this._config.title || t.title_diary)}</div><div class="sub person">${esc(this._person.name)}</div></div>
+      <div>${this._titleHTML}<div class="sub person">${esc(this._person.name)}</div></div>
       <div class="nav">
         <button class="icon" data-action="prev" aria-label="${esc(t.previous_day)}">‹</button>
         <span class="label">${esc(dayLabel(this._day, today, this._locale, t))}</span>
