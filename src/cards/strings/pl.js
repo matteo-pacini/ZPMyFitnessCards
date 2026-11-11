@@ -32,7 +32,7 @@ STRINGS.pl = {
   loading: "Ładowanie…",
   error_failed: "Coś poszło nie tak: {message}",
   unknown_person: "Brak osoby o imieniu {name}. Dodaj ją w Ustawienia, Urządzenia oraz usługi, Fork & Scale.",
-  no_person: "Brak osoby do pokazania. Ustaw person: w karcie albo powiąż swojego użytkownika z osobą w Fork & Scale.",
+  no_person: "Brak osoby do pokazania. Wybierz ją w ustawieniach karty (person: w YAML) albo powiąż swojego użytkownika z osobą w Fork & Scale.",
   search_placeholder: "Szukaj w zapisanych produktach",
   results: "Zapisane produkty",
   recent: "Ostatnie",

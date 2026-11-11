@@ -32,7 +32,7 @@ STRINGS["zh-Hans"] = {
   loading: "正在加载…",
   error_failed: "出现问题：{message}",
   unknown_person: "没有名为 {name} 的人。请在“设置 > 设备与服务 > Fork & Scale”中添加。",
-  no_person: "没有可显示的人员。请在卡片中设置 person:，或在 Fork & Scale 中将你的用户关联到某个人员。",
+  no_person: "没有可显示的人员。请在卡片设置中选择一个人员（YAML 中为 person:），或在 Fork & Scale 中将你的用户关联到某个人员。",
   search_placeholder: "搜索已保存的食物",
   results: "已保存的食物",
   recent: "最近",

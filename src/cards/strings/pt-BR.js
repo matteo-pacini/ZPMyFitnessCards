@@ -8,7 +8,7 @@ STRINGS["pt-BR"] = {
   carbs: "Carboidratos",
   breakfast: "Café da manhã",
   unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Configurações, Dispositivos e serviços, Fork & Scale.",
-  no_person: "Não há nenhuma pessoa para mostrar. Defina person: no card ou vincule seu usuário a uma pessoa no Fork & Scale.",
+  no_person: "Não há nenhuma pessoa para mostrar. Escolha uma nas configurações do card (person: em YAML) ou vincule seu usuário a uma pessoa no Fork & Scale.",
   search_placeholder: "Pesquisar alimentos salvos",
   results: "Alimentos salvos",
   no_results: "Nenhum alimento salvo corresponde a “{query}”.",

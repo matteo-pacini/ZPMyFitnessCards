@@ -32,7 +32,7 @@ STRINGS.nl = {
   loading: "Laden…",
   error_failed: "Er ging iets mis: {message}",
   unknown_person: "Geen persoon met de naam {name}. Voeg die toe via Instellingen, Apparaten en diensten, Fork & Scale.",
-  no_person: "Geen persoon om te tonen. Stel person: in op de kaart, of koppel je gebruiker aan een persoon in Fork & Scale.",
+  no_person: "Geen persoon om te tonen. Kies er een in de instellingen van de kaart (person: in YAML), of koppel je gebruiker aan een persoon in Fork & Scale.",
   search_placeholder: "Zoek in opgeslagen voeding",
   results: "Opgeslagen voeding",
   recent: "Recent",

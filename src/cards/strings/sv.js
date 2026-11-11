@@ -32,7 +32,7 @@ STRINGS.sv = {
   loading: "Laddar…",
   error_failed: "Något gick fel: {message}",
   unknown_person: "Ingen person som heter {name}. Lägg till personen under Inställningar, Enheter och tjänster, Fork & Scale.",
-  no_person: "Ingen person att visa. Ange person: på kortet, eller koppla din användare till en person i Fork & Scale.",
+  no_person: "Ingen person att visa. Välj en i kortets inställningar (person: i YAML), eller koppla din användare till en person i Fork & Scale.",
   search_placeholder: "Sök i sparad mat",
   results: "Sparad mat",
   recent: "Senaste",

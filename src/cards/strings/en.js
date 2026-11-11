@@ -32,7 +32,7 @@ STRINGS.en = {
   loading: "Loading…",
   error_failed: "Something went wrong: {message}",
   unknown_person: "No person named {name}. Add them in Settings, Devices & services, Fork & Scale.",
-  no_person: "No person to show. Set person: on the card, or link your user to a person in Fork & Scale.",
+  no_person: "No person to show. Choose one in the card's settings (person: in YAML), or link your user to a person in Fork & Scale.",
   search_placeholder: "Search saved foods",
   results: "Saved foods",
   recent: "Recent",

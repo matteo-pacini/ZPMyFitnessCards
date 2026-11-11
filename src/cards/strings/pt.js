@@ -32,7 +32,7 @@ STRINGS.pt = {
   loading: "A carregar…",
   error_failed: "Algo correu mal: {message}",
   unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Definições, Dispositivos e serviços, Fork & Scale.",
-  no_person: "Não há nenhuma pessoa para mostrar. Defina person: no cartão ou associe o seu utilizador a uma pessoa no Fork & Scale.",
+  no_person: "Não há nenhuma pessoa para mostrar. Escolha uma nas definições do cartão (person: em YAML) ou associe o seu utilizador a uma pessoa no Fork & Scale.",
   search_placeholder: "Pesquisar alimentos guardados",
   results: "Alimentos guardados",
   recent: "Recentes",

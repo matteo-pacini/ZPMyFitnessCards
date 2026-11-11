@@ -32,7 +32,7 @@ STRINGS.it = {
   loading: "Caricamento…",
   error_failed: "Qualcosa è andato storto: {message}",
   unknown_person: "Nessuna persona di nome {name}. Aggiungila in Impostazioni, Dispositivi e servizi, Fork & Scale.",
-  no_person: "Nessuna persona da mostrare. Imposta person: sulla scheda, oppure collega il tuo utente a una persona in Fork & Scale.",
+  no_person: "Nessuna persona da mostrare. Scegline una nelle impostazioni della scheda (person: in YAML), oppure collega il tuo utente a una persona in Fork & Scale.",
   search_placeholder: "Cerca tra gli alimenti salvati",
   results: "Alimenti salvati",
   recent: "Recenti",

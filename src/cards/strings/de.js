@@ -32,7 +32,7 @@ STRINGS.de = {
   loading: "Wird geladen…",
   error_failed: "Etwas ist schiefgelaufen: {message}",
   unknown_person: "Keine Person namens {name}. Füge sie unter Einstellungen, Geräte & Dienste, Fork & Scale hinzu.",
-  no_person: "Keine Person zum Anzeigen. Setze person: in der Karte oder verknüpfe deinen Benutzer mit einer Person in Fork & Scale.",
+  no_person: "Keine Person zum Anzeigen. Wähle eine in den Einstellungen der Karte (person: in YAML) oder verknüpfe deinen Benutzer mit einer Person in Fork & Scale.",
   search_placeholder: "Gespeicherte Lebensmittel suchen",
   results: "Gespeicherte Lebensmittel",
   recent: "Zuletzt",

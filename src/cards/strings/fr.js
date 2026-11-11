@@ -32,7 +32,7 @@ STRINGS.fr = {
   loading: "Chargement…",
   error_failed: "Une erreur s’est produite : {message}",
   unknown_person: "Aucune personne nommée {name}. Ajoutez-la dans Paramètres, Appareils et services, Fork & Scale.",
-  no_person: "Aucune personne à afficher. Indiquez person: sur la carte ou liez votre utilisateur à une personne dans Fork & Scale.",
+  no_person: "Aucune personne à afficher. Choisissez-en une dans les paramètres de la carte (person: en YAML) ou liez votre utilisateur à une personne dans Fork & Scale.",
   search_placeholder: "Rechercher dans les aliments enregistrés",
   results: "Aliments enregistrés",
   recent: "Récents",
