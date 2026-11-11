@@ -79,10 +79,7 @@ function trendChartHTML(bars, weekly, locale, t) {
   return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t.title_trends)}">${grid}${drawn}</svg>`;
 }
 
-const dayLabelShort = (day, locale) => {
-  const [y, m, d] = day.split("-").map(Number);
-  return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
-};
+const dayLabelShort = (day, locale) => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(day));
 
 class TrendsCard extends PersonCard {
   static titleKey = "title_trends";
