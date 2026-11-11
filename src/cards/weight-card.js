@@ -70,7 +70,7 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
 class WeightCard extends PersonCard {
   static titleKey = "title_weight";
   static ranges = ["90", "365", "all"];
-  static style = `${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
     .now { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .now b { font-size: 1.8rem; font-weight: var(--ha-font-weight-medium, 500); }

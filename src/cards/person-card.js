@@ -6,6 +6,12 @@ const rangeButtons = (ranges, selected, t) =>
 // Base for the cards that show one person.
 class PersonCard extends FitnessCard {
   static options = ["person", "title", "locale"];
+  // The style of rangeButtons. A card's own style adds to it.
+  static style = `
+    .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
+    .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
+  `;
 
   set hass(hass) {
     const unit = this._hass && weightUnit(this._hass);

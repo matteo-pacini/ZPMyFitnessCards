@@ -72,7 +72,7 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
 class SummaryCard extends PersonCard {
   static titleKey = "title_summary";
   static ranges = [];
-  static style = `
+  static style = `${super.style}
     .body { display: flex; flex-direction: column; gap: 12px; }
     .rings { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
     .big { position: relative; width: 132px; height: 132px; }

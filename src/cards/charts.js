@@ -24,10 +24,4 @@ const CHART_STYLE = `
   .chart { width: 100%; height: auto; display: block; overflow: visible; }
   .chart .axis, .chart .bandlabel, .chart .goallabel { font-size: 11px; fill: var(--secondary-text-color); }
   .chart .grid { stroke: var(--divider-color); stroke-width: 1; }
-  .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
-  .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
-  .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
-  .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
-  .stats small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
 `;

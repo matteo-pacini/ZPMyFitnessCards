@@ -84,8 +84,11 @@ const dayLabelShort = (day, locale) => new Intl.DateTimeFormat(locale, { weekday
 class TrendsCard extends PersonCard {
   static titleKey = "title_trends";
   static ranges = ["7", "30", "90", "365"];
-  static style = `${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+    .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
+    .stats small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
     .chart .bar .hit { fill: transparent; }
     .chart .bar[data-action] { cursor: pointer; }
     .chart .bar[data-action]:hover .hit { fill: var(--secondary-background-color); }

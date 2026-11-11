@@ -2901,12 +2901,6 @@ const CHART_STYLE = `
   .chart { width: 100%; height: auto; display: block; overflow: visible; }
   .chart .axis, .chart .bandlabel, .chart .goallabel { font-size: 11px; fill: var(--secondary-text-color); }
   .chart .grid { stroke: var(--divider-color); stroke-width: 1; }
-  .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
-  .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
-  .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
-  .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
-  .stats small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
 `;
 
 // src/cards/weights.js
@@ -2941,6 +2935,12 @@ const rangeButtons = (ranges, selected, t) =>
 // Base for the cards that show one person.
 class PersonCard extends FitnessCard {
   static options = ["person", "title", "locale"];
+  // The style of rangeButtons. A card's own style adds to it.
+  static style = `
+    .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
+    .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
+  `;
 
   set hass(hass) {
     const unit = this._hass && weightUnit(this._hass);
@@ -3058,7 +3058,7 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
 class WeightCard extends PersonCard {
   static titleKey = "title_weight";
   static ranges = ["90", "365", "all"];
-  static style = `${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
     .now { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .now b { font-size: 1.8rem; font-weight: var(--ha-font-weight-medium, 500); }
@@ -3245,8 +3245,11 @@ const dayLabelShort = (day, locale) => new Intl.DateTimeFormat(locale, { weekday
 class TrendsCard extends PersonCard {
   static titleKey = "title_trends";
   static ranges = ["7", "30", "90", "365"];
-  static style = `${CHART_STYLE}
+  static style = `${super.style}${CHART_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+    .stats b { display: block; font-size: 1.2rem; font-weight: var(--ha-font-weight-medium, 500); }
+    .stats small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
     .chart .bar .hit { fill: transparent; }
     .chart .bar[data-action] { cursor: pointer; }
     .chart .bar[data-action]:hover .hit { fill: var(--secondary-background-color); }
@@ -3380,7 +3383,7 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
 class SummaryCard extends PersonCard {
   static titleKey = "title_summary";
   static ranges = [];
-  static style = `
+  static style = `${super.style}
     .body { display: flex; flex-direction: column; gap: 12px; }
     .rings { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
     .big { position: relative; width: 132px; height: 132px; }
