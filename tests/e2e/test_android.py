@@ -14,7 +14,7 @@ import subprocess
 import tempfile
 import time
 import xml.etree.ElementTree as ET
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -52,6 +52,9 @@ APP_CONFIGURATION = (
 # An emulator console port of its own, so a developer's emulator is untouched.
 PORT = 5580
 SERIAL = f"emulator-{PORT}"
+
+# How many times the app may die, and start again, during its first run.
+FIRST_RUN_RESTARTS = 3
 
 
 class AdbError(subprocess.CalledProcessError):
@@ -126,6 +129,17 @@ class Device:
         """The resumed activity, as dumpsys names it."""
         activities = self.adb("shell", "dumpsys", "activity", "activities")
         return next((line for line in activities.splitlines() if "ResumedActivity" in line), "")
+
+    def pid(self) -> str:
+        """The app's process ID, or "" while it is not running."""
+        with contextlib.suppress(AdbError):  # pidof fails when there is none
+            return self.adb("shell", "pidof", APP).strip()
+        return ""
+
+    def restart_app(self) -> None:
+        """Close the crash dialog, if any, and start the app again."""
+        self.adb("shell", "am", "broadcast", "-a", "android.intent.action.CLOSE_SYSTEM_DIALOGS")
+        self.adb("shell", "monkey", "-p", APP, "1")
 
     def tap(self, text: str, timeout: float = 30) -> None:
         x, y = self.find(text, timeout)
@@ -223,23 +237,82 @@ def app_home() -> Iterator[Home]:
 
 
 def _connect_app(phone: Device, home: Home) -> None:
-    """Take the app through its first run, as someone would on a new phone."""
-    phone.adb("shell", "monkey", "-p", APP, "1")
-    phone.tap("Connect to my Home Assistant server", timeout=120)
-    phone.tap("Enter address manually", timeout=60)
-    phone.tap("http://homeassistant.local")
-    phone.adb("shell", "input", "keyevent", "KEYCODE_MOVE_END", *["KEYCODE_DEL"] * 30)
+    """Take the app through its first run, as someone would on a new phone.
+
+    The emulator's WebView sometimes crashes the app. Each screen is told by
+    a text only it shows, so after a crash the app starts again and the first
+    run carries on from whichever screen it shows.
+    """
     port = home.url.rsplit(":", 1)[1]
-    phone.adb("shell", "input", "text", f"http://10.0.2.2:{port}")
-    phone.tap("Connect")
-    phone.find("How would you like to name this device?", timeout=120)
-    phone.tap("Save")
-    phone.tap("Got it", timeout=60)
-    phone.tap("Do not share my location")
-    phone.tap("Less secure")
-    phone.tap("Next")
-    phone.tap("Do not allow")
-    phone.find("Overview", timeout=120)
+
+    def enter_address() -> None:
+        phone.tap("http://homeassistant.local")
+        phone.adb("shell", "input", "keyevent", "KEYCODE_MOVE_END", *["KEYCODE_DEL"] * 30)
+        phone.adb("shell", "input", "text", f"http://10.0.2.2:{port}")
+        phone.tap("Connect")
+
+    def choose_less_secure() -> None:
+        phone.tap("Less secure")
+        phone.tap("Next")
+
+    # Each screen, by a text only it shows, and what to do there, in order.
+    # After a crash the app can skip to Overview, and ask about notifications
+    # once it has loaded, over it.
+    screens: list[tuple[str, Callable[[], None]]] = [
+        (
+            "Connect to my Home Assistant server",
+            lambda: phone.tap("Connect to my Home Assistant server"),
+        ),
+        ("Enter address manually", lambda: phone.tap("Enter address manually")),
+        ("What is your Home Assistant address?", enter_address),
+        ("How would you like to name this device?", lambda: phone.tap("Save")),
+        ("Got it", lambda: phone.tap("Got it")),
+        (
+            "Use this device's location for automations",
+            lambda: phone.tap("Do not share my location"),
+        ),
+        ("Let us help secure your remote connection", choose_less_secure),
+        ("Allow notifications?", lambda: phone.tap("Do not allow")),
+    ]
+    phone.adb("shell", "monkey", "-p", APP, "1")
+    pid, done, last, restarts = "", None, None, 0
+    deadline = time.monotonic() + 120
+    while True:
+        running = phone.pid()
+        if pid and running != pid:
+            restarts += 1
+            if restarts > FIRST_RUN_RESTARTS:
+                phone.screenshot("failed-first-run")
+                raise RuntimeError(f"The app died {restarts} times during its first run")
+            phone.restart_app()
+            pid, done = "", None
+            deadline = time.monotonic() + 120
+            continue
+        pid = running
+        labels = [label for label, _ in phone.nodes()]
+        shown = [i for i, (text, _) in enumerate(screens) if any(text in x for x in labels)]
+        if pid and shown and shown[0] != done:
+            done = shown[0]
+            try:
+                screens[done][1]()
+            except TimeoutError:
+                # Started again, the app can show a screen it had passed, then
+                # move on by itself. Only a screen that stays is stuck.
+                text = screens[done][0]
+                if phone.pid() == pid and any(text in label for label, _ in phone.nodes()):
+                    raise
+                continue  # it died, or moved on: carry on from there
+            last = done
+            deadline = time.monotonic() + 120
+        elif (
+            not shown and last == len(screens) - 1 and any("Overview" in label for label in labels)
+        ):
+            return
+        elif time.monotonic() > deadline:
+            phone.screenshot("failed-first-run")
+            raise TimeoutError("The app's first run is stuck. On screen:\n" + "\n".join(labels))
+        else:
+            time.sleep(1)
 
 
 def _set_up_app(phone: Device) -> None:
@@ -296,14 +369,7 @@ def app(device: Device, app_home: Home, browser: Browser) -> Iterator[Page]:
                 cdp.close()
             # The emulator's WebView sometimes crashes the app as it starts.
             if APP not in device.foreground():
-                close_dialogs = [
-                    "am",
-                    "broadcast",
-                    "-a",
-                    "android.intent.action.CLOSE_SYSTEM_DIALOGS",
-                ]
-                device.adb("shell", *close_dialogs)
-                device.adb("shell", "monkey", "-p", APP, "1")
+                device.restart_app()
             if time.monotonic() > deadline:
                 device.screenshot("failed-webview")
                 raise TimeoutError("The app's WebView did not load Home Assistant")
