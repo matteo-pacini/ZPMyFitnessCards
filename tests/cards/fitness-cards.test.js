@@ -11,7 +11,7 @@ let fn;
 test.before(async () => {
   ctx = await load();
   fn = vm.runInContext(
-    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField })",
+    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField, chooseFood, showSavedFood })",
     ctx,
   );
 });
@@ -121,6 +121,25 @@ test("an entry logged by weight is edited by grams, a quick add by kcal", () => 
   assert.equal(fn.amountField(DAY.entries[1]), "kcal");
   const confirming = text(fn.editPanelHTML({ entry: DAY.entries[1], confirming: true }, "en-GB", en()));
   assert.match(confirming, /Delete Pizza <large>\? Cancel Yes, delete/);
+});
+
+test("a chosen food starts at its first portion, else 100 g", () => {
+  const p = {};
+  fn.chooseFood(p, { id: 1, portions: [{ name: "Bowl", grams: 40 }, { name: "Cup", grams: 80 }] });
+  assert.equal(p.grams, 40);
+  fn.chooseFood(p, { id: 2, portions: [] });
+  assert.deepEqual(plain(p), { food: { id: 2, portions: [] }, grams: 100 });
+  fn.chooseFood(p, { id: 3 });
+  assert.equal(p.grams, 100);
+});
+
+test("a saved food shows chosen on the search tab, and clears the panel's warning and error", () => {
+  const food = { id: 7, name: "Oats", portions: [{ name: "Bowl", grams: 40 }] };
+  const p = { kind: "add", meal: "lunch", tab: "new", query: "", warning: "W", error: "E", note: "N" };
+  fn.showSavedFood(p, food);
+  assert.deepEqual(plain(p), {
+    kind: "add", meal: "lunch", tab: "search", query: "Oats", results: [food], food, grams: 40, warning: null, error: null, note: "N",
+  });
 });
 
 test("a panel shows its note, warning and error, in that order, escaped", () => {

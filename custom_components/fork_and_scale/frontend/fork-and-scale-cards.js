@@ -2330,7 +2330,8 @@ class FoodDiaryCard extends FoodCard {
   _showLookedUp(p, looked) {
     if (this._panel !== p) return;
     if (looked.saved) {
-      Object.assign(p, { tab: "search", query: looked.saved.name, results: [looked.saved], food: looked.saved, grams: looked.saved.portions[0]?.grams ?? 100, note: looked.note, warning: null, error: null });
+      showSavedFood(p, looked.saved);
+      p.note = looked.note;
     } else {
       Object.assign(p, { newFood: looked.food, note: looked.note ?? null, warning: looked.warning ?? null, error: looked.error ?? null });
     }
@@ -2400,8 +2401,7 @@ class FoodDiaryCard extends FoodCard {
     },
     "click:choose"(el) {
       const p = this._panel;
-      p.food = p.results.find((f) => String(f.id) === el.dataset.id);
-      p.grams = p.food.portions?.[0]?.grams ?? 100;
+      chooseFood(p, p.results.find((f) => String(f.id) === el.dataset.id));
       this._renderResults();
       this._renderPicked();
       this._field("grams")?.focus?.();
@@ -2472,8 +2472,7 @@ class FoodDiaryCard extends FoodCard {
       await this._search();
       // A saved food with this barcode is the one to log.
       if (p.results?.length === 1 && p.results[0].barcode === code) {
-        p.food = p.results[0];
-        p.grams = p.food.portions?.[0]?.grams ?? 100;
+        chooseFood(p, p.results[0]);
         this._renderPicked();
       }
     },
@@ -2497,8 +2496,8 @@ class FoodDiaryCard extends FoodCard {
       if (error) return this._showError(null, error);
       const sent = await this._send({ type: "fork_and_scale/food/add", ...food }, barcodeError);
       if (!sent.ok) return;
-      const saved = sent.result;
-      Object.assign(p, { tab: "search", query: saved.name, results: [saved], food: saved, grams: saved.portions[0]?.grams ?? 100, newFood: null, warning: null, error: null });
+      showSavedFood(p, sent.result);
+      p.newFood = null;
       this._renderPanel();
     },
     async "click:save-edit"() {
@@ -2598,6 +2597,18 @@ function previewHTML(food, grams, locale, t) {
   return REQUIRED_NUTRIENTS
     .map((n) => `<div><b>${values ? number(values[n], locale, n === "kcal" ? 0 : 1) : "–"}</b><small>${esc(n === "kcal" ? t.kcal : `${t[n]} (g)`)}</small></div>`)
     .join("");
+}
+
+// Choose `food` in add panel `p`, at its first portion, else 100 g.
+function chooseFood(p, food) {
+  p.food = food;
+  p.grams = food.portions?.[0]?.grams ?? 100;
+}
+
+// Show a saved food chosen on add panel `p`'s search tab, as its only result.
+function showSavedFood(p, food) {
+  Object.assign(p, { tab: "search", query: food.name, results: [food], warning: null, error: null });
+  chooseFood(p, food);
 }
 
 // Panel `p`'s note, warning and error, those it has.
