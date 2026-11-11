@@ -62,16 +62,6 @@ or rebuild with `lib.fakeHash` and copy the hash from the `got:` line of the err
 
 The integration loads its cards itself, so nothing goes in `customLovelaceModules`. For Postgres, add the driver with `services.home-assistant.extraPackages = ps: [ ps.psycopg2 ];`, and make a database owned by the `hass` user. The URL `postgresql://@/fork_and_scale` then connects over the local socket as that user.
 
-### Coming from ZPMyFitnessCards
-
-Fork & Scale was called ZPMyFitnessCards, with the domain `zp_my_fitness`, up to version 0.3.0. To move over and keep your data:
-
-1. In **Settings > Devices & services**, delete ZPMyFitnessCards. Its data stays where it is: `zp_my_fitness.db` in the configuration folder, or your Postgres database.
-2. Update it in HACS, then restart Home Assistant. GitHub forwards the old repository address to the new one. If the old `custom_components/zp_my_fitness` folder is still there afterwards, delete it.
-3. Add Fork & Scale. On SQLite it takes over `zp_my_fitness.db`. On Postgres, give the same URL as before.
-4. Add each person again under the same name. Their data comes back, and their sensors get the same entity IDs, so their history carries on.
-5. In your dashboards, change each `custom:zp-…` card to `custom:fork-and-scale-…`, for example `custom:zp-weight-card` to `custom:fork-and-scale-weight-card`. In automations and scripts, change the `zp_my_fitness.` actions to `fork_and_scale.`.
-
 ## Units
 
 Units follow Home Assistant's unit system, in **Settings > System > General**. With US customary units, everyone sees and types weights in lb and heights in feet and inches: in the person form, the weight sensors, the actions and the cards. Any other unit system uses kg and cm. Energy is always in kcal, and food always in grams.
