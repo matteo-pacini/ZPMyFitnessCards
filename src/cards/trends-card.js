@@ -3,7 +3,7 @@
 function trendBars(days, weekly) {
   const logged = (d) => Object.keys(d.meals).length > 0;
   const kcal = (d) => MEALS.map((m) => d.meals[m]?.kcal ?? 0);
-  if (!weekly) return days.map((d) => ({ day: d.day, days: [d.day], meals: kcal(d), goal: d.goals?.kcal ?? null, logged: logged(d) }));
+  if (!weekly) return days.map((d) => ({ day: d.day, days: [d.day], meals: kcal(d), goal: d.goals?.kcal ?? null }));
   const bars = [];
   // Weeks end on the last day, so the newest bar is a full week.
   for (let end = days.length; end > 0; end -= 7) {
@@ -16,7 +16,6 @@ function trendBars(days, weekly) {
       days: week.map((d) => d.day),
       meals: MEALS.map((_, i) => average(counted.map((d) => kcal(d)[i]))),
       goal: goals.length ? average(goals) : null,
-      logged: counted.length > 0,
     });
   }
   return bars;
@@ -70,7 +69,7 @@ function trendChartHTML(bars, weekly, locale, t) {
         : "";
       const title = `${weekly ? fill(t.week_of, { date: shortDate(bar.day, locale, true) }) : shortDate(bar.day, locale, true)}: ${number(totals[i], locale)} ${t.kcal}`;
       const hit = weekly ? "" : ` data-action="open-day" data-day="${bar.day}"`;
-      return `<g class="bar${bar.logged ? "" : " empty"}"${hit}><title>${esc(title)}</title>
+      return `<g class="bar"${hit}><title>${esc(title)}</title>
         <rect class="hit" x="${(left + i * slot).toFixed(1)}" y="${top}" width="${slot.toFixed(1)}" height="${height - top - bottom}"/>${stack}${goal}</g>${label}`;
     })
     .join("");

@@ -160,7 +160,6 @@ test("daily bars stack meals and carry each day's goal", () => {
   const bars = plain(fn.trendBars([day("2026-11-08", 1800), day("2026-11-09", 0, 1900)], false));
   assert.deepEqual(bars[0].meals, [0, 1800, 0, 0]);
   assert.equal(bars[1].goal, 1900);
-  assert.equal(bars[1].logged, false);
 });
 
 test("weekly bars average the logged days, newest week full", () => {
