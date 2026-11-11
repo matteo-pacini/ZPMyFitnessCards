@@ -1,9 +1,16 @@
 """The SQLite database, without Home Assistant."""
 
 import pytest
+from sqlalchemy import insert
 from sqlalchemy.exc import IntegrityError
 
-from custom_components.zp_my_fitness.db import MIGRATIONS, Database
+from custom_components.zp_my_fitness.db import (
+    MIGRATIONS,
+    VERSION,
+    Database,
+    _schema_v1,
+    make_engine,
+)
 from custom_components.zp_my_fitness.goals import Goals
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
@@ -151,3 +158,67 @@ def test_updates_with_nothing_to_change_return_the_row(db: Database) -> None:
     logged = db.add_entry("p", entry("2026-11-09"))
     assert db.update_entry(logged["id"], {}) == logged
     assert db.update_entry(999, {"kcal": 1}) is None
+
+
+def test_upgrades_a_version_1_database_keeping_its_entries(database_url: str) -> None:
+    engine = make_engine(database_url)
+    with engine.begin() as conn:
+        MIGRATIONS[0](conn)
+        VERSION.create(conn)
+        conn.execute(insert(VERSION).values(version=1))
+        conn.execute(
+            insert(_schema_v1().tables["entries"]).values(
+                person="p",
+                day="2026-11-09",
+                meal="lunch",
+                name="Soup",
+                kcal=100,
+                created_at="2026-11-09T12:00:00+00:00",
+            )
+        )
+    engine.dispose()
+    db = Database(database_url)
+    db.open()
+    assert db.schema_version() == len(MIGRATIONS) == 2
+    [soup] = db.day_entries("p", "2026-11-09")
+    assert (soup["name"], soup["source"]) == ("Soup", None)
+    db.close()
+
+
+def test_replaces_one_source_s_entries_on_the_days_given(db: Database) -> None:
+    mine = db.add_entry("p", entry("2026-11-01", name="Mine"))
+    db.replace_entries(
+        "p", "mfp", "2026-11-01", "2026-11-02", [entry("2026-11-01", kcal=1), entry("2026-11-02")]
+    )
+    db.replace_entries("q", "mfp", "2026-11-01", "2026-11-01", [entry("2026-11-01", kcal=9)])
+    # Again, over days that overlap: the 2nd's entry goes, the 1st's stays.
+    db.replace_entries("p", "mfp", "2026-11-02", "2026-11-03", [entry("2026-11-03", kcal=3)])
+
+    def day(d: str) -> list:
+        return [(e["name"], e["kcal"], e["source"]) for e in db.day_entries("p", d)]
+
+    assert day("2026-11-01") == [("Mine", 100, None), ("Food", 1, "mfp")]
+    assert day("2026-11-02") == []
+    assert day("2026-11-03") == [("Food", 3, "mfp")]
+    assert db.entry(mine["id"])["source"] is None
+    assert len(db.day_entries("q", "2026-11-01")) == 1
+
+
+def test_exports_a_person_s_entries_and_weights_and_every_food(db: Database) -> None:
+    oats = db.add_food({**OATS, "portions": [{"name": "Bowl", "grams": 40}]})
+    db.add_entry("p", entry("2026-11-09", name="Late"))
+    db.add_entry("p", entry("2026-11-08", food_id=oats["id"], grams=40))
+    db.add_entry("q", entry("2026-11-08", name="Not theirs"))
+    db.set_weight("p", "2026-11-09", 70.2)
+    db.set_weight("p", "2026-11-01", 71)
+    db.set_weight("q", "2026-11-01", 90)
+    data = db.export("p")
+    assert [(e["day"], e["name"]) for e in data["entries"]] == [
+        ("2026-11-08", "Food"),
+        ("2026-11-09", "Late"),
+    ]
+    assert [(w["day"], w["kg"]) for w in data["weights"]] == [
+        ("2026-11-01", 71),
+        ("2026-11-09", 70.2),
+    ]
+    assert data["foods"] == [db.food(oats["id"])]

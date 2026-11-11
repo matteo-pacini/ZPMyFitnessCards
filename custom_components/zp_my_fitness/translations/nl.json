@@ -35,21 +35,32 @@
     "person": {
       "abort": {
         "erased": "Alle voeding, gewichten en doelen van deze persoon zijn verwijderd.",
+        "exported": "{link}Download de gegevens van {name}{link_end}: voedingsdagboek en gewichten, en de opgeslagen voedingsmiddelen, als CSV-bestanden in een ZIP. De link werkt {minutes} minuten.",
         "imported": "{weights} gewichten en {days} dagen calorieën geïmporteerd.",
+        "mfp_imported": "Geïmporteerd uit MyFitnessPal:\n\n- Dagen: {days}\n- Items: {entries}\n- Gewichten toegevoegd: {weights}\n- Gewichten overgeslagen, op dagen die er al een hadden: {skipped}",
         "no_recorder": "De recorder draait niet, dus er is geen geschiedenis om te importeren.",
         "not_loaded": "ZPMyFitnessCards is niet geladen. Laad het opnieuw en probeer het nog eens.",
         "reconfigure_successful": "Opgeslagen."
       },
       "entry_type": "Persoon",
       "error": {
+        "bad_line": "Regel {line} van {file} kon niet worden gelezen.",
+        "bad_row": "Rij {row} op {day} kon niet worden gelezen.",
         "birth_date_future": "De geboortedatum moet in het verleden liggen.",
+        "date_not_english": "De datums in het dagboek zijn niet in het Engels. Zet MyFitnessPal op Engels en sla de pagina opnieuw op.",
         "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",
         "name_empty": "Voer een naam in.",
         "name_taken": "Iemand anders heeft deze naam al.",
+        "no_calories": "Het dagboek heeft geen kolom Calories.",
         "no_statistics": "De recorder houdt voor deze sensor geen langetermijnstatistieken bij.",
         "not_confirmed": "Vink het vakje aan om te bevestigen.",
+        "not_myfitnesspal": "Dit is geen export van MyFitnessPal en geen opgeslagen afdrukbaar dagboek.",
         "nothing_selected": "Kies een gewichtssensor, een caloriesensor of allebei.",
-        "start_date_future": "De startdatum mag niet in de toekomst liggen."
+        "nothing_to_import": "Het bestand bevat tot vandaag geen voeding of gewichten.",
+        "save_complete": "De pagina bevat geen rijen van het dagboek. Open het afdrukbare dagboek, wacht tot het geladen is en sla het op met 'Pagina opslaan als' als volledige webpagina.",
+        "start_date_future": "De startdatum mag niet in de toekomst liggen.",
+        "upload_again": "Kies het bestand opnieuw.",
+        "weight_out_of_range": "Regel {line} van {file} heeft in deze eenheid een gewicht buiten 20–400 kg. Controleer de eenheid."
       },
       "initiate_flow": {
         "reconfigure": "Persoon wijzigen",
@@ -103,11 +114,31 @@
           "description": "Kopieert de geschiedenis van {name} uit sensoren die de recorder heeft bewaard. Gewicht: het daggemiddelde, alleen voor dagen zonder gewicht. Calorieën: het dagtotaal wordt één invoer ‘Imported total’ bij tussendoortjes. Opnieuw importeren voegt alleen toe wat ontbreekt.",
           "title": "Geschiedenis importeren"
         },
+        "import_mfp": {
+          "data": {
+            "file": "Bestand"
+          },
+          "description": "Kies de export van MyFitnessPal, de ZIP of een van de CSV-bestanden erin. Of open het afdrukbare dagboek van MyFitnessPal in een browser, wacht tot het geladen is, sla het op met 'Pagina opslaan als' als volledige webpagina en kies het .html-bestand. Op elke dag die het bestand beslaat, worden de items van {name} uit MyFitnessPal vervangen, en voeding die hier is gelogd blijft. Gewichten worden alleen toegevoegd op dagen zonder gewicht. Home Assistant bewaart de rijen van het dagboek en verder niets uit het bestand.",
+          "title": "Importeren uit MyFitnessPal"
+        },
+        "import_mfp_meals": {
+          "description": "Het bestand heeft andere maaltijden dan ontbijt, lunch, diner en tussendoortjes. Kies waar elke maaltijd heen gaat.",
+          "title": "Maaltijden"
+        },
+        "import_mfp_unit": {
+          "data": {
+            "weight_unit": "Gewichten in"
+          },
+          "description": "Het bestand vermeldt de eenheid van de gewichten niet. Kies de eenheid die MyFitnessPal gebruikte.",
+          "title": "Gewichtseenheid"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Gegevens wijzigen",
             "erase": "Alle gegevens verwijderen",
-            "import_history": "Geschiedenis importeren"
+            "export": "Gegevens exporteren",
+            "import_history": "Geschiedenis importeren",
+            "import_mfp": "Importeren uit MyFitnessPal"
           },
           "title": "Persoon wijzigen"
         },
@@ -274,6 +305,12 @@
       "options": {
         "female": "Vrouw",
         "male": "Man"
+      }
+    },
+    "weight_unit": {
+      "options": {
+        "kg": "Kilogram (kg)",
+        "lb": "Pond (lb)"
       }
     }
   },

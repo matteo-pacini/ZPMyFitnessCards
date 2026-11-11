@@ -1,0 +1,3 @@
+# The MyFitnessPal fixtures keep their byte order marks and CRLF line ends as
+# the real files have them.
+tests/fixtures/myfitnesspal/** -text

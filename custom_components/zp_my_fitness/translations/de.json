@@ -35,21 +35,32 @@
     "person": {
       "abort": {
         "erased": "Alle Lebensmittel, Gewichte und Ziele dieser Person wurden gelöscht.",
+        "exported": "{link}Daten von {name} herunterladen{link_end}: Ernährungstagebuch, Gewichte und gespeicherte Lebensmittel als CSV-Dateien in einer ZIP-Datei. Der Link gilt {minutes} Minuten.",
         "imported": "{weights} Gewichte und {days} Tage mit Kalorien importiert.",
+        "mfp_imported": "Aus MyFitnessPal importiert:\n\n- Tage: {days}\n- Einträge: {entries}\n- Gewichte hinzugefügt: {weights}\n- Gewichte übersprungen, an Tagen, die schon eines hatten: {skipped}",
         "no_recorder": "Der Recorder läuft nicht, daher gibt es keinen Verlauf zum Importieren.",
         "not_loaded": "ZPMyFitnessCards ist nicht geladen. Lade es neu und versuche es dann erneut.",
         "reconfigure_successful": "Gespeichert."
       },
       "entry_type": "Person",
       "error": {
+        "bad_line": "Zeile {line} von {file} konnte nicht gelesen werden.",
+        "bad_row": "Zeile {row} am {day} konnte nicht gelesen werden.",
         "birth_date_future": "Das Geburtsdatum muss in der Vergangenheit liegen.",
+        "date_not_english": "Die Daten im Tagebuch sind nicht auf Englisch. Stelle MyFitnessPal auf Englisch um und speichere die Seite erneut.",
         "macros_not_100": "Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
         "name_empty": "Gib einen Namen ein.",
         "name_taken": "Eine andere Person hat bereits diesen Namen.",
+        "no_calories": "Das Tagebuch hat keine Spalte „Calories“.",
         "no_statistics": "Der Recorder führt für diesen Sensor keine Langzeitstatistiken.",
         "not_confirmed": "Setze das Häkchen zur Bestätigung.",
+        "not_myfitnesspal": "Das ist weder ein MyFitnessPal-Export noch ein gespeichertes druckbares Tagebuch.",
         "nothing_selected": "Wähle einen Gewichtssensor, einen Kaloriensensor oder beide.",
-        "start_date_future": "Das Startdatum darf nicht in der Zukunft liegen."
+        "nothing_to_import": "Die Datei enthält bis heute weder Lebensmittel noch Gewichte.",
+        "save_complete": "Die Seite enthält keine Tagebuchzeilen. Öffne das druckbare Tagebuch, warte, bis es geladen ist, und speichere es mit „Seite speichern unter“ als vollständige Webseite.",
+        "start_date_future": "Das Startdatum darf nicht in der Zukunft liegen.",
+        "upload_again": "Wähle die Datei erneut aus.",
+        "weight_out_of_range": "Zeile {line} von {file} enthält in dieser Einheit ein Gewicht außerhalb von 20–400 kg. Prüfe die Einheit."
       },
       "initiate_flow": {
         "reconfigure": "Person ändern",
@@ -103,11 +114,31 @@
           "description": "Kopiert den Verlauf von {name} aus Sensoren, die der Recorder aufgezeichnet hat. Gewicht: der Tagesdurchschnitt, nur für Tage ohne Gewicht. Kalorien: Die Tagessumme wird zu einem Eintrag „Imported total“ unter Snacks. Ein erneuter Import ergänzt nur, was fehlt.",
           "title": "Verlauf importieren"
         },
+        "import_mfp": {
+          "data": {
+            "file": "Datei"
+          },
+          "description": "Wähle den Export von MyFitnessPal, seine ZIP-Datei oder eine der CSV-Dateien darin. Oder öffne das druckbare Tagebuch von MyFitnessPal im Browser, warte, bis es geladen ist, speichere es mit „Seite speichern unter“ als vollständige Webseite und wähle die .html-Datei. An jedem Tag, den die Datei abdeckt, werden die Einträge von {name} aus MyFitnessPal ersetzt; hier erfasste Lebensmittel bleiben. Gewichte kommen nur an Tagen ohne Gewicht hinzu. Home Assistant behält die Zeilen des Tagebuchs und sonst nichts aus der Datei.",
+          "title": "Aus MyFitnessPal importieren"
+        },
+        "import_mfp_meals": {
+          "description": "Die Datei hat Mahlzeiten außer Frühstück, Mittagessen, Abendessen und Snacks. Wähle, wohin jede gehört.",
+          "title": "Mahlzeiten"
+        },
+        "import_mfp_unit": {
+          "data": {
+            "weight_unit": "Gewichte in"
+          },
+          "description": "Die Datei gibt die Einheit ihrer Gewichte nicht an. Wähle die, die MyFitnessPal verwendet hat.",
+          "title": "Gewichtseinheit"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Angaben ändern",
             "erase": "Alle Daten löschen",
-            "import_history": "Verlauf importieren"
+            "export": "Daten exportieren",
+            "import_history": "Verlauf importieren",
+            "import_mfp": "Aus MyFitnessPal importieren"
           },
           "title": "Person ändern"
         },
@@ -274,6 +305,12 @@
       "options": {
         "female": "Weiblich",
         "male": "Männlich"
+      }
+    },
+    "weight_unit": {
+      "options": {
+        "kg": "Kilogramm (kg)",
+        "lb": "Pfund (lb)"
       }
     }
   },

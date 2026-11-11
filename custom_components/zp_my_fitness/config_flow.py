@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
+from homeassistant.components.file_upload import process_uploaded_file
+from homeassistant.components.http.auth import async_sign_path
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigEntryState,
@@ -14,12 +16,15 @@ from homeassistant.config_entries import (
     ConfigSubentryFlow,
     SubentryFlowResult,
 )
-from homeassistant.core import callback
+from homeassistant.const import UnitOfMass
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.selector import (
     BooleanSelector,
     DateSelector,
     EntitySelector,
     EntitySelectorConfig,
+    FileSelector,
+    FileSelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -52,13 +57,18 @@ from .const import (
     DOMAIN,
     ENGINE_POSTGRESQL,
     ENGINE_SQLITE,
+    IMPORTED_MEAL,
+    MEALS,
     SEXES,
+    SOURCE_MYFITNESSPAL,
     SUBENTRY_PERSON,
 )
 from .data import today
 from .db import make_engine
+from .export import PATH as EXPORT_PATH
 from .goals import ACTIVITY, PACES
 from .history import async_import_calories, async_import_weights, has_statistics
+from .myfitnesspal import Diary, Unreadable, entries, other_meals, read, weights_kg
 from .schema import vol
 
 # Defaults for a new person: MyFitnessPal's default macro split.
@@ -67,6 +77,14 @@ DEFAULTS = {CONF_PROTEIN_PCT: 20, CONF_CARBS_PCT: 50, CONF_FAT_PCT: 30}
 CONFIRM = "confirm"
 CONF_WEIGHT_SENSOR = "weight_sensor"
 CONF_CALORIES_SENSOR = "calories_sensor"
+CONF_FILE = "file"
+CONF_WEIGHT_UNIT = "weight_unit"
+
+# The files "Import from MyFitnessPal" takes.
+MYFITNESSPAL_FILES = ".zip,.csv,.html"
+
+# How long the link "Export data" shows works.
+EXPORT_LINK_MINUTES = 5
 
 TITLE = "ZPMyFitnessCards"
 
@@ -124,6 +142,15 @@ def validate_person(values: dict[str, Any], other_names: set[str]) -> dict[str, 
     if values[CONF_PROTEIN_PCT] + values[CONF_CARBS_PCT] + values[CONF_FAT_PCT] != 100:
         errors["base"] = "macros_not_100"
     return errors
+
+
+def read_upload(hass: HomeAssistant, file_id: str) -> Diary:
+    """Read an uploaded MyFitnessPal file, which is deleted afterwards. Blocks.
+
+    Raises Unreadable, or ValueError when there is no such upload.
+    """
+    with process_uploaded_file(hass, file_id) as path:
+        return read(path, today())
 
 
 def check_database(url: str) -> str | None:
@@ -199,7 +226,12 @@ class ZPMyFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class PersonSubentryFlow(ConfigSubentryFlow):
-    """Add, change or erase a person."""
+    """Add, change or erase a person, or import or export their data."""
+
+    # What the MyFitnessPal file holds, between the import's steps.
+    _diary: Diary
+    # Where each meal of the file's own goes, by its title.
+    _meals: dict[str, str]
 
     def _names(self, exclude: str | None = None) -> set[str]:
         return {
@@ -250,7 +282,8 @@ class PersonSubentryFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         """Change the person, or erase their data."""
         return self.async_show_menu(
-            step_id="reconfigure", menu_options=["edit", "import_history", "erase"]
+            step_id="reconfigure",
+            menu_options=["edit", "import_mfp", "import_history", "export", "erase"],
         )
 
     async def async_step_edit(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
@@ -315,6 +348,139 @@ class PersonSubentryFlow(ConfigSubentryFlow):
             data_schema=self.add_suggested_values_to_schema(schema, user_input),
             errors=errors,
             description_placeholders={"name": self._get_reconfigure_subentry().title},
+        )
+
+    async def async_step_import_mfp(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Read a MyFitnessPal export or saved printable diary."""
+        if self._get_entry().state is not ConfigEntryState.LOADED:
+            return self.async_abort(reason="not_loaded")
+        errors: dict[str, str] = {}
+        placeholders = {"name": self._get_reconfigure_subentry().title}
+        if user_input is not None:
+            try:
+                diary = await self.hass.async_add_executor_job(
+                    read_upload, self.hass, user_input[CONF_FILE]
+                )
+            except Unreadable as err:
+                errors["base"] = err.key
+                placeholders |= err.placeholders
+            except ValueError:
+                # No such upload: each is deleted once read, so sending it again fails.
+                errors["base"] = "upload_again"
+            else:
+                if diary.foods or diary.weights:
+                    self._diary, self._meals = diary, {}
+                    return await self.async_step_import_mfp_meals()
+                errors["base"] = "nothing_to_import"
+        return self.async_show_form(
+            step_id="import_mfp",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_FILE): FileSelector(
+                        FileSelectorConfig(accept=MYFITNESSPAL_FILES)
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def async_step_import_mfp_meals(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Ask where each of the file's own meals goes, when it has any."""
+        titles = other_meals(self._diary)
+        if user_input is not None or not titles:
+            self._meals = user_input or {}
+            return await self.async_step_import_mfp_unit()
+        # Each field is named after a meal's title, which the form shows as its label.
+        meal = SelectSelector(
+            SelectSelectorConfig(
+                options=list(MEALS), translation_key="meal", mode=SelectSelectorMode.DROPDOWN
+            )
+        )
+        return self.async_show_form(
+            step_id="import_mfp_meals",
+            data_schema=vol.Schema(
+                {vol.Required(title, default=IMPORTED_MEAL): meal for title in titles}
+            ),
+        )
+
+    async def async_step_import_mfp_unit(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Ask the unit of the file's weights, which it does not say, then import."""
+        if not self._diary.weights:
+            return await self._async_import_mfp([])
+        errors: dict[str, str] = {}
+        placeholders: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                weights = weights_kg(self._diary, user_input[CONF_WEIGHT_UNIT])
+            except Unreadable as err:
+                errors["base"] = err.key
+                placeholders = err.placeholders
+            else:
+                return await self._async_import_mfp(weights)
+        pounds = self.hass.config.units.mass_unit == UnitOfMass.POUNDS
+        unit = self._diary.weight_unit or ("lb" if pounds else "kg")
+        schema = vol.Schema(
+            {vol.Required(CONF_WEIGHT_UNIT): _choice(["kg", "lb"], CONF_WEIGHT_UNIT)}
+        )
+        return self.async_show_form(
+            step_id="import_mfp_unit",
+            data_schema=self.add_suggested_values_to_schema(
+                schema, user_input or {CONF_WEIGHT_UNIT: unit}
+            ),
+            errors=errors,
+            description_placeholders=placeholders,
+        )
+
+    async def _async_import_mfp(self, weights: list[tuple[str, float]]) -> SubentryFlowResult:
+        """Replace the person's MyFitnessPal entries on the file's days, add weights, and say so."""
+        data = self._get_entry().runtime_data.data
+        person = data.people[self._get_reconfigure_subentry().data[CONF_KEY]]
+        foods = entries(self._diary, self._meals)
+        if foods:
+            await data.async_replace_entries(
+                person.key, SOURCE_MYFITNESSPAL, foods[0]["day"], foods[-1]["day"], foods
+            )
+        added = await data.async_add_weights(person, weights)
+        return self.async_abort(
+            reason="mfp_imported",
+            description_placeholders={
+                "days": str(len({f["day"] for f in foods})),
+                "entries": str(len(foods)),
+                "weights": str(added),
+                "skipped": str(len(weights) - added),
+            },
+        )
+
+    async def async_step_export(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Show a link to download the person's data, signed for whoever is signed in."""
+        if self._get_entry().state is not ConfigEntryState.LOADED:
+            return self.async_abort(reason="not_loaded")
+        subentry = self._get_reconfigure_subentry()
+        url = async_sign_path(
+            self.hass,
+            EXPORT_PATH.format(person=subentry.data[CONF_KEY]),
+            timedelta(minutes=EXPORT_LINK_MINUTES),
+        )
+        return self.async_abort(
+            reason="exported",
+            description_placeholders={
+                "name": subentry.title,
+                # An HTML link, not markdown: the frontend opens links to its
+                # own pages in place, unless they have a target. The tags are
+                # placeholders because translations may not hold HTML.
+                "link": f'<a href="{url}" target="_blank">',
+                "link_end": "</a>",
+                "minutes": str(EXPORT_LINK_MINUTES),
+            },
         )
 
     async def async_step_erase(

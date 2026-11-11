@@ -35,21 +35,32 @@
     "person": {
       "abort": {
         "erased": "已删除此人的所有食物、体重和目标。",
+        "exported": "{link}下载 {name} 的数据{link_end}：饮食日记和体重，以及已保存的食物，以 CSV 文件打包为 ZIP。链接在 {minutes} 分钟内有效。",
         "imported": "已导入 {weights} 条体重和 {days} 天的热量。",
+        "mfp_imported": "已从 MyFitnessPal 导入：\n\n- 天数：{days}\n- 记录：{entries}\n- 已添加的体重：{weights}\n- 已跳过的体重（那些日期已有体重）：{skipped}",
         "no_recorder": "记录器未运行，因此没有可导入的历史记录。",
         "not_loaded": "ZPMyFitnessCards 未加载。请重新加载后再试。",
         "reconfigure_successful": "已保存。"
       },
       "entry_type": "人员",
       "error": {
+        "bad_line": "无法读取 {file} 的第 {line} 行。",
+        "bad_row": "无法读取 {day} 的第 {row} 行。",
         "birth_date_future": "出生日期必须早于今天。",
+        "date_not_english": "日记中的日期不是英文。请将 MyFitnessPal 切换为英文，然后重新保存页面。",
         "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",
         "name_empty": "请输入名称。",
         "name_taken": "已有其他人使用此名称。",
+        "no_calories": "日记中没有 Calories 列。",
         "no_statistics": "记录器没有保存此传感器的长期统计数据。",
         "not_confirmed": "请勾选复选框以确认。",
+        "not_myfitnesspal": "这不是 MyFitnessPal 的导出文件，也不是保存的可打印日记。",
         "nothing_selected": "请选择体重传感器、热量传感器或两者。",
-        "start_date_future": "开始日期不能晚于今天。"
+        "nothing_to_import": "文件中没有截至今天的食物或体重。",
+        "save_complete": "页面中没有日记行。请打开可打印日记，等待加载完成，然后用“网页另存为”保存为完整网页。",
+        "start_date_future": "开始日期不能晚于今天。",
+        "upload_again": "请重新选择文件。",
+        "weight_out_of_range": "{file} 的第 {line} 行的体重按此单位超出 20–400 kg。请检查单位。"
       },
       "initiate_flow": {
         "reconfigure": "更改人员",
@@ -103,11 +114,31 @@
           "description": "从记录器保存的传感器中复制 {name} 的历史记录。体重：每天的平均值，仅限尚无体重的日期。热量：每天的总量会变成零食下的一条“Imported total”记录。再次导入只会补充缺少的部分。",
           "title": "导入历史记录"
         },
+        "import_mfp": {
+          "data": {
+            "file": "文件"
+          },
+          "description": "选择 MyFitnessPal 的导出文件：ZIP 或其中的一个 CSV 文件。也可以在浏览器中打开 MyFitnessPal 的可打印日记，等待加载完成，用“网页另存为”保存为完整网页，然后选择 .html 文件。在文件涵盖的每一天，{name} 来自 MyFitnessPal 的记录会被替换，在这里记录的食物保持不变。体重只会添加到尚无体重的日期。Home Assistant 只保留日记的行，不保留文件中的其他内容。",
+          "title": "从 MyFitnessPal 导入"
+        },
+        "import_mfp_meals": {
+          "description": "文件中有早餐、午餐、晚餐和零食以外的餐次。请为每个餐次选择归属。",
+          "title": "餐次"
+        },
+        "import_mfp_unit": {
+          "data": {
+            "weight_unit": "体重单位"
+          },
+          "description": "文件没有说明体重的单位。请选择 MyFitnessPal 使用的单位。",
+          "title": "体重单位"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "更改信息",
             "erase": "删除所有数据",
-            "import_history": "导入历史记录"
+            "export": "导出数据",
+            "import_history": "导入历史记录",
+            "import_mfp": "从 MyFitnessPal 导入"
           },
           "title": "更改人员"
         },
@@ -274,6 +305,12 @@
       "options": {
         "female": "女",
         "male": "男"
+      }
+    },
+    "weight_unit": {
+      "options": {
+        "kg": "千克 (kg)",
+        "lb": "磅 (lb)"
       }
     }
   },

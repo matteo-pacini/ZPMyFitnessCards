@@ -35,21 +35,32 @@
     "person": {
       "abort": {
         "erased": "All mat, alla vikter och mål för den här personen har tagits bort.",
+        "exported": "{link}Ladda ner data för {name}{link_end}: matdagbok och vikter, och de sparade livsmedlen, som CSV-filer i en ZIP. Länken fungerar i {minutes} minuter.",
         "imported": "Importerade {weights} vikter och {days} dagar med kalorier.",
+        "mfp_imported": "Importerat från MyFitnessPal:\n\n- Dagar: {days}\n- Poster: {entries}\n- Vikter tillagda: {weights}\n- Vikter överhoppade, på dagar som redan hade en: {skipped}",
         "no_recorder": "Recordern körs inte, så det finns ingen historik att importera.",
         "not_loaded": "ZPMyFitnessCards är inte inläst. Läs in det igen och försök sedan på nytt.",
         "reconfigure_successful": "Sparat."
       },
       "entry_type": "Person",
       "error": {
+        "bad_line": "Rad {line} i {file} kunde inte läsas.",
+        "bad_row": "Rad {row} den {day} kunde inte läsas.",
         "birth_date_future": "Födelsedatumet måste ligga bakåt i tiden.",
+        "date_not_english": "Dagbokens datum är inte på engelska. Byt MyFitnessPal till engelska och spara sidan igen.",
         "macros_not_100": "Protein, kolhydrater och fett måste bli 100 % tillsammans.",
         "name_empty": "Ange ett namn.",
         "name_taken": "En annan person har redan det här namnet.",
+        "no_calories": "Dagboken har ingen kolumn Calories.",
         "no_statistics": "Recordern sparar ingen långtidsstatistik för den här sensorn.",
         "not_confirmed": "Kryssa i rutan för att bekräfta.",
+        "not_myfitnesspal": "Det här är varken en export från MyFitnessPal eller en sparad utskriftsvänlig dagbok.",
         "nothing_selected": "Välj en viktsensor, en kalorisensor eller båda.",
-        "start_date_future": "Startdatumet kan inte ligga i framtiden."
+        "nothing_to_import": "Filen har ingen mat eller några vikter fram till i dag.",
+        "save_complete": "Sidan har inga dagboksrader. Öppna den utskriftsvänliga dagboken, vänta tills den har laddats och spara den med ”Spara sida som” som en komplett webbsida.",
+        "start_date_future": "Startdatumet kan inte ligga i framtiden.",
+        "upload_again": "Välj filen igen.",
+        "weight_out_of_range": "Rad {line} i {file} har en vikt utanför 20–400 kg i den här enheten. Kontrollera enheten."
       },
       "initiate_flow": {
         "reconfigure": "Ändra person",
@@ -103,11 +114,31 @@
           "description": "Kopierar historiken för {name} från sensorer som recordern har sparat. Vikt: dagens medelvärde, bara för dagar utan vikt. Kalorier: dagens summa blir en post ”Imported total” under mellanmål. Kör du importen igen läggs bara det som saknas till.",
           "title": "Importera historik"
         },
+        "import_mfp": {
+          "data": {
+            "file": "Fil"
+          },
+          "description": "Välj exporten från MyFitnessPal, dess ZIP eller en av CSV-filerna i den. Eller öppna MyFitnessPals utskriftsvänliga dagbok i en webbläsare, vänta tills den har laddats, spara den med ”Spara sida som” som en komplett webbsida och välj .html-filen. För varje dag som filen täcker ersätts poster för {name} från MyFitnessPal, och mat som loggats här finns kvar. Vikter läggs bara till på dagar som saknar vikt. Home Assistant sparar dagbokens rader och inget annat från filen.",
+          "title": "Importera från MyFitnessPal"
+        },
+        "import_mfp_meals": {
+          "description": "Filen har andra måltider än frukost, lunch, middag och mellanmål. Välj vart var och en ska.",
+          "title": "Måltider"
+        },
+        "import_mfp_unit": {
+          "data": {
+            "weight_unit": "Vikter i"
+          },
+          "description": "Filen anger inte vilken enhet vikterna har. Välj den som MyFitnessPal använde.",
+          "title": "Viktenhet"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Ändra uppgifter",
             "erase": "Ta bort all data",
-            "import_history": "Importera historik"
+            "export": "Exportera data",
+            "import_history": "Importera historik",
+            "import_mfp": "Importera från MyFitnessPal"
           },
           "title": "Ändra person"
         },
@@ -274,6 +305,12 @@
       "options": {
         "female": "Kvinna",
         "male": "Man"
+      }
+    },
+    "weight_unit": {
+      "options": {
+        "kg": "Kilogram (kg)",
+        "lb": "Pund (lb)"
       }
     }
   },

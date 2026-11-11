@@ -308,6 +308,24 @@ class FitnessData:
         self._changed(person, {e["day"] for e in entries})
         return len(entries)
 
+    async def async_replace_entries(
+        self, person: str, source: str, start: str, end: str, entries: list[dict]
+    ) -> None:
+        """Replace a person's entries from `source` on the days from `start` to `end`.
+
+        Entries from elsewhere, such as those logged in Home Assistant, stay.
+        History is corrected for each past day whose totals changed.
+        """
+        before = await self._read(self.db.meal_totals, person, start, end)
+        await self._write(self.db.replace_entries, person, source, start, end, entries)
+        after = await self._read(self.db.meal_totals, person, start, end)
+        days = sorted(before.keys() | after.keys())
+        for day in days:
+            self._correct_history(
+                person, day, day_sums(before.get(day, {})), day_sums(after.get(day, {}))
+            )
+        self._changed(person, days)
+
     async def async_delete_weight(self, person: Person, day: str) -> None:
         """Delete a weight, then follow it with today's goals."""
         await self._write(self.db.delete_weight, person.key, day)

@@ -36,6 +36,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.pool import NullPool
+from sqlalchemy.schema import DDL, CreateColumn
 
 from .const import NUTRIENTS
 from .goals import Goals
@@ -101,16 +102,80 @@ def _schema_v1() -> MetaData:
     return metadata
 
 
+def _schema_v2() -> MetaData:
+    """Version 1, with each entry's source: NULL when logged in Home Assistant."""
+    metadata = MetaData()
+    nutrients = [Column(n, Float) for n in NUTRIENTS]
+    Table(
+        "people",
+        metadata,
+        Column("key", String(64), primary_key=True),
+        Column("name", Text, nullable=False),
+    )
+    Table(
+        "foods",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("name", Text, nullable=False),
+        Column("barcode", String(64), unique=True),
+        *[
+            Column(n, Float, nullable=n in ("fibre", "sugar", "saturated_fat", "salt"))
+            for n in NUTRIENTS
+        ],
+        Column("portions", Text, nullable=False, default="[]"),
+        Column("updated_at", String(32), nullable=False),
+    )
+    entries = Table(
+        "entries",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("person", String(64), nullable=False),
+        Column("day", String(10), nullable=False),
+        Column("meal", String(16), nullable=False),
+        Column("food_id", Integer, ForeignKey("foods.id", ondelete="SET NULL")),
+        Column("name", Text, nullable=False),
+        Column("grams", Float),
+        *nutrients,
+        Column("created_at", String(32), nullable=False),
+        Column("source", String(16)),
+        CheckConstraint("meal IN ('breakfast', 'lunch', 'dinner', 'snacks')"),
+    )
+    Index("entries_by_day", entries.c.person, entries.c.day)
+    Table(
+        "weights",
+        metadata,
+        Column("person", String(64), primary_key=True),
+        Column("day", String(10), primary_key=True),
+        Column("kg", Float, nullable=False),
+        Column("updated_at", String(32), nullable=False),
+    )
+    Table(
+        "goals",
+        metadata,
+        Column("person", String(64), primary_key=True),
+        Column("day", String(10), primary_key=True),
+        *[Column(n, Float, nullable=False) for n in ("kcal", "protein", "carbs", "fat")],
+    )
+    return metadata
+
+
 def _migrate_to_v1(conn: Connection) -> None:
     _schema_v1().create_all(conn)
 
 
+def _migrate_to_v2(conn: Connection) -> None:
+    source = _schema_v2().tables["entries"].c.source
+    conn.execute(
+        DDL(f"ALTER TABLE entries ADD COLUMN {CreateColumn(source).compile(dialect=conn.dialect)}")
+    )
+
+
 # Each entry upgrades the schema by one version; schema_version holds the
 # version a database is at. Never edit a released entry, append a new one.
-MIGRATIONS: list[Callable[[Connection], None]] = [_migrate_to_v1]
+MIGRATIONS: list[Callable[[Connection], None]] = [_migrate_to_v1, _migrate_to_v2]
 
 # The tables the queries below use: those of the latest version.
-SCHEMA = _schema_v1()
+SCHEMA = _schema_v2()
 PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS = (
     SCHEMA.tables[name] for name in ("people", "foods", "entries", "weights", "goals")
 )
@@ -357,6 +422,29 @@ class Database:
         with self._db.begin() as conn:
             conn.execute(delete(ENTRIES).where(ENTRIES.c.id == entry_id))
 
+    def replace_entries(
+        self, person: str, source: str, start: str, end: str, entries: Iterable[dict[str, Any]]
+    ) -> None:
+        """Replace a person's entries from `source` on days from `start` to `end`.
+
+        Entries from elsewhere, such as those logged in Home Assistant, stay.
+        """
+        with self._db.begin() as conn:
+            conn.execute(
+                delete(ENTRIES).where(
+                    ENTRIES.c.person == person,
+                    ENTRIES.c.source == source,
+                    ENTRIES.c.day.between(start, end),
+                )
+            )
+            for entry in entries:
+                values = {k: entry.get(k) for k in ENTRY_FIELDS}
+                conn.execute(
+                    insert(ENTRIES).values(
+                        person=person, **values, source=source, created_at=_now()
+                    )
+                )
+
     def days_with_entry_named(self, person: str, name: str) -> set[str]:
         """The days on which a person has an entry called `name`."""
         rows = self._all(
@@ -443,6 +531,29 @@ class Database:
             .order_by(WEIGHTS.c.day.desc())
             .limit(1)
         )
+
+    # Export
+
+    def export(self, person: str) -> dict[str, list[dict[str, Any]]]:
+        """A person's entries and weights, oldest first, and every saved food.
+
+        Foods are everyone's, so they are all there. Read in one transaction,
+        so the three agree.
+        """
+        with self._db.begin() as conn:
+            entries = conn.execute(
+                select(ENTRIES)
+                .where(ENTRIES.c.person == person)
+                .order_by(ENTRIES.c.day, ENTRIES.c.id)
+            )
+            weights = conn.execute(
+                select(WEIGHTS).where(WEIGHTS.c.person == person).order_by(WEIGHTS.c.day)
+            )
+            return {
+                "entries": [dict(r._mapping) for r in entries],
+                "weights": [dict(r._mapping) for r in weights],
+                "foods": [_food(r) for r in conn.execute(select(FOODS).order_by(FOODS.c.id))],
+            }
 
     # Goals
 

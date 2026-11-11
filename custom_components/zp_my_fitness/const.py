@@ -52,3 +52,7 @@ SIGNAL_CHANGED = f"{DOMAIN}_changed"
 # history, which knows totals but not foods.
 IMPORTED_ENTRY = "Imported total"
 IMPORTED_MEAL = "snacks"
+
+# The source recorded on entries imported from MyFitnessPal, which importing
+# again replaces. Entries logged in Home Assistant have none.
+SOURCE_MYFITNESSPAL = "myfitnesspal"

@@ -185,7 +185,7 @@ async def test_a_person_added_while_unloaded_gets_a_new_key(hass: HomeAssistant)
     assert len(_people(entry)["Nora"]["key"]) == 32
 
 
-@pytest.mark.parametrize("step", ["import_history", "erase"])
+@pytest.mark.parametrize("step", ["import_history", "import_mfp", "export", "erase"])
 async def test_steps_that_need_the_database_wait_for_it_to_load(
     hass: HomeAssistant, step: str
 ) -> None:

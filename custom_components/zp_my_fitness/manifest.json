@@ -4,7 +4,7 @@
   "after_dependencies": ["frontend", "recorder"],
   "codeowners": ["@matteo-pacini"],
   "config_flow": true,
-  "dependencies": ["http", "websocket_api"],
+  "dependencies": ["file_upload", "http", "websocket_api"],
   "documentation": "https://github.com/matteo-pacini/ZPMyFitnessCards",
   "integration_type": "service",
   "iot_class": "calculated",

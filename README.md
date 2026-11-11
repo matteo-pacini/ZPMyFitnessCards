@@ -25,6 +25,8 @@ To change a person later, use **Change person**. Its **Delete all data** option 
 
 **Import history**, in the same menu, copies a person's past from sensors the recorder has kept: each day's average from a weight sensor, for days with no weight yet, and each day's total from a calories sensor, as one "Imported total" entry under Snacks. Running it again adds only what is missing. Removing a person keeps their data, and adding them back under the same name brings it back.
 
+The menu also imports a diary from MyFitnessPal and exports a person's data. See [Import and export](#import-and-export).
+
 The integration loads the cards for you. There is no dashboard resource to add.
 
 Requires Home Assistant 2025.3 or later.
@@ -81,6 +83,29 @@ actions:
     data:
       message: "{{ day.totals.kcal | round }} of {{ day.goals.kcal | round }} kcal today"
 ```
+
+## Import and export
+
+### From MyFitnessPal
+
+**Import from MyFitnessPal**, in a person's **Change person** menu, brings in their diary. It takes either of these:
+
+- **The Premium export**: the ZIP MyFitnessPal sends, `File-Export-<from>-to-<to>.zip`, or any CSV file in it. Each meal of each day becomes one quick add called "MyFitnessPal", with its calories, protein, carbs, fat, fibre, sugar, saturated fat and salt (worked out from sodium). Weights come from the measurements; the export does not say their unit, so the form asks for kg or lb. It suggests the unit of the export's exercise file, or else Home Assistant's own. Other measurements, exercise and notes are left out.
+- **The printable diary**: on MyFitnessPal's website, open the printable diary (`/reports/printable-diary/<your user name>`) for the days you want and wait for it to show. Save it with your browser's Save Page As as a complete web page: "Web Page, complete" in Firefox, "Webpage, Complete" in Chrome and Edge. Then choose the `.html` file. Each food becomes a quick add with its values as the page shows them. A food logged in grams keeps its grams; any other amount stays in its name, such as "Chicken wrap, 1 wrap". The dates on the page must be in English.
+
+Meals called breakfast, lunch, dinner or supper, and snacks find their meal by name. If the file has meals of its own, the form asks where each goes. Importing again replaces the person's MyFitnessPal entries on the days the file covers, from its first day to its last, and never touches food logged in Home Assistant. A weight is added only on a day that has none. Days after today are left out, and no saved foods are made. Statistics for past days are corrected, as for any change to the diary.
+
+A saved printable diary also holds your MyFitnessPal account's email address, location and sign-in tokens. Home Assistant reads the diary's rows and keeps nothing else: it deletes the uploaded file once read, and never logs what is in it. Delete your own copy when you are done.
+
+### Export data
+
+**Export data**, in the same menu, shows a link to a ZIP of the person's data, as CSV files in metric units:
+
+- `entries.csv`: every entry, with its day, meal, name, grams, kcal and nutrients in g, the saved food it came from, `myfitnesspal` for imported entries, and when it was logged.
+- `weights.csv`: each day's weight in kg.
+- `foods.csv`: the saved foods, with their values per 100 g, barcodes and portions. This is the household's shared list, so it is the same for everyone.
+
+The link works for five minutes, and only for administrators.
 
 ## Database
 

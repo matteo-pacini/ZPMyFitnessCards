@@ -35,21 +35,32 @@
     "person": {
       "abort": {
         "erased": "Se han eliminado todos los alimentos, pesos y objetivos de esta persona.",
+        "exported": "{link}Descargar los datos de {name}{link_end}: su diario de comidas y sus pesos, y los alimentos guardados, como archivos CSV en un ZIP. El enlace funciona durante {minutes} minutos.",
         "imported": "Importados {weights} pesos y {days} días de calorías.",
+        "mfp_imported": "Importado de MyFitnessPal:\n\n- Días: {days}\n- Entradas: {entries}\n- Pesos añadidos: {weights}\n- Pesos omitidos, en días que ya tenían uno: {skipped}",
         "no_recorder": "El registrador no está en marcha, así que no hay historial que importar.",
         "not_loaded": "ZPMyFitnessCards no está cargado. Recárgalo y vuelve a intentarlo.",
         "reconfigure_successful": "Guardado."
       },
       "entry_type": "Persona",
       "error": {
+        "bad_line": "No se pudo leer la línea {line} de {file}.",
+        "bad_row": "No se pudo leer la fila {row} del {day}.",
         "birth_date_future": "La fecha de nacimiento debe estar en el pasado.",
+        "date_not_english": "Las fechas del diario no están en inglés. Cambia MyFitnessPal a inglés y vuelve a guardar la página.",
         "macros_not_100": "Proteínas, carbohidratos y grasas deben sumar 100 %.",
         "name_empty": "Introduce un nombre.",
         "name_taken": "Otra persona ya tiene este nombre.",
+        "no_calories": "El diario no tiene columna Calories.",
         "no_statistics": "El registrador no guarda estadísticas a largo plazo de este sensor.",
         "not_confirmed": "Marca la casilla para confirmar.",
+        "not_myfitnesspal": "Esto no es una exportación de MyFitnessPal ni un diario imprimible guardado.",
         "nothing_selected": "Elige un sensor de peso, uno de calorías o ambos.",
-        "start_date_future": "La fecha de inicio no puede estar en el futuro."
+        "nothing_to_import": "El archivo no tiene comidas ni pesos hasta hoy.",
+        "save_complete": "La página no tiene filas del diario. Abre el diario imprimible, espera a que cargue y guárdalo con «Guardar página como» como página web completa.",
+        "start_date_future": "La fecha de inicio no puede estar en el futuro.",
+        "upload_again": "Vuelve a elegir el archivo.",
+        "weight_out_of_range": "La línea {line} de {file} tiene un peso fuera de 20–400 kg en esta unidad. Revisa la unidad."
       },
       "initiate_flow": {
         "reconfigure": "Cambiar persona",
@@ -103,11 +114,31 @@
           "description": "Copia el historial de {name} desde sensores que el registrador ha guardado. Peso: la media de cada día, solo en días sin peso. Calorías: el total de cada día pasa a ser una entrada «Imported total» en Tentempiés. Si lo repites, solo añade lo que falta.",
           "title": "Importar historial"
         },
+        "import_mfp": {
+          "data": {
+            "file": "Archivo"
+          },
+          "description": "Elige la exportación de MyFitnessPal, su ZIP o uno de sus archivos CSV. O abre el diario imprimible de MyFitnessPal en un navegador, espera a que cargue, guárdalo con «Guardar página como» como página web completa y elige el archivo .html. En cada día que cubre el archivo, se sustituyen las entradas de {name} que vienen de MyFitnessPal, y la comida registrada aquí se mantiene. Los pesos solo se añaden en días que no tienen ninguno. Home Assistant guarda las filas del diario y nada más del archivo.",
+          "title": "Importar de MyFitnessPal"
+        },
+        "import_mfp_meals": {
+          "description": "El archivo tiene comidas además de desayuno, almuerzo, cena y tentempiés. Elige adónde va cada una.",
+          "title": "Comidas"
+        },
+        "import_mfp_unit": {
+          "data": {
+            "weight_unit": "Pesos en"
+          },
+          "description": "El archivo no indica la unidad de sus pesos. Elige la que usaba MyFitnessPal.",
+          "title": "Unidad de peso"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Cambiar datos",
             "erase": "Eliminar todos los datos",
-            "import_history": "Importar historial"
+            "export": "Exportar datos",
+            "import_history": "Importar historial",
+            "import_mfp": "Importar de MyFitnessPal"
           },
           "title": "Cambiar persona"
         },
@@ -274,6 +305,12 @@
       "options": {
         "female": "Mujer",
         "male": "Hombre"
+      }
+    },
+    "weight_unit": {
+      "options": {
+        "kg": "Kilogramos (kg)",
+        "lb": "Libras (lb)"
       }
     }
   },

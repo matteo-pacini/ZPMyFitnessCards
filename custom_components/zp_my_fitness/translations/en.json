@@ -35,21 +35,32 @@
     "person": {
       "abort": {
         "erased": "Deleted all of this person's food, weights and goals.",
+        "exported": "{link}Download {name}'s data{link_end}: their food diary and weights, and the saved foods, as CSV files in a ZIP. The link works for {minutes} minutes.",
         "imported": "Imported {weights} weights and {days} days of calories.",
+        "mfp_imported": "Imported from MyFitnessPal:\n\n- Days: {days}\n- Entries: {entries}\n- Weights added: {weights}\n- Weights skipped, on days that already had one: {skipped}",
         "no_recorder": "The recorder is not running, so there is no history to import.",
         "not_loaded": "ZPMyFitnessCards is not loaded. Reload it, then try again.",
         "reconfigure_successful": "Saved."
       },
       "entry_type": "Person",
       "error": {
+        "bad_line": "Line {line} of {file} could not be read.",
+        "bad_row": "Row {row} on {day} could not be read.",
         "birth_date_future": "The birth date must be in the past.",
+        "date_not_english": "The diary's dates are not in English. Switch MyFitnessPal to English, then save the page again.",
         "macros_not_100": "Protein, carbs and fat must add up to 100%.",
         "name_empty": "Enter a name.",
         "name_taken": "Another person already has this name.",
+        "no_calories": "The diary has no Calories column.",
         "no_statistics": "The recorder keeps no long-term statistics for this sensor.",
         "not_confirmed": "Tick the box to confirm.",
+        "not_myfitnesspal": "This is not a MyFitnessPal export or a saved printable diary.",
         "nothing_selected": "Choose a weight sensor, a calories sensor or both.",
-        "start_date_future": "The start date cannot be in the future."
+        "nothing_to_import": "The file has no food or weights up to today.",
+        "save_complete": "The page has no diary rows. Open the printable diary, wait for it to load, then save it with Save Page As as a complete web page.",
+        "start_date_future": "The start date cannot be in the future.",
+        "upload_again": "Choose the file again.",
+        "weight_out_of_range": "Line {line} of {file} has a weight outside 20–400 kg in this unit. Check the unit."
       },
       "initiate_flow": {
         "reconfigure": "Change person",
@@ -103,11 +114,31 @@
           "description": "Copies {name}'s history from sensors the recorder has kept. Weights: each day's average, only for days with no weight yet. Calories: each day's total becomes one “Imported total” entry under Snacks. Running it again adds only what is missing.",
           "title": "Import history"
         },
+        "import_mfp": {
+          "data": {
+            "file": "File"
+          },
+          "description": "Choose MyFitnessPal's export, its ZIP or one of the CSV files in it. Or open MyFitnessPal's printable diary in a browser, wait for it to load, save it with Save Page As as a complete web page, and choose the .html file. On each day the file covers, {name}'s entries from MyFitnessPal are replaced, and food logged here stays. Weights are added only on days that have none. Home Assistant keeps the diary's rows and nothing else from the file.",
+          "title": "Import from MyFitnessPal"
+        },
+        "import_mfp_meals": {
+          "description": "The file has meals besides breakfast, lunch, dinner and snacks. Choose where each goes.",
+          "title": "Meals"
+        },
+        "import_mfp_unit": {
+          "data": {
+            "weight_unit": "Weights in"
+          },
+          "description": "The file does not say the unit of its weights. Choose the one MyFitnessPal used.",
+          "title": "Weight unit"
+        },
         "reconfigure": {
           "menu_options": {
             "edit": "Change details",
             "erase": "Delete all data",
-            "import_history": "Import history"
+            "export": "Export data",
+            "import_history": "Import history",
+            "import_mfp": "Import from MyFitnessPal"
           },
           "title": "Change person"
         },
@@ -274,6 +305,12 @@
       "options": {
         "female": "Female",
         "male": "Male"
+      }
+    },
+    "weight_unit": {
+      "options": {
+        "kg": "Kilograms (kg)",
+        "lb": "Pounds (lb)"
       }
     }
   },

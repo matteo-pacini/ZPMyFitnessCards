@@ -14,8 +14,11 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `backup.py`: pauses writes while Home Assistant backs up.
   - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.
   - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `zp_my_fitness/openfoodfacts/search`, through its Search-a-licious service.
+  - `myfitnesspal.py`: reads MyFitnessPal's Premium export (a ZIP or one of its CSVs) and its printable diary page saved as a complete web page into a `Diary`, with no Home Assistant code. `config_flow.py` uploads the file, asks for meals and the weight unit, and writes through `FitnessData.async_replace_entries`.
+  - `export.py`: a person's entries, weights and every saved food as a ZIP of CSVs, served by an admin-only view; "Export data" shows a signed link to it.
 - `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
 - `src/`: plain browser scripts, one per card or family of cards. `fitness-cards.js` holds every card: they share loading, live updates, the food form and the strings. There are no imports and no npm dependencies.
+- `tests/fixtures/myfitnesspal/`: made-up MyFitnessPal files with the real ones' quirks. The ZIP is built from its folder at test time.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` loads a card script into a `vm` context with a stubbed DOM, for the pure functions and the markup they build. Interaction is tested end to end.
@@ -80,6 +83,10 @@ scripts/throttle 4 nix build -L .#checks.x86_64-linux.e2e-vm-sqlite
 - **Open Food Facts.** Tests never call the real service. The barcode lookup runs in the browser, and tests answer it with Playwright's `page.route`. Search by name runs on the Home Assistant server, in `openfoodfacts.py`, because Search-a-licious refuses browsers from other sites. Integration tests answer it with `aioclient_mock`. The e2e tests answer it with `FakeSearch` in `tests/e2e/conftest.py`, a local server that the test Home Assistant reaches through the `ZP_MY_FITNESS_SEARCH_URL` environment variable. That variable is only for tests: keep it out of the config flow, options and `configuration.yaml`.
 - **App scanner.** `scanWithApp` wraps `hass.auth.external.receiveMessage`, which the frontend does not document. Keep calling the original handler, which acknowledges each message, and keep typing a barcode working without any scanner.
 - **Coverage.** CI fails if the Python tests cover less than 90% of the integration's lines and branches (`fail_under` in `pyproject.toml`), and reports card unit coverage without enforcing it. Test new code anyway: card code needs a unit test for its pure functions and an end-to-end test for each interaction and failure path.
+- **MyFitnessPal files.** A saved printable diary holds the account's email, location and sign-in tokens. Read only the diary's rows, never store or log the file, and name a line or row in errors, never the file's text. `.private/` holds real files for local checks only; fixtures are made up. `.mhtml` is not supported: Chromium uploads it as `multipart/related`, which Home Assistant's `/api/file_upload` rejects.
+- **Entry sources.** `entries.source` is `myfitnesspal` for imported entries and NULL for everything logged in Home Assistant. Importing again deletes and re-adds only that source's entries, from the file's first day to its last.
+- **Links in flows.** The frontend opens links to its own origin in place, so a markdown link to a download only navigates. The export link is an HTML `<a target="_blank">`, passed as the `{link}` and `{link_end}` placeholders because translations may not contain HTML.
+- **Uploads in tests.** `file_upload` keeps files in the system's temporary folder. Integration tests point `tempfile.tempdir` at `tmp_path`, and the end-to-end Home Assistant gets a `TMPDIR` inside its configuration folder.
 - **Frozen time.** The integration tests freeze time, so `asyncio.sleep` with a delay never returns there. Yield with `asyncio.sleep(0)`.
 
 ## Style

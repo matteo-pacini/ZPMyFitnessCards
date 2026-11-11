@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -116,3 +117,16 @@ async def ws(hass: HomeAssistant, entry: MockConfigEntry, hass_ws_client: WebSoc
 
     call.client = client
     return call
+
+
+MYFITNESSPAL = Path(__file__).parents[1] / "fixtures" / "myfitnesspal"
+EXPORT = "File-Export-2025-10-01-to-2025-10-04"
+
+
+def myfitnesspal_zip(folder: Path) -> Path:
+    """MyFitnessPal's export ZIP, made in `folder` from the fixture's CSVs."""
+    path = folder / f"{EXPORT}.zip"
+    with zipfile.ZipFile(path, "w") as archive:
+        for csv in sorted((MYFITNESSPAL / EXPORT).iterdir()):
+            archive.write(csv, csv.name)
+    return path

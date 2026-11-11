@@ -22,6 +22,7 @@ from .const import CARDS_URL, CONF_DB_URL, DB_FILE, DOMAIN, SIGNAL_CHANGED, SUBE
 from .coordinator import PersonCoordinator
 from .data import FitnessData, Person
 from .db import Database, sqlite_url
+from .export import ExportView
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -42,7 +43,7 @@ type FitnessConfigEntry = ConfigEntry[RuntimeData]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Serve the cards, and register the websocket commands and the actions."""
+    """Serve the cards and the export, and register the websocket commands and the actions."""
     integration = await async_get_integration(hass, DOMAIN)
     await hass.http.async_register_static_paths(
         [StaticPathConfig(CARDS_URL, str(CARDS_FILE), cache_headers=True)]
@@ -51,6 +52,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         # Cached for good, so the version in the URL is what makes browsers
         # fetch the cards again after an update.
         add_extra_js_url(hass, f"{CARDS_URL}?v={integration.version}")
+    hass.http.register_view(ExportView())
     websocket.async_register(hass)
     services.async_register(hass)
     return True

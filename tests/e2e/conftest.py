@@ -370,9 +370,14 @@ def _home(
         REPO / "custom_components" / "zp_my_fitness"
     )
     home = Home(url=f"http://127.0.0.1:{port}", config_dir=config_dir)
+    # Uploaded files go to Home Assistant's temporary folder, kept here so
+    # that they go with the run.
+    (config_dir / "tmp").mkdir()
     # --skip-pip: everything this test needs is already in .venv, and the
     # integrations that fail without their packages are not ones it uses.
-    env = {**os.environ, "ZP_MY_FITNESS_SEARCH_URL": search_url} if search_url else None
+    env = {**os.environ, "TMPDIR": str(config_dir / "tmp")}
+    if search_url:
+        env["ZP_MY_FITNESS_SEARCH_URL"] = search_url
     process = subprocess.Popen(
         [sys.executable, "-m", "homeassistant", "--config", str(config_dir), "--skip-pip"],
         stdout=subprocess.DEVNULL,
