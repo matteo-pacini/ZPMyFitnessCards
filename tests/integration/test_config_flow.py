@@ -7,11 +7,13 @@ import pytest
 from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zp_my_fitness.const import DOMAIN, SUBENTRY_PERSON
 
 from .conftest import mock_entry, person
+from .test_translations import ENGLISH
 
 FORM = {k: v for k, v in person().items() if k != "key"}
 
@@ -28,13 +30,15 @@ async def test_adds_the_integration_once_on_sqlite_by_default(hass: HomeAssistan
     assert again["reason"] == "single_instance_allowed"
 
 
-async def _add(hass: HomeAssistant, entry: MockConfigEntry, **fields: Any) -> dict:
+async def _add(
+    hass: HomeAssistant, entry: MockConfigEntry, form: dict[str, Any] = FORM, **fields: Any
+) -> dict:
     result = await hass.config_entries.subentries.async_init(
         (entry.entry_id, SUBENTRY_PERSON), context={"source": SOURCE_USER}
     )
     assert result["type"] is FlowResultType.FORM
     return await hass.config_entries.subentries.async_configure(
-        result["flow_id"], {**FORM, **fields}
+        result["flow_id"], {**form, **fields}
     )
 
 
@@ -212,3 +216,166 @@ async def test_importing_history_needs_the_recorder(
     )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "no_recorder"
+
+
+# Units
+
+
+WEIGHTS = ("start_weight_kg", "goal_weight_kg")
+FORM_LB = {k: v for k, v in FORM.items() if k not in ("height_cm", *WEIGHTS)} | {
+    "height_ft": 5,
+    "height_in": 9,
+    "start_weight_lb": 150,
+    "goal_weight_lb": 135.5,
+    "pace": "lose_1_lb",
+}
+
+
+def _fields(result: dict) -> dict[str, Any]:
+    """The form's fields by name, as (selector config, suggested value)."""
+    return {
+        str(key): (selector.config, (key.description or {}).get("suggested_value"))
+        for key, selector in result["data_schema"].schema.items()
+    }
+
+
+def _shown(result: dict) -> dict[str, Any]:
+    """The values the form shows, as it would send them back."""
+    return {k: v for k, (_config, v) in _fields(result).items() if v is not None}
+
+
+async def _edit(hass: HomeAssistant, entry: MockConfigEntry, name: str) -> dict:
+    result = await _reconfigure(hass, entry, name)
+    return await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "edit"}
+    )
+
+
+async def test_the_form_follows_the_unit_system(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_PERSON), context={"source": SOURCE_USER}
+    )
+    fields = _fields(result)
+    assert fields["height_cm"][0]["unit_of_measurement"] == "cm"
+    assert fields["start_weight_kg"][0]["unit_of_measurement"] == "kg"
+    assert fields["pace"][0]["options"] == ["lose_0_75", "lose_0_5", "lose_0_25", "maintain"]
+
+    hass.config.units = US_CUSTOMARY_SYSTEM
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_PERSON), context={"source": SOURCE_USER}
+    )
+    fields = _fields(result)
+    assert "height_cm" not in fields
+    assert "start_weight_kg" not in fields
+    assert (fields["height_ft"][0]["unit_of_measurement"], fields["height_in"][0]["max"]) == (
+        "ft",
+        11,
+    )
+    assert fields["start_weight_lb"][0] | fields["goal_weight_lb"][0] == {
+        "min": 44.1,
+        "max": 881.8,
+        "step": 0.1,
+        "unit_of_measurement": "lb",
+        "mode": "box",
+    }
+    assert fields["pace"][0]["options"] == ["lose_1_5_lb", "lose_1_lb", "lose_0_5_lb", "maintain"]
+    # Every translated form names its new fields.
+    for step in ("user", "edit"):
+        for field in ("height_ft", "height_in", "start_weight_lb", "goal_weight_lb"):
+            assert ENGLISH[f"config_subentries.person.step.{step}.data.{field}"]
+
+
+@pytest.mark.usefixtures("us_customary")
+async def test_adds_a_person_in_lb_feet_and_inches_stored_in_kg_and_cm(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    result = await _add(hass, entry, FORM_LB, name="Nora")
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    nora = _people(entry)["Nora"]
+    assert (nora["start_weight_kg"], nora["goal_weight_kg"], nora["height_cm"]) == (
+        68.04,
+        61.46,
+        175.26,
+    )
+    assert nora["pace"] == "lose_1_lb"
+    assert not {"start_weight_lb", "goal_weight_lb", "height_ft", "height_in"} & nora.keys()
+
+
+@pytest.mark.usefixtures("us_customary")
+@pytest.mark.parametrize(("feet", "inches"), [(3, 3), (8, 3)])
+async def test_refuses_a_height_out_of_range_in_feet_and_inches(
+    hass: HomeAssistant, entry: MockConfigEntry, feet: int, inches: int
+) -> None:
+    result = await _add(hass, entry, FORM_LB, name="Nora", height_ft=feet, height_in=inches)
+    assert result["errors"] == {"height_ft": "height_out_of_range"}
+    assert "Nora" not in _people(entry)
+
+
+async def test_changing_units_shows_the_stored_values_and_keeps_them(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    before = _people(entry)["Debora"]
+    hass.config.units = US_CUSTOMARY_SYSTEM
+    result = await _edit(hass, entry, "Debora")
+    shown = _shown(result)
+    # 165 cm, 70 kg and 62 kg.
+    assert (shown["height_ft"], shown["height_in"]) == (5, 5)
+    assert (shown["start_weight_lb"], shown["goal_weight_lb"]) == (154.3, 136.7)
+    # Her pace in kg stays on offer, among the paces in lb.
+    assert shown["pace"] == "lose_0_5"
+    assert _fields(result)["pace"][0]["options"] == [
+        "lose_1_5_lb",
+        "lose_0_5",
+        "lose_1_lb",
+        "lose_0_5_lb",
+        "maintain",
+    ]
+
+    # Saved as shown, nothing moves, though 154.3 lb is 69.99 kg.
+    done = await hass.config_entries.subentries.async_configure(result["flow_id"], shown)
+    assert done["reason"] == "reconfigure_successful"
+    assert _people(entry)["Debora"] == before
+
+    result = await _edit(hass, entry, "Debora")
+    await hass.config_entries.subentries.async_configure(
+        result["flow_id"], shown | {"goal_weight_lb": 130, "height_in": 6}
+    )
+    debora = _people(entry)["Debora"]
+    assert (debora["goal_weight_kg"], debora["height_cm"]) == (58.97, 167.64)
+    assert debora["start_weight_kg"] == before["start_weight_kg"]
+
+
+@pytest.mark.usefixtures("us_customary")
+async def test_a_person_added_in_lb_keeps_their_values_on_a_metric_install(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    await _add(hass, entry, FORM_LB, name="Nora")
+    await hass.async_block_till_done()
+    added = _people(entry)["Nora"]
+
+    hass.config.units = METRIC_SYSTEM
+    result = await _edit(hass, entry, "Nora")
+    shown = _shown(result)
+    assert (shown["height_cm"], shown["start_weight_kg"], shown["goal_weight_kg"]) == (
+        175,
+        68.0,
+        61.5,
+    )
+    assert _fields(result)["pace"][0]["options"] == [
+        "lose_0_75",
+        "lose_0_5",
+        "lose_1_lb",
+        "lose_0_25",
+        "maintain",
+    ]
+    await hass.config_entries.subentries.async_configure(result["flow_id"], shown)
+    await hass.async_block_till_done()
+    assert _people(entry)["Nora"] == added
+
+    hass.config.units = US_CUSTOMARY_SYSTEM
+    result = await _edit(hass, entry, "Nora")
+    shown = _shown(result)
+    assert (shown["start_weight_lb"], shown["goal_weight_lb"]) == (150, 135.5)
+    assert (shown["height_ft"], shown["height_in"]) == (5, 9)

@@ -13,6 +13,7 @@ from datetime import date, datetime, time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
+from homeassistant.const import UnitOfMass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -119,6 +120,15 @@ class Person:
 def today() -> date:
     """Today in Home Assistant's time zone."""
     return dt_util.now().date()
+
+
+def uses_pounds(hass: HomeAssistant) -> bool:
+    """Whether Home Assistant's unit system is US customary, which weighs in lb.
+
+    People then see and type weights in lb and heights in feet and inches.
+    Everything is still stored in kg and cm.
+    """
+    return hass.config.units.mass_unit == UnitOfMass.POUNDS
 
 
 def day_sums(meals: Mapping[str, Mapping[str, float]]) -> dict[str, float]:

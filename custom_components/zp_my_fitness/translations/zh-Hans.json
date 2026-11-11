@@ -48,6 +48,7 @@
         "bad_row": "无法读取 {day} 的第 {row} 行。",
         "birth_date_future": "出生日期必须早于今天。",
         "date_not_english": "日记中的日期不是英文。请将 MyFitnessPal 切换为英文，然后重新保存页面。",
+        "height_out_of_range": "请输入 3 ft 4 in 到 8 ft 2 in 之间的身高。",
         "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",
         "mixed_date_orders": "{file} 第 {line} 行的日和月顺序与前面的行相反。请使用 MyFitnessPal 发送的原始文件。",
         "name_empty": "请输入名称。",
@@ -76,14 +77,18 @@
             "carbs_pct": "碳水化合物",
             "fat_pct": "脂肪",
             "goal_weight_kg": "目标体重",
+            "goal_weight_lb": "目标体重",
             "height_cm": "身高",
+            "height_ft": "身高（ft）",
+            "height_in": "身高（in）",
             "name": "名称",
             "pace": "每周进度",
             "person_entity": "Home Assistant 人员",
             "protein_pct": "蛋白质",
             "sex": "性别",
             "start_date": "开始日期",
-            "start_weight_kg": "初始体重"
+            "start_weight_kg": "初始体重",
+            "start_weight_lb": "初始体重"
           },
           "data_description": {
             "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。",
@@ -151,14 +156,18 @@
             "carbs_pct": "碳水化合物",
             "fat_pct": "脂肪",
             "goal_weight_kg": "目标体重",
+            "goal_weight_lb": "目标体重",
             "height_cm": "身高",
+            "height_ft": "身高（ft）",
+            "height_in": "身高（in）",
             "name": "名称",
             "pace": "每周进度",
             "person_entity": "Home Assistant 人员",
             "protein_pct": "蛋白质",
             "sex": "性别",
             "start_date": "开始日期",
-            "start_weight_kg": "初始体重"
+            "start_weight_kg": "初始体重",
+            "start_weight_lb": "初始体重"
           },
           "data_description": {
             "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。",
@@ -268,6 +277,9 @@
     },
     "unknown_person": {
       "message": "请选择已添加到 ZPMyFitnessCards 的人员。"
+    },
+    "weight_out_of_range": {
+      "message": "请输入 {min} 到 {max} {unit} 之间的体重。"
     }
   },
   "selector": {
@@ -298,7 +310,10 @@
       "options": {
         "lose_0_25": "每周减重 0.25 千克",
         "lose_0_5": "每周减重 0.5 千克",
+        "lose_0_5_lb": "每周减重 0.5 lb",
         "lose_0_75": "每周减重 0.75 千克",
+        "lose_1_5_lb": "每周减重 1.5 lb",
+        "lose_1_lb": "每周减重 1 lb",
         "maintain": "保持体重"
       }
     },
@@ -391,8 +406,12 @@
           "description": "该人员在 ZPMyFitnessCards 中对应的设备。",
           "name": "人员"
         },
+        "unit": {
+          "description": "体重的单位：kg 或 lb。留空则跟随 Home Assistant 的单位制。",
+          "name": "单位"
+        },
         "weight": {
-          "description": "单位为 kg，20 到 400。",
+          "description": "如果 Home Assistant 使用美制单位，单位为 lb，否则为 kg，除非在“单位”中另行指定。20 到 400 kg，即 44.1 到 881.8 lb。",
           "name": "体重"
         }
       },

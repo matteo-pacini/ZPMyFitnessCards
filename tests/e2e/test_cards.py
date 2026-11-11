@@ -222,14 +222,14 @@ def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page)
     expect(card.locator(".chart")).to_contain_text("Goal 62 kg")
 
     card.locator('[data-field="day"]').fill(yesterday)
-    card.locator('[data-field="kg"]').fill("69.3")
+    card.locator('[data-field="weight"]').fill("69.3")
     card.locator('[data-action="log"]').click()
     item = card.locator(".recent .item", has_text="69.3 kg")
     expect(item).to_have_count(1, timeout=TIMEOUT)
     weights = home.ws({"type": "zp_my_fitness/weights", "person": person_id(home, "Debora")})
     assert {"day": yesterday, "kg": 69.3} in weights
 
-    card.locator('[data-field="kg"]').fill("5")
+    card.locator('[data-field="weight"]').fill("5")
     card.locator('[data-action="log"]').click()
     expect(card.locator(".error")).to_contain_text("from 20 to 400 kg")
 

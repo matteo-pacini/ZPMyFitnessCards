@@ -48,6 +48,7 @@
         "bad_row": "Rad {row} den {day} kunde inte läsas.",
         "birth_date_future": "Födelsedatumet måste ligga bakåt i tiden.",
         "date_not_english": "Dagbokens datum är inte på engelska. Byt MyFitnessPal till engelska och spara sidan igen.",
+        "height_out_of_range": "Ange en längd mellan 3 ft 4 in och 8 ft 2 in.",
         "macros_not_100": "Protein, kolhydrater och fett måste bli 100 % tillsammans.",
         "mixed_date_orders": "Rad {line} i {file} har dag och månad i omvänd ordning mot tidigare rader. Använd filen så som MyFitnessPal skickade den.",
         "name_empty": "Ange ett namn.",
@@ -76,14 +77,18 @@
             "carbs_pct": "Kolhydrater",
             "fat_pct": "Fett",
             "goal_weight_kg": "Målvikt",
+            "goal_weight_lb": "Målvikt",
             "height_cm": "Längd",
+            "height_ft": "Längd (ft)",
+            "height_in": "Längd (in)",
             "name": "Namn",
             "pace": "Takt per vecka",
             "person_entity": "Person i Home Assistant",
             "protein_pct": "Protein",
             "sex": "Kön",
             "start_date": "Startdatum",
-            "start_weight_kg": "Startvikt"
+            "start_weight_kg": "Startvikt",
+            "start_weight_lb": "Startvikt"
           },
           "data_description": {
             "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt.",
@@ -151,14 +156,18 @@
             "carbs_pct": "Kolhydrater",
             "fat_pct": "Fett",
             "goal_weight_kg": "Målvikt",
+            "goal_weight_lb": "Målvikt",
             "height_cm": "Längd",
+            "height_ft": "Längd (ft)",
+            "height_in": "Längd (in)",
             "name": "Namn",
             "pace": "Takt per vecka",
             "person_entity": "Person i Home Assistant",
             "protein_pct": "Protein",
             "sex": "Kön",
             "start_date": "Startdatum",
-            "start_weight_kg": "Startvikt"
+            "start_weight_kg": "Startvikt",
+            "start_weight_lb": "Startvikt"
           },
           "data_description": {
             "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt.",
@@ -268,6 +277,9 @@
     },
     "unknown_person": {
       "message": "Välj en person som har lagts till i ZPMyFitnessCards."
+    },
+    "weight_out_of_range": {
+      "message": "Ange en vikt mellan {min} och {max} {unit}."
     }
   },
   "selector": {
@@ -298,7 +310,10 @@
       "options": {
         "lose_0_25": "Gå ner 0,25 kg i veckan",
         "lose_0_5": "Gå ner 0,5 kg i veckan",
+        "lose_0_5_lb": "Gå ner 0,5 lb i veckan",
         "lose_0_75": "Gå ner 0,75 kg i veckan",
+        "lose_1_5_lb": "Gå ner 1,5 lb i veckan",
+        "lose_1_lb": "Gå ner 1 lb i veckan",
         "maintain": "Behåll vikten"
       }
     },
@@ -391,8 +406,12 @@
           "description": "Personen, som dess enhet i ZPMyFitnessCards.",
           "name": "Person"
         },
+        "unit": {
+          "description": "kg eller lb, för vikten. Utelämna för att följa Home Assistants enhetssystem.",
+          "name": "Enhet"
+        },
         "weight": {
-          "description": "I kg, från 20 till 400.",
+          "description": "I lb om Home Assistant använder amerikanska enheter, annars i kg, om inte Enhet säger något annat. Från 20 till 400 kg, alltså 44,1 till 881,8 lb.",
           "name": "Vikt"
         }
       },

@@ -14,11 +14,20 @@ ACTIVITY = {
     "very_active": 1.9,
 }
 
-# Weekly change in kg for each pace.
+# Exact, by definition.
+KG_PER_LB = 0.45359237
+CM_PER_INCH = 2.54
+
+# Weekly change in kg for each pace, fastest first. Metric installs offer the
+# kg paces and US customary ones the lb paces, but a person keeps either kind
+# when the unit system changes.
 PACES = {
     "lose_0_75": -0.75,
+    "lose_1_5_lb": -1.5 * KG_PER_LB,
     "lose_0_5": -0.5,
+    "lose_1_lb": -1 * KG_PER_LB,
     "lose_0_25": -0.25,
+    "lose_0_5_lb": -0.5 * KG_PER_LB,
     "maintain": 0.0,
 }
 
@@ -76,6 +85,27 @@ def band_limits(height_cm: float) -> dict[str, float]:
         "overweight_from_kg": round(25.0 * square, 1),
         "obese_from_kg": round(30.0 * square, 1),
     }
+
+
+def kg_to_lb(kg: float) -> float:
+    """`kg` in lb."""
+    return kg / KG_PER_LB
+
+
+def lb_to_kg(lb: float) -> float:
+    """`lb` in kg, to 0.01 kg, which is close enough to show the same 0.1 lb again."""
+    return round(lb * KG_PER_LB, 2)
+
+
+def cm_to_feet_inches(cm: float) -> tuple[int, int]:
+    """`cm` in feet and whole inches."""
+    feet, inches = divmod(round(cm / CM_PER_INCH), 12)
+    return feet, inches
+
+
+def feet_inches_to_cm(feet: float, inches: float) -> float:
+    """Feet and inches in cm."""
+    return round((feet * 12 + inches) * CM_PER_INCH, 2)
 
 
 def bmi_band(weight_kg: float, height_cm: float) -> str:

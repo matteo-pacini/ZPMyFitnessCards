@@ -35,9 +35,16 @@ SEXES = ("female", "male")
 
 MEALS = ("breakfast", "lunch", "dinner", "snacks")
 
-# The weights a person can log, in kg.
+# The weights a person can log, in kg, and the same in lb, rounded inwards
+# to 0.1 lb.
 MIN_KG = 20
 MAX_KG = 400
+MIN_LB = 44.1
+MAX_LB = 881.8
+
+# The heights a person can have, in cm.
+MIN_CM = 100
+MAX_CM = 250
 
 # What a food or an entry can carry. The first four are required for foods;
 # the rest are optional everywhere.

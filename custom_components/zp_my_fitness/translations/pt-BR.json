@@ -48,6 +48,7 @@
         "bad_row": "Não foi possível ler a linha {row} de {day}.",
         "birth_date_future": "A data de nascimento precisa estar no passado.",
         "date_not_english": "As datas do diário não estão em inglês. Mude o MyFitnessPal para inglês e salve a página de novo.",
+        "height_out_of_range": "Digite uma altura entre 3 ft 4 in e 8 ft 2 in.",
         "macros_not_100": "Proteína, carboidratos e gordura precisam somar 100%.",
         "mixed_date_orders": "A linha {line} de {file} tem o dia e o mês invertidos em relação às linhas anteriores. Use o arquivo como o MyFitnessPal enviou.",
         "name_empty": "Digite um nome.",
@@ -76,14 +77,18 @@
             "carbs_pct": "Carboidratos",
             "fat_pct": "Gordura",
             "goal_weight_kg": "Peso desejado",
+            "goal_weight_lb": "Peso desejado",
             "height_cm": "Altura",
+            "height_ft": "Altura (ft)",
+            "height_in": "Altura (in)",
             "name": "Nome",
             "pace": "Ritmo semanal",
             "person_entity": "Pessoa do Home Assistant",
             "protein_pct": "Proteína",
             "sex": "Sexo",
             "start_date": "Data de início",
-            "start_weight_kg": "Peso inicial"
+            "start_weight_kg": "Peso inicial",
+            "start_weight_lb": "Peso inicial"
           },
           "data_description": {
             "calorie_goal": "Deixe vazio para usar a meta calculada a partir dos dados acima. Ela acompanha cada novo peso.",
@@ -151,14 +156,18 @@
             "carbs_pct": "Carboidratos",
             "fat_pct": "Gordura",
             "goal_weight_kg": "Peso desejado",
+            "goal_weight_lb": "Peso desejado",
             "height_cm": "Altura",
+            "height_ft": "Altura (ft)",
+            "height_in": "Altura (in)",
             "name": "Nome",
             "pace": "Ritmo semanal",
             "person_entity": "Pessoa do Home Assistant",
             "protein_pct": "Proteína",
             "sex": "Sexo",
             "start_date": "Data de início",
-            "start_weight_kg": "Peso inicial"
+            "start_weight_kg": "Peso inicial",
+            "start_weight_lb": "Peso inicial"
           },
           "data_description": {
             "calorie_goal": "Deixe vazio para usar a meta calculada a partir dos dados acima. Ela acompanha cada novo peso.",
@@ -268,6 +277,9 @@
     },
     "unknown_person": {
       "message": "Escolha uma pessoa adicionada ao ZPMyFitnessCards."
+    },
+    "weight_out_of_range": {
+      "message": "Informe um peso entre {min} e {max} {unit}."
     }
   },
   "selector": {
@@ -298,7 +310,10 @@
       "options": {
         "lose_0_25": "Perder 0,25 kg por semana",
         "lose_0_5": "Perder 0,5 kg por semana",
+        "lose_0_5_lb": "Perder 0,5 lb por semana",
         "lose_0_75": "Perder 0,75 kg por semana",
+        "lose_1_5_lb": "Perder 1,5 lb por semana",
+        "lose_1_lb": "Perder 1 lb por semana",
         "maintain": "Manter o peso"
       }
     },
@@ -391,8 +406,12 @@
           "description": "A pessoa, como o dispositivo dela no ZPMyFitnessCards.",
           "name": "Pessoa"
         },
+        "unit": {
+          "description": "kg ou lb, para o peso. Deixe em branco para seguir o sistema de unidades do Home Assistant.",
+          "name": "Unidade"
+        },
         "weight": {
-          "description": "Em kg, de 20 a 400.",
+          "description": "Em lb se o Home Assistant usar unidades dos EUA; caso contrário, em kg, a menos que Unidade diga outra coisa. De 20 a 400 kg, ou seja, de 44,1 a 881,8 lb.",
           "name": "Peso"
         }
       },

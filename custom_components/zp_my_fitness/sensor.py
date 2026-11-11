@@ -24,6 +24,7 @@ from homeassistant.util import dt as dt_util
 from . import goals as g
 from .const import DOMAIN, MEALS, NUTRIENTS
 from .coordinator import PersonCoordinator, Today
+from .data import uses_pounds
 
 KCAL = "kcal"
 GRAMS = "g"
@@ -150,6 +151,14 @@ class FitnessSensor(CoordinatorEntity[PersonCoordinator], SensorEntity):
             name=person.name,
             entry_type=DeviceEntryType.SERVICE,
         )
+
+    @property
+    def suggested_unit_of_measurement(self) -> str | None:
+        # Home Assistant reads this for a new entity, and again when the unit
+        # system changes if it is told to update the units of sensors.
+        if self.device_class != SensorDeviceClass.WEIGHT:
+            return None
+        return UnitOfMass.POUNDS if uses_pounds(self.hass) else UnitOfMass.KILOGRAMS
 
     @property
     def native_value(self) -> float:

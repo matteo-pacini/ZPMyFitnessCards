@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
+from homeassistant.components.sensor import async_update_suggested_units
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -150,3 +151,40 @@ async def test_a_typed_calorie_goal_overrides_the_suggestion(hass: HomeAssistant
     await hass.async_block_till_done()
     assert state(hass, "sensor.debora_calorie_goal") == 2000
     assert state(hass, "sensor.debora_protein_goal") == 150
+
+
+@pytest.mark.usefixtures("us_customary")
+async def test_weights_are_in_lb_on_a_us_install(
+    hass: HomeAssistant, entry: MockConfigEntry, ws
+) -> None:
+    weight = hass.states.get("sensor.debora_weight")
+    assert weight.attributes["unit_of_measurement"] == "lb"
+    assert float(weight.state) == pytest.approx(154.32, abs=0.005)
+    # Attributes stay metric.
+    assert weight.attributes["overweight_from_kg"] == 68.1
+    assert weight.attributes["goal_weight_kg"] == 62
+    assert weight.attributes["height_cm"] == 165
+
+    await ws("weight/set", person="debora", day="2026-11-09", kg=68.04)
+    change = hass.states.get("sensor.debora_weight_change")
+    assert change.attributes["unit_of_measurement"] == "lb"
+    assert float(change.state) == pytest.approx(-4.32, abs=0.005)
+    assert hass.states.get("sensor.debora_calories_today").attributes["unit_of_measurement"] == (
+        "kcal"
+    )
+
+
+async def test_weights_follow_a_change_of_unit_system(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    def weight() -> tuple[float, str]:
+        state = hass.states.get("sensor.debora_weight")
+        return round(float(state.state), 2), state.attributes["unit_of_measurement"]
+
+    assert weight() == (70, "kg")
+    for system, shown in (("us_customary", (154.32, "lb")), ("metric", (70, "kg"))):
+        # What Settings > General does when told to update the sensors' units.
+        await hass.config.async_update(unit_system=system)
+        async_update_suggested_units(hass)
+        await hass.async_block_till_done()
+        assert weight() == shown

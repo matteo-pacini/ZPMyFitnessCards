@@ -237,6 +237,8 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     shoot(sample, browser, FOODS_CARD, "saved-foods")
     shoot(sample, browser, FOODS_CARD, "barcode-lookup", setup=look_up_barcode)
     shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
+    with sample.us_customary():
+        shoot(sample, browser, WEIGHT, "weight-lb", setup=pick_range("365"))
     shoot(sample, browser, TRENDS, "trends", setup=pick_range("30"))
     shoot(sample, browser, TRENDS, "trends-week")
     shoot(sample, browser, SUMMARY, "summary")
@@ -253,6 +255,7 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
             "saved-foods",
             "barcode-lookup",
             "weight",
+            "weight-lb",
             "trends",
             "trends-week",
             "summary",

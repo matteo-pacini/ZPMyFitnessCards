@@ -10,11 +10,14 @@ log_weight:
       example: 68.4
       selector:
         number:
-          min: 20
-          max: 400
           step: 0.1
-          unit_of_measurement: kg
           mode: box
+    unit:
+      selector:
+        select:
+          options:
+            - kg
+            - lb
     day:
       selector:
         date:

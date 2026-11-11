@@ -10,6 +10,7 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigSubentryData
 from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
@@ -30,6 +31,15 @@ async def london(hass: HomeAssistant, freezer: FrozenDateTimeFactory, tmp_path: 
     hass.config.config_dir = str(tmp_path)
     await hass.config.async_set_time_zone("Europe/London")
     freezer.move_to(NOW)
+
+
+@pytest.fixture
+def us_customary(hass: HomeAssistant) -> None:
+    """Home Assistant in US customary units, which weigh in lb.
+
+    Ask for it before `entry`, so the sensors start in lb.
+    """
+    hass.config.units = US_CUSTOMARY_SYSTEM
 
 
 def person(name: str = "Debora", key: str | None = None, **changes: Any) -> dict[str, Any]:

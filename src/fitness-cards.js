@@ -107,19 +107,20 @@ const STRINGS = {
     healthy: "Healthy",
     overweight: "Overweight",
     obese: "Obese",
-    goal_weight: "Goal {kg} kg",
+    goal_weight: "Goal {weight}",
     log_weight: "Log weight",
     kg: "kg",
+    lb: "lb",
     day: "Day",
     recent_weights: "Recent weigh-ins",
-    no_weights: "No weigh-ins yet. The starting weight is {kg} kg.",
+    no_weights: "No weigh-ins yet. The starting weight is {weight}.",
     avg_day: "Average a day",
     on_goal: "Days on goal",
     on_goal_value: "{days} of {logged}",
     macro_split: "Protein · carbs · fat",
     no_data: "Nothing logged in this period.",
     week_of: "Week of {date}",
-    error_weight: "Enter a weight from 20 to 400 kg.",
+    error_weight: "Enter a weight from {min} to {max} {unit}.",
     title_summary: "Today",
     kcal_left: "kcal left",
     kcal_over: "kcal over",
@@ -230,19 +231,20 @@ const STRINGS = {
     healthy: "Normalgewicht",
     overweight: "Übergewicht",
     obese: "Adipositas",
-    goal_weight: "Ziel {kg} kg",
+    goal_weight: "Ziel {weight}",
     log_weight: "Gewicht eintragen",
     kg: "kg",
+    lb: "lb",
     day: "Tag",
     recent_weights: "Letzte Messungen",
-    no_weights: "Noch keine Messungen. Das Startgewicht ist {kg} kg.",
+    no_weights: "Noch keine Messungen. Das Startgewicht ist {weight}.",
     avg_day: "Schnitt pro Tag",
     on_goal: "Tage im Ziel",
     on_goal_value: "{days} von {logged}",
     macro_split: "Eiweiß · Kohlenhydrate · Fett",
     no_data: "In diesem Zeitraum nichts eingetragen.",
     week_of: "Woche ab {date}",
-    error_weight: "Gib ein Gewicht von 20 bis 400 kg ein.",
+    error_weight: "Gib ein Gewicht von {min} bis {max} {unit} ein.",
     title_summary: "Heute",
     kcal_left: "kcal übrig",
     kcal_over: "kcal zu viel",
@@ -353,19 +355,20 @@ const STRINGS = {
     healthy: "Saludable",
     overweight: "Sobrepeso",
     obese: "Obesidad",
-    goal_weight: "Objetivo {kg} kg",
+    goal_weight: "Objetivo {weight}",
     log_weight: "Registrar peso",
     kg: "kg",
+    lb: "lb",
     day: "Día",
     recent_weights: "Últimos pesajes",
-    no_weights: "Aún no hay pesajes. El peso inicial es {kg} kg.",
+    no_weights: "Aún no hay pesajes. El peso inicial es {weight}.",
     avg_day: "Media al día",
     on_goal: "Días en objetivo",
     on_goal_value: "{days} de {logged}",
     macro_split: "Proteínas · carbohidratos · grasas",
     no_data: "Nada registrado en este periodo.",
     week_of: "Semana del {date}",
-    error_weight: "Introduce un peso de 20 a 400 kg.",
+    error_weight: "Introduce un peso de {min} a {max} {unit}.",
     title_summary: "Hoy",
     kcal_left: "kcal restantes",
     kcal_over: "kcal de más",
@@ -476,19 +479,20 @@ const STRINGS = {
     healthy: "Normal",
     overweight: "Surpoids",
     obese: "Obésité",
-    goal_weight: "Objectif {kg} kg",
+    goal_weight: "Objectif {weight}",
     log_weight: "Enregistrer le poids",
     kg: "kg",
+    lb: "lb",
     day: "Jour",
     recent_weights: "Dernières pesées",
-    no_weights: "Aucune pesée pour l’instant. Le poids de départ est de {kg} kg.",
+    no_weights: "Aucune pesée pour l’instant. Le poids de départ est de {weight}.",
     avg_day: "Moyenne par jour",
     on_goal: "Jours dans l’objectif",
     on_goal_value: "{days} sur {logged}",
     macro_split: "Protéines · glucides · lipides",
     no_data: "Rien d’enregistré sur cette période.",
     week_of: "Semaine du {date}",
-    error_weight: "Saisissez un poids entre 20 et 400 kg.",
+    error_weight: "Saisissez un poids entre {min} et {max} {unit}.",
     title_summary: "Aujourd’hui",
     kcal_left: "kcal restantes",
     kcal_over: "kcal en trop",
@@ -599,19 +603,20 @@ const STRINGS = {
     healthy: "Normopeso",
     overweight: "Sovrappeso",
     obese: "Obesità",
-    goal_weight: "Obiettivo {kg} kg",
+    goal_weight: "Obiettivo {weight}",
     log_weight: "Registra il peso",
     kg: "kg",
+    lb: "lb",
     day: "Giorno",
     recent_weights: "Ultime pesate",
-    no_weights: "Ancora nessuna pesata. Il peso iniziale è {kg} kg.",
+    no_weights: "Ancora nessuna pesata. Il peso iniziale è {weight}.",
     avg_day: "Media al giorno",
     on_goal: "Giorni in obiettivo",
     on_goal_value: "{days} su {logged}",
     macro_split: "Proteine · carboidrati · grassi",
     no_data: "Niente registrato in questo periodo.",
     week_of: "Settimana dal {date}",
-    error_weight: "Inserisci un peso tra 20 e 400 kg.",
+    error_weight: "Inserisci un peso tra {min} e {max} {unit}.",
     title_summary: "Oggi",
     kcal_left: "kcal rimaste",
     kcal_over: "kcal in eccesso",
@@ -722,19 +727,20 @@ const STRINGS = {
     healthy: "Gezond",
     overweight: "Overgewicht",
     obese: "Obesitas",
-    goal_weight: "Doel {kg} kg",
+    goal_weight: "Doel {weight}",
     log_weight: "Gewicht vastleggen",
     kg: "kg",
+    lb: "lb",
     day: "Dag",
     recent_weights: "Laatste wegingen",
-    no_weights: "Nog geen wegingen. Het startgewicht is {kg} kg.",
+    no_weights: "Nog geen wegingen. Het startgewicht is {weight}.",
     avg_day: "Gemiddeld per dag",
     on_goal: "Dagen binnen doel",
     on_goal_value: "{days} van {logged}",
     macro_split: "Eiwit · koolhydraten · vet",
     no_data: "Niets vastgelegd in deze periode.",
     week_of: "Week van {date}",
-    error_weight: "Voer een gewicht van 20 tot 400 kg in.",
+    error_weight: "Voer een gewicht van {min} tot {max} {unit} in.",
     title_summary: "Vandaag",
     kcal_left: "kcal over",
     kcal_over: "kcal te veel",
@@ -845,19 +851,20 @@ const STRINGS = {
     healthy: "Prawidłowa",
     overweight: "Nadwaga",
     obese: "Otyłość",
-    goal_weight: "Cel {kg} kg",
+    goal_weight: "Cel {weight}",
     log_weight: "Zapisz wagę",
     kg: "kg",
+    lb: "lb",
     day: "Dzień",
     recent_weights: "Ostatnie pomiary",
-    no_weights: "Brak pomiarów. Waga początkowa to {kg} kg.",
+    no_weights: "Brak pomiarów. Waga początkowa to {weight}.",
     avg_day: "Średnio dziennie",
     on_goal: "Dni w celu",
     on_goal_value: "{days} z {logged}",
     macro_split: "Białko · węglowodany · tłuszcz",
     no_data: "Nic nie zapisano w tym okresie.",
     week_of: "Tydzień od {date}",
-    error_weight: "Wpisz wagę od 20 do 400 kg.",
+    error_weight: "Wpisz wagę od {min} do {max} {unit}.",
     title_summary: "Dzisiaj",
     kcal_left: "kcal zostało",
     kcal_over: "kcal ponad cel",
@@ -968,19 +975,20 @@ const STRINGS = {
     healthy: "Saudável",
     overweight: "Excesso de peso",
     obese: "Obesidade",
-    goal_weight: "Objetivo {kg} kg",
+    goal_weight: "Objetivo {weight}",
     log_weight: "Registar peso",
     kg: "kg",
+    lb: "lb",
     day: "Dia",
     recent_weights: "Últimas pesagens",
-    no_weights: "Ainda não há pesagens. O peso inicial é {kg} kg.",
+    no_weights: "Ainda não há pesagens. O peso inicial é {weight}.",
     avg_day: "Média por dia",
     on_goal: "Dias no objetivo",
     on_goal_value: "{days} de {logged}",
     macro_split: "Proteína · hidratos · gordura",
     no_data: "Nada registado neste período.",
     week_of: "Semana de {date}",
-    error_weight: "Introduza um peso entre 20 e 400 kg.",
+    error_weight: "Introduza um peso entre {min} e {max} {unit}.",
     title_summary: "Hoje",
     kcal_left: "kcal restantes",
     kcal_over: "kcal a mais",
@@ -1034,12 +1042,12 @@ const STRINGS = {
     error_barcode_taken: "Outro alimento salvo tem este código de barras.",
     error_amount: "Digite uma quantidade acima de 0.",
     overweight: "Sobrepeso",
-    goal_weight: "Meta {kg} kg",
+    goal_weight: "Meta {weight}",
     log_weight: "Registrar peso",
     on_goal: "Dias na meta",
     macro_split: "Proteína · carboidratos · gordura",
     no_data: "Nada registrado neste período.",
-    error_weight: "Digite um peso entre 20 e 400 kg.",
+    error_weight: "Digite um peso entre {min} e {max} {unit}.",
     look_up: "Buscar código de barras",
     scan: "Escanear",
     scanning: "Aponte a câmera para o código de barras.",
@@ -1140,19 +1148,20 @@ const STRINGS = {
     healthy: "Normalvikt",
     overweight: "Övervikt",
     obese: "Fetma",
-    goal_weight: "Mål {kg} kg",
+    goal_weight: "Mål {weight}",
     log_weight: "Logga vikt",
     kg: "kg",
+    lb: "lb",
     day: "Dag",
     recent_weights: "Senaste vägningar",
-    no_weights: "Inga vägningar än. Startvikten är {kg} kg.",
+    no_weights: "Inga vägningar än. Startvikten är {weight}.",
     avg_day: "Snitt per dag",
     on_goal: "Dagar inom målet",
     on_goal_value: "{days} av {logged}",
     macro_split: "Protein · kolhydrater · fett",
     no_data: "Inget loggat under perioden.",
     week_of: "Veckan från {date}",
-    error_weight: "Ange en vikt mellan 20 och 400 kg.",
+    error_weight: "Ange en vikt mellan {min} och {max} {unit}.",
     title_summary: "I dag",
     kcal_left: "kcal kvar",
     kcal_over: "kcal för mycket",
@@ -1263,19 +1272,20 @@ const STRINGS = {
     healthy: "正常",
     overweight: "超重",
     obese: "肥胖",
-    goal_weight: "目标 {kg} 千克",
+    goal_weight: "目标 {weight}",
     log_weight: "记录体重",
     kg: "千克",
+    lb: "lb",
     day: "日期",
     recent_weights: "最近称重",
-    no_weights: "尚无称重记录。初始体重为 {kg} 千克。",
+    no_weights: "尚无称重记录。初始体重为 {weight}。",
     avg_day: "日均",
     on_goal: "达标天数",
     on_goal_value: "{days}/{logged}",
     macro_split: "蛋白质 · 碳水化合物 · 脂肪",
     no_data: "此期间没有记录。",
     week_of: "{date} 起的一周",
-    error_weight: "请输入 20 到 400 千克之间的体重。",
+    error_weight: "请输入 {min} 到 {max} {unit}之间的体重。",
     title_summary: "今天",
     kcal_left: "千卡剩余",
     kcal_over: "千卡超出",
@@ -2594,6 +2604,33 @@ const shortDate = (day, locale, withYear = false) => {
   );
 };
 
+// Weights are stored, sent and received in kg. On an install whose unit
+// system is US customary, the cards show and take them in lb instead.
+const KG_PER_LB = 0.45359237;
+const MIN_KG = 20;
+const MAX_KG = 400;
+
+const weightUnit = (hass) => (hass?.config?.unit_system?.mass === "lb" ? "lb" : "kg");
+
+const fromKg = (kg, unit) => (unit === "lb" ? kg / KG_PER_LB : kg);
+
+// A weight typed in `unit`, in kg. From lb that is to 0.01 kg, close enough
+// to show the same 0.1 lb again.
+const toKg = (value, unit) => (unit === "lb" ? Math.round(value * KG_PER_LB * 100) / 100 : value);
+
+// "68.4 kg": a weight in kg, in `unit` to 0.1.
+const weightText = (kg, unit, locale, t) => `${number(fromKg(kg, unit), locale, 1)} ${t[unit]}`;
+
+// "+1.2 kg", "−0.5 lb" or "±0 kg": a change of weight in kg, in `unit`.
+const changeText = (kg, unit, locale, t) => `${kg > 0 ? "+" : kg < 0 ? "−" : "±"}${weightText(Math.abs(kg), unit, locale, t)}`;
+
+// The weights a person can log, in `unit`, rounded inwards to 0.1.
+const weightRange = (unit) => [Math.ceil(fromKg(MIN_KG, unit) * 10) / 10, Math.floor(fromKg(MAX_KG, unit) * 10) / 10];
+
+// Where a person's BMI bands end, in `unit`: underweight below, overweight
+// from, obese from.
+const bandLimits = (person, unit) => [person.underweight_below_kg, person.overweight_from_kg, person.obese_from_kg].map((kg) => fromKg(kg, unit));
+
 // The BMI band a weight falls in, from a person's band limits in kg.
 function bandOf(kg, person) {
   if (kg < person.underweight_below_kg) return "underweight";
@@ -2609,21 +2646,23 @@ function rangeStart(range, today, firstDay) {
   return shiftDay(today, -(Number(range) - 1));
 }
 
-// The weight chart: BMI bands, the goal, and the weigh-ins from `start` to `today`.
-function weightChartHTML(weights, person, start, today, locale, t) {
+// The weight chart in `unit`: BMI bands, the goal, and the weigh-ins from
+// `start` to `today`.
+function weightChartHTML(weights, person, start, today, locale, t, unit) {
   const { width, height, left, right, top, bottom } = CHART;
-  const values = weights.map((w) => w.kg);
-  const reference = values.length ? values : [person.start_weight_kg];
-  let low = Math.min(...reference, person.goal_weight_kg) - 2;
-  let high = Math.max(...reference, person.goal_weight_kg) + 2;
+  const values = weights.map((w) => fromKg(w.kg, unit));
+  const goalWeight = fromKg(person.goal_weight_kg, unit);
+  const reference = values.length ? values : [fromKg(person.start_weight_kg, unit)];
+  let low = Math.min(...reference, goalWeight) - fromKg(2, unit);
+  let high = Math.max(...reference, goalWeight) + fromKg(2, unit);
   low = Math.floor(low);
   high = Math.ceil(high);
   const span = Math.max(daysBetween(start, today), 1);
   const x = (day) => left + (daysBetween(start, day) / span) * (width - left - right);
-  const y = (kg) => top + ((high - kg) / (high - low)) * (height - top - bottom);
-  const clampY = (kg) => y(Math.min(Math.max(kg, low), high));
+  const y = (v) => top + ((high - v) / (high - low)) * (height - top - bottom);
+  const clampY = (v) => y(Math.min(Math.max(v, low), high));
 
-  const limits = [low, person.underweight_below_kg, person.overweight_from_kg, person.obese_from_kg, high];
+  const limits = [low, ...bandLimits(person, unit), high];
   const bands = ["underweight", "healthy", "overweight", "obese"]
     .map((band, i) => {
       const from = Math.max(limits[i], low);
@@ -2642,12 +2681,12 @@ function weightChartHTML(weights, person, start, today, locale, t) {
   const xTicks = Array.from({ length: xCount + 1 }, (_, i) => shiftDay(start, Math.round((span * i) / xCount)))
     .map((day, i) => `<text class="axis" x="${x(day)}" y="${height - 8}" text-anchor="${i === 0 ? "start" : i === xCount ? "end" : "middle"}">${esc(shortDate(day, locale, span > 400))}</text>`)
     .join("");
-  const goal = `<line class="goal" x1="${left}" x2="${width - right}" y1="${y(person.goal_weight_kg)}" y2="${y(person.goal_weight_kg)}"/>
-    <text class="goallabel" x="${left + 4}" y="${y(person.goal_weight_kg) - 4}">${esc(fill(t.goal_weight, { kg: number(person.goal_weight_kg, locale, 1) }))}</text>`;
-  const path = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(w.kg).toFixed(1)}`).join("");
+  const goal = `<line class="goal" x1="${left}" x2="${width - right}" y1="${y(goalWeight)}" y2="${y(goalWeight)}"/>
+    <text class="goallabel" x="${left + 4}" y="${y(goalWeight) - 4}">${esc(fill(t.goal_weight, { weight: weightText(person.goal_weight_kg, unit, locale, t) }))}</text>`;
+  const path = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(values[i]).toFixed(1)}`).join("");
   const points =
     weights.length <= 120
-      ? weights.map((w) => `<circle class="point" cx="${x(w.day)}" cy="${y(w.kg)}" r="3"><title>${esc(shortDate(w.day, locale, true))}: ${number(w.kg, locale, 1)} kg</title></circle>`).join("")
+      ? weights.map((w, i) => `<circle class="point" cx="${x(w.day)}" cy="${y(values[i])}" r="3"><title>${esc(shortDate(w.day, locale, true))}: ${esc(weightText(w.kg, unit, locale, t))}</title></circle>`).join("")
       : "";
   return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(t.title_weight)}">
     ${bands}${yTicks}${xTicks}${goal}
@@ -2775,6 +2814,13 @@ class PersonCard extends FitnessCard {
     };
   }
 
+  set hass(hass) {
+    const unit = this._hass && weightUnit(this._hass);
+    super.hass = hass;
+    // Home Assistant's unit system changed: show weights in the new unit.
+    if (unit && unit !== weightUnit(hass)) this._render();
+  }
+
   async _load() {
     const people = await this._call({ type: "zp_my_fitness/people" });
     this._person = findPerson(people, this._config, this._hass);
@@ -2852,6 +2898,7 @@ class WeightCard extends PersonCard {
     const locale = this._locale;
     const person = this._person;
     const today = this._today;
+    const unit = weightUnit(this._hass);
     const weights = this._data;
     const latest = weights.length ? weights[weights.length - 1].kg : person.start_weight_kg;
     const change = latest - person.start_weight_kg;
@@ -2859,21 +2906,21 @@ class WeightCard extends PersonCard {
     const shown = weights.filter((w) => w.day >= start);
     const band = bandOf(latest, person);
     const recent = weights.slice(-5).reverse();
-    const signed = `${change > 0 ? "+" : change < 0 ? "−" : "±"}${number(Math.abs(change), locale, 1)} kg`;
+    const [low, high] = weightRange(unit);
     body.innerHTML = `
-      <div class="now num"><b>${number(latest, locale, 1)} kg</b>
-        <span class="sub">${esc(fill(t.since_start, { change: signed, date: shortDate(person.start_date, locale, true) }))}</span>
+      <div class="now num"><b>${esc(weightText(latest, unit, locale, t))}</b>
+        <span class="sub">${esc(fill(t.since_start, { change: changeText(change, unit, locale, t), date: shortDate(person.start_date, locale, true) }))}</span>
         <span class="chip ${band}">${esc(t[band])}</span></div>
-      ${weightChartHTML(shown, person, start, today, locale, t)}
-      ${weights.length ? "" : `<div class="muted">${esc(fill(t.no_weights, { kg: number(person.start_weight_kg, locale, 1) }))}</div>`}
+      ${weightChartHTML(shown, person, start, today, locale, t, unit)}
+      ${weights.length ? "" : `<div class="muted">${esc(fill(t.no_weights, { weight: weightText(person.start_weight_kg, unit, locale, t) }))}</div>`}
       <div class="log">
         <label>${esc(t.day)}<input type="date" data-field="day" value="${this._logDay ?? today}" max="${today}"></label>
-        <label>${esc(t.kg)}<input type="number" data-field="kg" min="20" max="400" step="0.1" inputmode="decimal"></label>
+        <label>${esc(t[unit])}<input type="number" data-field="weight" min="${low}" max="${high}" step="0.1" inputmode="decimal"></label>
         <button class="fill" data-action="log">${esc(t.log_weight)}</button>
       </div>
       ${this._error ? `<div class="error">${esc(this._error)}</div>` : ""}
       ${recent.length ? `<div class="recent"><div class="sub">${esc(t.recent_weights)}</div>${recent
-        .map((w) => `<div class="item num"><span>${esc(shortDate(w.day, locale, true))}</span><span>${number(w.kg, locale, 1)} kg</span>
+        .map((w) => `<div class="item num"><span>${esc(shortDate(w.day, locale, true))}</span><span>${esc(weightText(w.kg, unit, locale, t))}</span>
           <button class="text" data-action="delete-weight" data-day="${w.day}" aria-label="${esc(t.delete)} ${esc(w.day)}">×</button></div>`)
         .join("")}</div>` : ""}`;
   }
@@ -2885,15 +2932,18 @@ class WeightCard extends PersonCard {
     },
     async "click:log"() {
       const day = this._card.querySelector('[data-field="day"]').value || this._today;
-      const kg = numberValue(this._card.querySelector('[data-field="kg"]'));
-      if (kg == null || kg < 20 || kg > 400) {
-        this._error = this._t.error_weight;
+      const unit = weightUnit(this._hass);
+      const [low, high] = weightRange(unit);
+      const weight = numberValue(this._card.querySelector('[data-field="weight"]'));
+      if (weight == null || weight < low || weight > high) {
+        const locale = this._locale;
+        this._error = fill(this._t.error_weight, { min: number(low, locale, 1), max: number(high, locale, 1), unit: this._t[unit] });
         return this._renderBody();
       }
       this._error = null;
       this._logDay = day;
       try {
-        await this._call({ type: "zp_my_fitness/weight/set", person: this._person.id, day, kg });
+        await this._call({ type: "zp_my_fitness/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
       } catch (err) {
         this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
         this._renderBody();
@@ -3006,8 +3056,9 @@ function sparklineSVG(weights, start, today) {
   </svg>`;
 }
 
-// Today's summary from zp_my_fitness/day, and the last 30 days of weights.
-function summaryHTML(day, weights, person, start, today, locale, t) {
+// Today's summary from zp_my_fitness/day, and the last 30 days of weights,
+// shown in `unit`.
+function summaryHTML(day, weights, person, start, today, locale, t, unit) {
   const sums = totals(day.entries);
   const goals = day.goals;
   const left = goals ? goals.kcal - sums.kcal : null;
@@ -3027,9 +3078,7 @@ function summaryHTML(day, weights, person, start, today, locale, t) {
   const band = bandOf(latest, person);
   let change = "";
   if (weights.length >= 2) {
-    const delta = latest - weights[0].kg;
-    const signed = `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${number(Math.abs(delta), locale, 1)} kg`;
-    change = `<small>${esc(fill(t.change_30d, { change: signed }))}</small>`;
+    change = `<small>${esc(fill(t.change_30d, { change: changeText(latest - weights[0].kg, unit, locale, t) }))}</small>`;
   }
   return `
     <div class="rings">
@@ -3040,7 +3089,7 @@ function summaryHTML(day, weights, person, start, today, locale, t) {
     <div class="stack" role="img" aria-label="${esc(t.kcal)}">${stack}</div>
     <div class="legend">${legend}</div>
     <div class="weight">
-      <div><b class="num">${number(latest, locale, 1)} kg</b> <span class="chip ${band}">${esc(t[band])}</span>${change}</div>
+      <div><b class="num">${esc(weightText(latest, unit, locale, t))}</b> <span class="chip ${band}">${esc(t[band])}</span>${change}</div>
       ${sparklineSVG(weights, start, today)}
     </div>`;
 }
@@ -3137,7 +3186,7 @@ class SummaryCard extends PersonCard {
     const body = this._card?.querySelector(".body");
     if (!body || !this._data) return;
     const { day, weights, start } = this._data;
-    body.innerHTML = summaryHTML(day, weights, this._person, start, this._today, this._locale, this._t);
+    body.innerHTML = summaryHTML(day, weights, this._person, start, this._today, this._locale, this._t, weightUnit(this._hass));
   }
 
   static actions = {};

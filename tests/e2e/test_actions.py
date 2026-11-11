@@ -126,7 +126,9 @@ def wait_for(check: Callable[[], Any], seconds: float = 15) -> Any:
 
 def test_the_action_editor_logs_a_weight(home: Home, page: Page) -> None:
     open_action(home, page, "Log weight", "log_weight", "Debora")
-    expect(page.get_by_text("In kg, from 20 to 400.")).to_be_visible()
+    expect(
+        page.get_by_text("From 20 to 400 kg, which is 44.1 to 881.8 lb.", exact=False)
+    ).to_be_visible()
     fill(page, "Weight", "66.6")
     page.get_by_role("button", name="Perform action").click()
 

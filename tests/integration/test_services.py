@@ -8,6 +8,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM, UnitSystem
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zp_my_fitness import services
@@ -77,12 +78,59 @@ async def test_logs_a_past_day_s_weight(hass: HomeAssistant, entry: MockConfigEn
     ]
 
 
-@pytest.mark.parametrize("weight", [19.9, 400.1, "unavailable"])
-async def test_refuses_a_weight_out_of_range(
-    hass: HomeAssistant, entry: MockConfigEntry, weight: Any
+@pytest.mark.usefixtures("us_customary")
+async def test_logs_a_weight_in_lb_on_a_us_install_unless_told_kg(
+    hass: HomeAssistant, entry: MockConfigEntry
 ) -> None:
+    data = entry.runtime_data.data
+    await act(hass, "log_weight", weight=150)
+    assert await data.async_read(data.db.weights, "debora", "2026-11-09", "2026-11-09") == [
+        {"day": "2026-11-09", "kg": 68.04}
+    ]
+    await act(hass, "log_weight", weight=69.5, unit="kg")
+    assert await data.async_read(data.db.weights, "debora", "2026-11-09", "2026-11-09") == [
+        {"day": "2026-11-09", "kg": 69.5}
+    ]
+
+
+async def test_logs_a_weight_in_lb_on_a_metric_install_when_told(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    await act(hass, "log_weight", weight=150, unit="lb")
+    assert state(hass, "sensor.debora_weight") == 68.04
+
+
+@pytest.mark.parametrize(
+    ("units", "data", "message"),
+    [
+        (METRIC_SYSTEM, {"weight": 19.9}, "Give a weight from 20 to 400 kg"),
+        (METRIC_SYSTEM, {"weight": 400.1}, "Give a weight from 20 to 400 kg"),
+        (METRIC_SYSTEM, {"weight": 900, "unit": "lb"}, "Give a weight from 44.1 to 881.8 lb"),
+        (US_CUSTOMARY_SYSTEM, {"weight": 44}, "Give a weight from 44.1 to 881.8 lb"),
+        (US_CUSTOMARY_SYSTEM, {"weight": 881.9}, "Give a weight from 44.1 to 881.8 lb"),
+        (US_CUSTOMARY_SYSTEM, {"weight": 401, "unit": "kg"}, "Give a weight from 20 to 400 kg"),
+    ],
+)
+async def test_refuses_a_weight_out_of_range_in_its_unit(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    units: UnitSystem,
+    data: dict[str, Any],
+    message: str,
+) -> None:
+    hass.config.units = units
+    err = await refused(hass, "log_weight", **data)
+    assert err.translation_key == "weight_out_of_range"
+    assert str(err) == message
+    store = entry.runtime_data.data
+    assert await store.async_read(store.db.weights, "debora", "2026-11-01", "2026-11-09") == []
+
+
+@pytest.mark.usefixtures("entry")
+@pytest.mark.parametrize("data", [{"weight": "unavailable"}, {"weight": 70, "unit": "st"}])
+async def test_refuses_a_weight_that_is_not_one(hass: HomeAssistant, data: dict) -> None:
     with pytest.raises(vol.Invalid):
-        await act(hass, "log_weight", weight=weight)
+        await act(hass, "log_weight", **data)
 
 
 @pytest.mark.usefixtures("entry")
@@ -236,7 +284,7 @@ async def test_gets_a_day(hass: HomeAssistant, entry: MockConfigEntry) -> None:
 
     assert day["person"] == "Debora"
     assert day["day"] == "2026-11-09"
-    assert day["weight_kg"] == 68.4
+    assert (day["weight_kg"], day["weight"], day["weight_unit"]) == (68.4, 68.4, "kg")
     assert day["goals"]["kcal"] == state(hass, "sensor.debora_calorie_goal")
     assert set(day["goals"]) == {"kcal", "protein", "carbs", "fat"}
     # Missing values count as 0 in totals, and every value is to 0.1.
@@ -297,9 +345,18 @@ async def test_gets_an_empty_day_before_any_goal(hass: HomeAssistant) -> None:
     day = await act(hass, "get_day", day="2026-10-01", device_id=device(hass, "matteo"))
     assert day["person"] == "Matteo"
     assert day["goals"] is None
-    assert day["weight_kg"] is None
+    assert (day["weight_kg"], day["weight"], day["weight_unit"]) == (None, None, "kg")
     assert day["totals"]["kcal"] == 0
     assert all(meal["entries"] == [] for meal in day["meals"].values())
+
+
+@pytest.mark.usefixtures("us_customary", "entry")
+async def test_gets_a_day_s_weight_in_lb_on_a_us_install(hass: HomeAssistant) -> None:
+    await act(hass, "log_weight", weight=68.44, unit="kg")
+    day = await act(hass, "get_day")
+    assert (day["weight_kg"], day["weight"], day["weight_unit"]) == (68.44, 150.9, "lb")
+    day = await act(hass, "get_day", day="2026-11-08")
+    assert (day["weight_kg"], day["weight"], day["weight_unit"]) == (None, None, "lb")
 
 
 @pytest.mark.usefixtures("entry")

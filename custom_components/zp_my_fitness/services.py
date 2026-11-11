@@ -2,7 +2,9 @@
 
 Each names a person by the device the integration makes for them, which the
 device selector offers by name. Days are dates in Home Assistant's time zone,
-today when left out, never in the future.
+today when left out, never in the future. Weights are in lb if Home
+Assistant's unit system is US customary, else in kg, unless log_weight is
+given its unit.
 """
 
 from __future__ import annotations
@@ -11,6 +13,7 @@ from dataclasses import asdict
 from functools import partial
 from typing import Any
 
+from homeassistant.const import UnitOfMass
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
@@ -22,8 +25,9 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .const import DOMAIN, MAX_KG, MEALS, MIN_KG, NUTRIENTS
-from .data import FitnessData, Person, food_entry, loaded_data, today
+from . import goals as g
+from .const import DOMAIN, MAX_KG, MAX_LB, MEALS, MIN_KG, MIN_LB, NUTRIENTS
+from .data import FitnessData, Person, food_entry, loaded_data, today, uses_pounds
 from .schema import vol
 
 SERVICE_LOG_WEIGHT = "log_weight"
@@ -40,7 +44,8 @@ PERSON_AND_DAY = {vol.Required("device_id"): cv.string, vol.Optional("day"): cv.
 LOG_WEIGHT_SCHEMA = vol.Schema(
     {
         **PERSON_AND_DAY,
-        vol.Required("weight"): vol.All(vol.Coerce(float), vol.Range(min=MIN_KG, max=MAX_KG)),
+        vol.Required("weight"): vol.Coerce(float),
+        vol.Optional("unit"): vol.In([UnitOfMass.KILOGRAMS, UnitOfMass.POUNDS]),
     }
 )
 
@@ -102,10 +107,20 @@ def _target(hass: HomeAssistant, call: ServiceCall) -> tuple[FitnessData, Person
     return data, person, day.isoformat()
 
 
+def _weight_unit(hass: HomeAssistant) -> str:
+    return UnitOfMass.POUNDS if uses_pounds(hass) else UnitOfMass.KILOGRAMS
+
+
 async def _log_weight(hass: HomeAssistant, call: ServiceCall) -> None:
-    """Record a weight, replacing the day's earlier one."""
+    """Record a weight, in its unit or the install's, replacing the day's earlier one."""
     data, person, day = _target(hass, call)
-    await data.async_set_weight(person, day, call.data["weight"])
+    weight = call.data["weight"]
+    unit = call.data.get("unit", _weight_unit(hass))
+    kg = weight if unit == UnitOfMass.KILOGRAMS else g.lb_to_kg(weight)
+    if not MIN_KG <= kg <= MAX_KG:
+        low, high = (MIN_KG, MAX_KG) if unit == UnitOfMass.KILOGRAMS else (MIN_LB, MAX_LB)
+        raise _error("weight_out_of_range", min=low, max=high, unit=unit)
+    await data.async_set_weight(person, day, kg)
 
 
 async def _log_food(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -147,11 +162,15 @@ async def _get_day(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     """A person's day: each meal's entries and totals, the day's totals, goals and weight.
 
     Nutrients are rounded to one decimal. In totals, a missing value counts as 0.
+    The weight is in kg, and also in the install's unit to one decimal.
     """
     data, person, day = _target(hass, call)
     entries = await data.async_read(data.db.day_entries, person.key, day)
     goals = await data.async_read(data.db.goal_on, person.key, day)
     weight = await data.async_read(data.db.weights, person.key, day, day)
+    kg = weight[0]["kg"] if weight else None
+    unit = _weight_unit(hass)
+    shown = g.kg_to_lb(kg) if kg is not None and unit == UnitOfMass.POUNDS else kg
     meals = {
         meal: {
             **_totals([e for e in entries if e["meal"] == meal]),
@@ -173,7 +192,9 @@ async def _get_day(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
         "totals": _totals(entries),
         "meals": meals,
         "goals": asdict(goals) if goals else None,
-        "weight_kg": weight[0]["kg"] if weight else None,
+        "weight_kg": kg,
+        "weight": None if shown is None else round(shown, 1),
+        "weight_unit": unit,
     }
 
 

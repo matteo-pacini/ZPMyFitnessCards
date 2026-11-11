@@ -48,6 +48,7 @@
         "bad_row": "Rij {row} op {day} kon niet worden gelezen.",
         "birth_date_future": "De geboortedatum moet in het verleden liggen.",
         "date_not_english": "De datums in het dagboek zijn niet in het Engels. Zet MyFitnessPal op Engels en sla de pagina opnieuw op.",
+        "height_out_of_range": "Voer een lengte van 3 ft 4 in tot 8 ft 2 in in.",
         "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",
         "mixed_date_orders": "Regel {line} van {file} heeft dag en maand andersom dan eerdere regels. Gebruik het bestand zoals MyFitnessPal het heeft gestuurd.",
         "name_empty": "Voer een naam in.",
@@ -76,14 +77,18 @@
             "carbs_pct": "Koolhydraten",
             "fat_pct": "Vet",
             "goal_weight_kg": "Streefgewicht",
+            "goal_weight_lb": "Streefgewicht",
             "height_cm": "Lengte",
+            "height_ft": "Lengte (ft)",
+            "height_in": "Lengte (in)",
             "name": "Naam",
             "pace": "Tempo per week",
             "person_entity": "Home Assistant-persoon",
             "protein_pct": "Eiwit",
             "sex": "Geslacht",
             "start_date": "Startdatum",
-            "start_weight_kg": "Startgewicht"
+            "start_weight_kg": "Startgewicht",
+            "start_weight_lb": "Startgewicht"
           },
           "data_description": {
             "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan.",
@@ -151,14 +156,18 @@
             "carbs_pct": "Koolhydraten",
             "fat_pct": "Vet",
             "goal_weight_kg": "Streefgewicht",
+            "goal_weight_lb": "Streefgewicht",
             "height_cm": "Lengte",
+            "height_ft": "Lengte (ft)",
+            "height_in": "Lengte (in)",
             "name": "Naam",
             "pace": "Tempo per week",
             "person_entity": "Home Assistant-persoon",
             "protein_pct": "Eiwit",
             "sex": "Geslacht",
             "start_date": "Startdatum",
-            "start_weight_kg": "Startgewicht"
+            "start_weight_kg": "Startgewicht",
+            "start_weight_lb": "Startgewicht"
           },
           "data_description": {
             "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan.",
@@ -268,6 +277,9 @@
     },
     "unknown_person": {
       "message": "Kies een persoon die aan ZPMyFitnessCards is toegevoegd."
+    },
+    "weight_out_of_range": {
+      "message": "Geef een gewicht van {min} tot {max} {unit}."
     }
   },
   "selector": {
@@ -298,7 +310,10 @@
       "options": {
         "lose_0_25": "0,25 kg per week afvallen",
         "lose_0_5": "0,5 kg per week afvallen",
+        "lose_0_5_lb": "0,5 lb per week afvallen",
         "lose_0_75": "0,75 kg per week afvallen",
+        "lose_1_5_lb": "1,5 lb per week afvallen",
+        "lose_1_lb": "1 lb per week afvallen",
         "maintain": "Gewicht behouden"
       }
     },
@@ -391,8 +406,12 @@
           "description": "De persoon: het apparaat van die persoon in ZPMyFitnessCards.",
           "name": "Persoon"
         },
+        "unit": {
+          "description": "kg of lb, voor het gewicht. Laat leeg om het eenhedenstelsel van Home Assistant te volgen.",
+          "name": "Eenheid"
+        },
         "weight": {
-          "description": "In kg, van 20 tot 400.",
+          "description": "In lb als Home Assistant Amerikaanse eenheden gebruikt, anders in kg, tenzij Eenheid iets anders zegt. Van 20 tot 400 kg, oftewel 44,1 tot 881,8 lb.",
           "name": "Gewicht"
         }
       },

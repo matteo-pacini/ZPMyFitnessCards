@@ -5,6 +5,7 @@ from datetime import date
 import pytest
 
 from custom_components.zp_my_fitness import goals as g
+from custom_components.zp_my_fitness.const import MAX_KG, MAX_LB, MIN_KG, MIN_LB
 
 
 def test_age_counts_whole_years() -> None:
@@ -49,3 +50,29 @@ def test_band_limits_follow_height() -> None:
 )
 def test_bmi_band(kg: float, band: str) -> None:
     assert g.bmi_band(kg, 180) == band
+
+
+def test_converts_kg_to_lb_and_cm_to_feet_and_inches() -> None:
+    assert g.kg_to_lb(0.45359237) == 1
+    assert g.kg_to_lb(70) == pytest.approx(154.32, abs=0.005)
+    # To 0.01 kg.
+    assert g.lb_to_kg(150) == 68.04
+    assert g.cm_to_feet_inches(165) == (5, 5)
+    assert g.cm_to_feet_inches(182.8) == (6, 0)
+    assert g.feet_inches_to_cm(5, 9) == 175.26
+
+
+def test_every_weight_in_lb_comes_back_the_same() -> None:
+    for tenths in range(441, 8819):
+        assert round(g.kg_to_lb(g.lb_to_kg(tenths / 10)), 1) == tenths / 10
+
+
+def test_the_lb_limits_are_the_kg_limits_rounded_inwards() -> None:
+    assert g.lb_to_kg(MIN_LB - 0.1) < MIN_KG <= g.lb_to_kg(MIN_LB)
+    assert g.lb_to_kg(MAX_LB) <= MAX_KG < g.lb_to_kg(MAX_LB + 0.1)
+
+
+def test_paces_in_lb_are_kept_in_kg_fastest_first() -> None:
+    assert g.PACES["lose_1_lb"] == -0.45359237
+    assert g.suggested_calories(2200, "lose_1_lb") == pytest.approx(2200 - 0.45359237 * 1100)
+    assert list(g.PACES.values()) == sorted(g.PACES.values())

@@ -144,7 +144,7 @@ def test_weight_card_shows_save_and_delete_errors(home: Home, page: Page) -> Non
         fail={"zp_my_fitness/weight/set": "boom", "zp_my_fitness/weight/delete": "boom"},
     )
     expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
-    card.locator('[data-field="kg"]').fill("68")
+    card.locator('[data-field="weight"]').fill("68")
     card.locator('[data-action="log"]').dispatch_event("click")
     expect(card.locator(".error")).to_have_text("Something went wrong: boom on purpose")
     card.locator('[data-action="delete-weight"]').first.dispatch_event("click")

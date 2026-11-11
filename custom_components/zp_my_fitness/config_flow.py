@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Mapping
 from datetime import date, timedelta
 from typing import Any
 
@@ -16,7 +17,6 @@ from homeassistant.config_entries import (
     ConfigSubentryFlow,
     SubentryFlowResult,
 )
-from homeassistant.const import UnitOfMass
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -36,6 +36,7 @@ from homeassistant.helpers.selector import (
 from sqlalchemy import text
 from sqlalchemy.exc import ArgumentError, SQLAlchemyError
 
+from . import goals as g
 from .const import (
     CONF_ACTIVITY,
     CONF_BIRTH_DATE,
@@ -58,12 +59,18 @@ from .const import (
     ENGINE_POSTGRESQL,
     ENGINE_SQLITE,
     IMPORTED_MEAL,
+    MAX_CM,
+    MAX_KG,
+    MAX_LB,
     MEALS,
+    MIN_CM,
+    MIN_KG,
+    MIN_LB,
     SEXES,
     SOURCE_MYFITNESSPAL,
     SUBENTRY_PERSON,
 )
-from .data import today
+from .data import today, uses_pounds
 from .db import make_engine
 from .export import PATH as EXPORT_PATH
 from .goals import ACTIVITY, PACES
@@ -88,6 +95,25 @@ EXPORT_LINK_MINUTES = 5
 
 TITLE = "ZPMyFitnessCards"
 
+# On US customary installs the person form asks for these instead of the
+# weights in kg and the height in cm. The sub-entry stores kg and cm either way.
+CONF_START_WEIGHT_LB = "start_weight_lb"
+CONF_GOAL_WEIGHT_LB = "goal_weight_lb"
+CONF_HEIGHT_FT = "height_ft"
+CONF_HEIGHT_IN = "height_in"
+
+# Each measurement the sub-entry stores, and the form's fields for it:
+# (on metric installs, on US customary ones), so indexed by `pounds`.
+MEASUREMENTS = {
+    CONF_START_WEIGHT: ((CONF_START_WEIGHT,), (CONF_START_WEIGHT_LB,)),
+    CONF_GOAL_WEIGHT: ((CONF_GOAL_WEIGHT,), (CONF_GOAL_WEIGHT_LB,)),
+    CONF_HEIGHT: ((CONF_HEIGHT,), (CONF_HEIGHT_FT, CONF_HEIGHT_IN)),
+}
+
+# The paces each unit system offers.
+PACES_KG = ("lose_0_75", "lose_0_5", "lose_0_25", "maintain")
+PACES_LB = ("lose_1_5_lb", "lose_1_lb", "lose_0_5_lb", "maintain")
+
 
 def _number(low: float, high: float, step: float, unit: str) -> NumberSelector:
     return NumberSelector(
@@ -103,9 +129,22 @@ def _choice(options: list[str], key: str) -> SelectSelector:
     )
 
 
-def person_schema() -> vol.Schema:
-    """The person form."""
-    weight = _number(20, 400, 0.1, "kg")
+def person_schema(pounds: bool, pace: str | None = None) -> vol.Schema:
+    """The person form, in lb, feet and inches if `pounds`, else in kg and cm.
+
+    It offers the unit system's paces, and `pace` as well if it is another's.
+    """
+    if pounds:
+        start, goal, offered = CONF_START_WEIGHT_LB, CONF_GOAL_WEIGHT_LB, PACES_LB
+        weight = _number(MIN_LB, MAX_LB, 0.1, "lb")
+        height = {
+            vol.Required(CONF_HEIGHT_FT): _number(3, 8, 1, "ft"),
+            vol.Required(CONF_HEIGHT_IN): _number(0, 11, 1, "in"),
+        }
+    else:
+        start, goal, offered = CONF_START_WEIGHT, CONF_GOAL_WEIGHT, PACES_KG
+        weight = _number(MIN_KG, MAX_KG, 0.1, "kg")
+        height = {vol.Required(CONF_HEIGHT): _number(MIN_CM, MAX_CM, 1, "cm")}
     percent = _number(0, 100, 1, "%")
     return vol.Schema(
         {
@@ -113,12 +152,14 @@ def person_schema() -> vol.Schema:
             vol.Optional(CONF_PERSON_ENTITY): EntitySelector(EntitySelectorConfig(domain="person")),
             vol.Required(CONF_SEX): _choice(list(SEXES), CONF_SEX),
             vol.Required(CONF_BIRTH_DATE): DateSelector(),
-            vol.Required(CONF_HEIGHT): _number(100, 250, 1, "cm"),
-            vol.Required(CONF_START_WEIGHT): weight,
+            **height,
+            vol.Required(start): weight,
             vol.Required(CONF_START_DATE): DateSelector(),
-            vol.Required(CONF_GOAL_WEIGHT): weight,
+            vol.Required(goal): weight,
             vol.Required(CONF_ACTIVITY): _choice(list(ACTIVITY), CONF_ACTIVITY),
-            vol.Required(CONF_PACE): _choice(list(PACES), CONF_PACE),
+            vol.Required(CONF_PACE): _choice(
+                [p for p in PACES if p in offered or p == pace], CONF_PACE
+            ),
             vol.Optional(CONF_CALORIE_GOAL): _number(800, 6000, 10, "kcal"),
             vol.Required(CONF_PROTEIN_PCT): percent,
             vol.Required(CONF_CARBS_PCT): percent,
@@ -127,8 +168,49 @@ def person_schema() -> vol.Schema:
     )
 
 
+def _in_form(key: str, value: float, pounds: bool) -> tuple[float, ...]:
+    """A stored measurement as its fields show it, rounded to their steps."""
+    if key == CONF_HEIGHT:
+        return g.cm_to_feet_inches(value) if pounds else (round(value),)
+    return (round(g.kg_to_lb(value) if pounds else value, 1),)
+
+
+def _from_form(key: str, fields: tuple[float, ...], pounds: bool) -> float:
+    """A measurement's fields in kg or cm."""
+    if not pounds:
+        return fields[0]
+    return g.feet_inches_to_cm(*fields) if key == CONF_HEIGHT else g.lb_to_kg(fields[0])
+
+
+def shown(data: Mapping[str, Any], pounds: bool) -> dict[str, Any]:
+    """A person's stored details as the form shows them."""
+    out = {k: v for k, v in data.items() if k not in MEASUREMENTS}
+    for key, fields in MEASUREMENTS.items():
+        out |= zip(fields[pounds], _in_form(key, data[key], pounds), strict=True)
+    return out
+
+
+def stored(
+    values: Mapping[str, Any], pounds: bool, before: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
+    """A filled-in person form as the sub-entry stores it, in kg and cm.
+
+    A measurement the form shows as it was `before` keeps its stored value,
+    so saving a person again never moves it by a rounding.
+    """
+    form_keys = {f for fields in MEASUREMENTS.values() for f in fields[pounds]}
+    out = {k: v for k, v in values.items() if k not in form_keys}
+    for key, fields in MEASUREMENTS.items():
+        typed = tuple(values[f] for f in fields[pounds])
+        if before and typed == _in_form(key, before[key], pounds):
+            out[key] = before[key]
+        else:
+            out[key] = _from_form(key, typed, pounds)
+    return out
+
+
 def validate_person(values: dict[str, Any], other_names: set[str]) -> dict[str, str]:
-    """Errors in a filled-in person form, by field."""
+    """Errors in a filled-in person form, by field, from `values` as stored."""
     errors: dict[str, str] = {}
     name = values[CONF_NAME].strip()
     if not name:
@@ -139,6 +221,9 @@ def validate_person(values: dict[str, Any], other_names: set[str]) -> dict[str, 
         errors[CONF_BIRTH_DATE] = "birth_date_future"
     if date.fromisoformat(values[CONF_START_DATE]) > today():
         errors[CONF_START_DATE] = "start_date_future"
+    if not MIN_CM <= values[CONF_HEIGHT] <= MAX_CM:
+        # Only feet and inches can add up to this: the cm field has these limits.
+        errors[CONF_HEIGHT_FT] = "height_out_of_range"
     if values[CONF_PROTEIN_PCT] + values[CONF_CARBS_PCT] + values[CONF_FAT_PCT] != 100:
         errors["base"] = "macros_not_100"
     return errors
@@ -233,6 +318,9 @@ class PersonSubentryFlow(ConfigSubentryFlow):
     # Where each meal of the file's own goes, by its title.
     _meals: dict[str, str]
 
+    # Whether the person form last shown was in lb, feet and inches.
+    _pounds: bool
+
     def _names(self, exclude: str | None = None) -> set[str]:
         return {
             s.title.casefold()
@@ -241,11 +329,15 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         }
 
     def _form(
-        self, step_id: str, values: dict[str, Any], errors: dict[str, str]
+        self, step_id: str, values: Mapping[str, Any], errors: dict[str, str]
     ) -> SubentryFlowResult:
+        # The answer comes in this form's units, even if the unit system changes
+        # while it is open.
+        self._pounds = uses_pounds(self.hass)
+        schema = person_schema(self._pounds, values.get(CONF_PACE))
         return self.async_show_form(
             step_id=step_id,
-            data_schema=self.add_suggested_values_to_schema(person_schema(), values),
+            data_schema=self.add_suggested_values_to_schema(schema, values),
             errors=errors,
         )
 
@@ -270,11 +362,12 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         """Ask for the person's details."""
         if user_input is None:
             return self._form("user", {**DEFAULTS, CONF_START_DATE: today().isoformat()}, {})
-        errors = validate_person(user_input, self._names())
+        data = stored(user_input, self._pounds)
+        errors = validate_person(data, self._names())
         if errors:
             return self._form("user", user_input, errors)
-        name = user_input[CONF_NAME].strip()
-        data = {**user_input, CONF_NAME: name, CONF_KEY: await self._key_for(name)}
+        name = data[CONF_NAME].strip()
+        data = {**data, CONF_NAME: name, CONF_KEY: await self._key_for(name)}
         return self.async_create_entry(title=name, data=data)
 
     async def async_step_reconfigure(
@@ -290,13 +383,14 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         """Change the person's details."""
         subentry = self._get_reconfigure_subentry()
         if user_input is None:
-            return self._form("edit", dict(subentry.data), {})
-        errors = validate_person(user_input, self._names(exclude=subentry.subentry_id))
+            return self._form("edit", shown(subentry.data, uses_pounds(self.hass)), {})
+        data = stored(user_input, self._pounds, subentry.data)
+        errors = validate_person(data, self._names(exclude=subentry.subentry_id))
         if errors:
             return self._form("edit", user_input, errors)
-        name = user_input[CONF_NAME].strip()
+        name = data[CONF_NAME].strip()
         # Optional fields left empty are absent, so build the data afresh.
-        data = {**user_input, CONF_NAME: name, CONF_KEY: subentry.data[CONF_KEY]}
+        data = {**data, CONF_NAME: name, CONF_KEY: subentry.data[CONF_KEY]}
         return self.async_update_and_abort(self._get_entry(), subentry, title=name, data=data)
 
     async def async_step_import_history(
@@ -424,8 +518,7 @@ class PersonSubentryFlow(ConfigSubentryFlow):
                 placeholders = err.placeholders
             else:
                 return await self._async_import_mfp(weights)
-        pounds = self.hass.config.units.mass_unit == UnitOfMass.POUNDS
-        unit = self._diary.weight_unit or ("lb" if pounds else "kg")
+        unit = self._diary.weight_unit or ("lb" if uses_pounds(self.hass) else "kg")
         schema = vol.Schema(
             {vol.Required(CONF_WEIGHT_UNIT): _choice(["kg", "lb"], CONF_WEIGHT_UNIT)}
         )

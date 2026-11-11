@@ -26,7 +26,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
@@ -162,6 +162,23 @@ class Home:
     def log(self) -> str:
         """Home Assistant's log so far."""
         return (self.config_dir / "home-assistant.log").read_text()
+
+    @contextmanager
+    def us_customary(self) -> Iterator[None]:
+        """Switch to US customary units, then back to metric, whatever happens.
+
+        Both switches update the sensors' units too, as Settings > General
+        offers to.
+        """
+
+        def switch(system: str) -> None:
+            self.ws({"type": "config/core/update", "unit_system": system, "update_units": True})
+
+        switch("us_customary")
+        try:
+            yield
+        finally:
+            switch("metric")
 
 
 def _free_port() -> int:
@@ -404,6 +421,13 @@ def _home(
         except subprocess.TimeoutExpired:
             process.kill()
         shutil.rmtree(config_dir, ignore_errors=True)
+
+
+@pytest.fixture
+def us_customary(home: Home) -> Iterator[None]:
+    """The test Home Assistant in US customary units, which weigh in lb, for one test."""
+    with home.us_customary():
+        yield
 
 
 @pytest.fixture(scope="session")

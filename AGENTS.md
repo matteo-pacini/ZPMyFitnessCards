@@ -6,7 +6,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
 
 - `custom_components/zp_my_fitness/`: the integration. `brand/` holds its icons.
   - `db.py`: the database, SQLite or Postgres, through SQLAlchemy Core, with blocking methods. `data.py` (`FitnessData`) is the only caller.
-  - `goals.py`: calorie, macro and BMI maths, with no Home Assistant code.
+  - `goals.py`: calorie, macro and BMI maths, and conversions between kg and lb and between cm and feet and inches, with no Home Assistant code.
   - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
   - `websocket.py`: the commands the cards call.
   - `services.py`: the actions, `log_weight`, `log_food` and `get_day`, which name a person by their device. `services.yaml` gives their fields and selectors, and `translations/` their names, descriptions and errors; `tests/integration/test_services.py` checks the three agree.
@@ -74,6 +74,7 @@ scripts/throttle 4 nix build -L .#checks.x86_64-linux.e2e-vm-sqlite
 - **Languages.** Each card has a `STRINGS` table in 11 languages: en, de, es, fr, it, nl, pl, pt, pt-BR, sv and zh-Hans. Add a key to `en` first, then to each language. The tests check keys and placeholders.
 - **Theming.** Take colours and fonts from Home Assistant theme variables, never hard-coded colours.
 - **People.** Each person is a config sub-entry. Code refers to a person by the `key` in its data, never by name or sub-entry ID. Re-adding a removed person under the same name reuses their key, which brings back their data, entities and history.
+- **Units.** Everything is stored, and sent and taken by the websocket commands, in kg and cm. Only what a person reads or types follows Home Assistant's unit system: lb, feet and inches when it is US customary (`uses_pounds` in `data.py`, `weightUnit` in the cards), else kg and cm. Convert in the config flow, the actions and the cards, and nowhere else. Food stays in grams and energy in kcal.
 - **Writes.** Go through `FitnessData`, never `Database` directly. It runs the query in the executor, holds the lock that backups pause on, refreshes goals, corrects the recorder's statistics for past days, and sends `SIGNAL_CHANGED` to the sensors and the cards.
 - **Both databases.** Every query must work on SQLite and Postgres: build it with SQLAlchemy Core, not raw SQL, and test it through `database_url`. Days are ISO date strings in both.
 - **Schema.** `MIGRATIONS` in `db.py` upgrades a database one version at a time, and `schema_version` records where it is. Never edit a released migration or `_schema_v1`; add a new schema function and a migration to it.

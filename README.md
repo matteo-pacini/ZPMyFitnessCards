@@ -31,6 +31,14 @@ The integration loads the cards for you. There is no dashboard resource to add.
 
 Requires Home Assistant 2025.3 or later.
 
+## Units
+
+Units follow Home Assistant's unit system, in **Settings > System > General**. With US customary units, everyone sees and types weights in lb and heights in feet and inches: in the person form, the weight sensors, the actions and the cards. Any other unit system uses kg and cm. Energy is always in kcal, and food always in grams.
+
+The data is always stored in kg and cm, so changing the unit system only changes what you see. When you change it, let Home Assistant update the units of existing sensors, and the weight sensors follow.
+
+The weekly paces are 0.25, 0.5 and 0.75 kg a week in metric, and 0.5, 1 and 1.5 lb a week in US customary units. A person keeps their pace when the unit system changes; the form then shows it in the unit it was chosen in.
+
 ## Sensors
 
 Each person is a device with these sensors, named after them, for example `sensor.debora_calories_today`:
@@ -41,11 +49,11 @@ Each person is a device with these sensors, named after them, for example `senso
 | Breakfast, lunch, dinner and snacks calories | kcal | Start again at midnight. |
 | Calories remaining | kcal | Calorie goal minus calories today. |
 | Calorie, protein, carbs and fat goal | kcal or g | |
-| Weight | kg | The last weigh-in, or the starting weight before the first. |
-| Weight change | kg | Since the starting weight. |
+| Weight | kg or lb | The last weigh-in, or the starting weight before the first. |
+| Weight change | kg or lb | Since the starting weight. |
 | Daily burn | kcal | Estimated calories burnt a day. |
 
-The weight sensor also has these attributes: `underweight_below_kg`, `overweight_from_kg` and `obese_from_kg` (the BMI band limits for the person's height), `bmi_band`, `goal_weight_kg`, `height_cm` and `weighed_on`.
+The weight sensor also has these attributes, always in kg and cm: `underweight_below_kg`, `overweight_from_kg` and `obese_from_kg` (the BMI band limits for the person's height), `bmi_band`, `goal_weight_kg`, `height_cm` and `weighed_on`.
 
 The daily totals keep long-term statistics, so a statistics graph with `stat_types: change` and `period: day` shows each day's intake. Changing a past day in the diary also corrects its statistics.
 
@@ -53,9 +61,9 @@ The daily totals keep long-term statistics, so a statistics graph with `stat_typ
 
 Automations, scripts and Assist can log and read with three actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
 
-- `zp_my_fitness.log_weight` records a weight in kg, from 20 to 400. A day keeps one weight, so logging again replaces it.
+- `zp_my_fitness.log_weight` records a weight, in lb with US customary units and in kg otherwise, or in the `unit` you give, `kg` or `lb`. It takes 20 to 400 kg, which is 44.1 to 881.8 lb. A day keeps one weight, so logging again replaces it.
 - `zp_my_fitness.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
-- `zp_my_fitness.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1.
+- `zp_my_fitness.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`.
 
 Choose the person in the action editor, which fills in their `device_id`. For example, to log each new reading from a smart scale:
 
@@ -191,6 +199,10 @@ Home Assistant runs this search, not your browser, so the Home Assistant server 
 One person's weight: the latest weigh-in, the change since their starting weight, and their BMI band. The chart covers 90 days, 1 year or all of it, shaded by BMI band for the person's height, with a dashed line at the goal weight. Log a weight for today or any past day; a day keeps one weight, so logging again replaces it. The last five weigh-ins are listed, each with a button to delete it.
 
 <img src="images/weight.png" alt="Weight" width="400">
+
+With US customary units, it shows and takes every weight in lb.
+
+<img src="images/weight-lb.png" alt="Weight in lb" width="400">
 
 ```yaml
 type: custom:zp-weight-card
