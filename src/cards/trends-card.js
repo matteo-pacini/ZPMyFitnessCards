@@ -66,7 +66,7 @@ function trendChartHTML(bars, weekly, locale, t) {
         .join("");
       const goal = bar.goal != null ? `<line class="goaltick" x1="${(x - 2).toFixed(1)}" x2="${(x + barWidth + 2).toFixed(1)}" y1="${y(bar.goal).toFixed(1)}" y2="${y(bar.goal).toFixed(1)}"/>` : "";
       const label = i % labelEvery === 0 || i === bars.length - 1
-        ? `<text class="axis" x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" text-anchor="middle">${esc(weekly ? shortDate(bar.day, locale) : bars.length <= 7 ? dayLabelShort(bar.day, locale) : shortDate(bar.day, locale))}</text>`
+        ? `<text class="axis" x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" text-anchor="middle">${esc(!weekly && bars.length <= 7 ? dayLabelShort(bar.day, locale) : shortDate(bar.day, locale))}</text>`
         : "";
       const title = `${weekly ? fill(t.week_of, { date: shortDate(bar.day, locale, true) }) : shortDate(bar.day, locale, true)}: ${number(totals[i], locale)} ${t.kcal}`;
       const hit = weekly ? "" : ` data-action="open-day" data-day="${bar.day}"`;
