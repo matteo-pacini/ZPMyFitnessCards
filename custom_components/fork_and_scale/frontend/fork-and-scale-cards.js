@@ -1890,11 +1890,13 @@ class FitnessCard extends HTMLElement {
         this._unsubscribe = null;
       });
   }
+}
 
-  // The rest is for the cards with a food form, the food diary and saved
-  // foods. Errors show in the card's open panel, `_panel`, which it draws
-  // with `_renderPanel`.
-
+// src/cards/food-card.js
+// Base for the cards with a food form, the food diary and saved foods.
+// Errors show in the card's open panel, `_panel`, which it draws with
+// `_renderPanel`.
+class FoodCard extends FitnessCard {
   _showError(err, key = "error_failed") {
     if (!this._panel) return;
     this._panel.error = fill(this._t[key], { message: err?.message ?? "" });
@@ -2091,7 +2093,7 @@ class CardEditor extends HTMLElement {
 }
 
 // src/cards/food-diary-card.js
-class FoodDiaryCard extends FitnessCard {
+class FoodDiaryCard extends FoodCard {
   static style = `
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
@@ -2644,7 +2646,7 @@ function copyPanelHTML(p, today, t) {
 }
 
 // src/cards/foods-card.js
-class FoodsCard extends FitnessCard {
+class FoodsCard extends FoodCard {
   static style = `
     .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }

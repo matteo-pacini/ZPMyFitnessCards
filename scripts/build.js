@@ -33,6 +33,7 @@ const SOURCES = [
   "cards/helpers.js",
   "cards/food-form.js",
   "cards/fitness-card.js",
+  "cards/food-card.js",
   "cards/editor.js",
   "cards/food-diary-card.js",
   "cards/foods-card.js",

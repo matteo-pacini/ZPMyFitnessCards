@@ -1,4 +1,4 @@
-class FoodsCard extends FitnessCard {
+class FoodsCard extends FoodCard {
   static style = `
     .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }

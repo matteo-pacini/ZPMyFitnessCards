@@ -1,4 +1,4 @@
-class FoodDiaryCard extends FitnessCard {
+class FoodDiaryCard extends FoodCard {
   static style = `
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }

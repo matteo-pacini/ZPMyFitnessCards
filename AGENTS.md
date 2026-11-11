@@ -24,6 +24,7 @@ Fork & Scale is a Home Assistant custom integration, `fork_and_scale`, with dash
   - `helpers.js`: days, totals, `findPerson` and their kin, and the base style.
   - `food-form.js`: the food form, Open Food Facts and the scanner, for the food diary and saved foods cards.
   - `fitness-card.js`: `FitnessCard`, the base of every card: config, language, loading and live updates.
+  - `food-card.js`: `FoodCard`, the base of the food diary and saved foods cards: barcode lookups and scans, Open Food Facts searches, and errors in the card's open panel.
   - `editor.js`: the visual editor every card opens, with a field for each option in the card's static `options`, drawn with the frontend's `ha-form`.
   - `charts.js` and `weights.js`: chart helpers, and weight units and BMI bands, for more than one card.
   - `person-card.js`: `PersonCard`, the base of the cards that show one person.
