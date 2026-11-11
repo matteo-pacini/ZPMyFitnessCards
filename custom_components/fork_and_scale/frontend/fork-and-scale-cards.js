@@ -1485,7 +1485,8 @@ const SEARCH_DELAY_MS = 250;
 // A food diary showing that person moves to the day.
 const OPEN_DAY = "fork-and-scale-open-day";
 
-// Dates are ISO days ("2026-11-09") in Home Assistant's time zone.
+// Dates are ISO days ("2026-11-09") in Home Assistant's time zone. new Date()
+// reads one as its midnight in UTC, so format it in UTC to show that day.
 
 function todayIn(timeZone, now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
@@ -1499,7 +1500,6 @@ function shiftDay(day, days) {
 function dayLabel(day, today, locale, t) {
   if (day === today) return t.today;
   if (day === shiftDay(today, -1)) return t.yesterday;
-  const [y, m, d] = day.split("-").map(Number);
   const sameYear = day.slice(0, 4) === today.slice(0, 4);
   return new Intl.DateTimeFormat(locale, {
     weekday: "short",
@@ -1507,7 +1507,7 @@ function dayLabel(day, today, locale, t) {
     month: "short",
     ...(sameYear ? {} : { year: "numeric" }),
     timeZone: "UTC",
-  }).format(new Date(Date.UTC(y, m - 1, d)));
+  }).format(new Date(day));
 }
 
 const number = (value, locale, digits = 0) =>
@@ -2847,12 +2847,8 @@ function ticks(low, high, count) {
 
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
-const shortDate = (day, locale, withYear = false) => {
-  const [y, m, d] = day.split("-").map(Number);
-  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(
-    new Date(Date.UTC(y, m - 1, d)),
-  );
-};
+const shortDate = (day, locale, withYear = false) =>
+  new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(new Date(day));
 
 const CHART_STYLE = `
   .chart { width: 100%; height: auto; display: block; overflow: visible; }

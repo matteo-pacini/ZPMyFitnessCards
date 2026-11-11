@@ -17,12 +17,8 @@ function ticks(low, high, count) {
 
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
-const shortDate = (day, locale, withYear = false) => {
-  const [y, m, d] = day.split("-").map(Number);
-  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(
-    new Date(Date.UTC(y, m - 1, d)),
-  );
-};
+const shortDate = (day, locale, withYear = false) =>
+  new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(new Date(day));
 
 const CHART_STYLE = `
   .chart { width: 100%; height: auto; display: block; overflow: visible; }
