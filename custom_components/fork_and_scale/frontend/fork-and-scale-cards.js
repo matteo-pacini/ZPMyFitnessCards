@@ -2207,13 +2207,11 @@ class FoodDiaryCard extends FoodCard {
       return;
     }
     const t = this._t;
-    const error = p.error ? `<div class="error">${esc(p.error)}</div>` : "";
-    if (p.kind === "edit") panel.innerHTML = editPanelHTML(p, this._locale, t) + error;
-    else if (p.kind === "copy") panel.innerHTML = copyPanelHTML(p, this._today, t) + error;
-    else {
-      const warning = p.warning ? `<div class="warning">${esc(p.warning)}</div>` : "";
-      panel.innerHTML = addPanelHTML(p, t, Boolean(this._scanner)) + (p.note ? `<div class="note">${esc(p.note)}</div>` : "") + warning + error;
-    }
+    let html;
+    if (p.kind === "edit") html = editPanelHTML(p, this._locale, t);
+    else if (p.kind === "copy") html = copyPanelHTML(p, this._today, t);
+    else html = addPanelHTML(p, t, Boolean(this._scanner));
+    panel.innerHTML = html + panelMessagesHTML(p);
     if (p.kind === "add" && p.tab === "search") {
       this._renderResults();
       this._renderOff();
@@ -2599,6 +2597,10 @@ function previewHTML(food, grams, locale, t) {
     .map((n) => `<div><b>${values ? number(values[n], locale, n === "kcal" ? 0 : 1) : "–"}</b><small>${esc(n === "kcal" ? t.kcal : `${t[n]} (g)`)}</small></div>`)
     .join("");
 }
+
+// Panel `p`'s note, warning and error, those it has.
+const panelMessagesHTML = (p) =>
+  ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
 
 function addPanelHTML(p, t, scan = false) {
   const tabs = ["search", "quick", "new"]

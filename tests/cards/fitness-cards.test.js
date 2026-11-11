@@ -11,7 +11,7 @@ let fn;
 test.before(async () => {
   ctx = await load();
   fn = vm.runInContext(
-    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML })",
+    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML })",
     ctx,
   );
 });
@@ -119,6 +119,15 @@ test("an entry logged by weight is edited by grams, a quick add by kcal", () => 
   assert.match(quick, /data-field="kcal"[^>]*value="900"/);
   const confirming = text(fn.editPanelHTML({ entry: DAY.entries[1], confirming: true }, "en-GB", en()));
   assert.match(confirming, /Delete Pizza <large>\? Cancel Yes, delete/);
+});
+
+test("a panel shows its note, warning and error, in that order, escaped", () => {
+  assert.equal(fn.panelMessagesHTML({}), "");
+  assert.equal(
+    fn.panelMessagesHTML({ note: "N", warning: null, error: "<E>" }),
+    '<div class="note">N</div><div class="error">&lt;E&gt;</div>',
+  );
+  assert.equal(text(fn.panelMessagesHTML({ error: "E", warning: "W", note: "N" })), "N W E");
 });
 
 test("the add panel has a tab for each way to add food", () => {
