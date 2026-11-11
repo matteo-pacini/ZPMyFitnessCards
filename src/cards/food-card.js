@@ -1,3 +1,9 @@
+// Panel `p`'s note, warning and error, those it has.
+const panelMessagesHTML = (p) =>
+  ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
+
+const cancelButtonHTML = (t) => `<button class="text" data-action="close">${esc(t.cancel)}</button>`;
+
 // Base for the cards with a food form, the food diary and saved foods.
 // Errors show in the card's open panel, `_panel`, which it draws with
 // `_renderPanel`.
@@ -9,6 +15,8 @@ class FoodCard extends FitnessCard {
     .scanner video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--secondary-background-color); }
     .note { color: var(--secondary-text-color); }
     .warning { color: var(--warning-color); }
+    .row small { color: var(--secondary-text-color); }
+    .off { display: flex; flex-direction: column; }
   `;
 
   _showError(err, key = "error_failed") {

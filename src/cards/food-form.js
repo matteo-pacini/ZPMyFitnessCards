@@ -1,13 +1,16 @@
+// The attributes of an input for an amount, in grams or kcal.
+const NUMBER_INPUT = `type="number" min="0" step="any" inputmode="decimal"`;
+
 // Shared by the diary's "New food" tab and the saved foods card.
 function foodFormHTML(food, t, scan = false) {
   const field = (key, label, value, extra = "") =>
     `<label>${esc(label)}<input data-field="${key}" ${extra} value="${value == null ? "" : esc(value)}"></label>`;
   const nutrient = (n) =>
-    field(n, n === "kcal" ? t.kcal : `${t[n]} (g)`, food[n], `type="number" min="0" step="any" inputmode="decimal"`);
+    field(n, n === "kcal" ? t.kcal : `${t[n]} (g)`, food[n], NUMBER_INPUT);
   const portions = (food.portions ?? []).map(
     (p, i) => `<div class="portion" data-index="${i}">
       <input data-portion="name" placeholder="${esc(t.portion_name)}" value="${esc(p.name ?? "")}" aria-label="${esc(t.portion_name)}">
-      <input data-portion="grams" type="number" min="0" step="any" inputmode="decimal" placeholder="g" value="${p.grams ?? ""}" aria-label="${esc(t.grams)}">
+      <input data-portion="grams" ${NUMBER_INPUT} placeholder="g" value="${p.grams ?? ""}" aria-label="${esc(t.grams)}">
       <button type="button" class="text" data-action="remove-portion" data-index="${i}">${esc(t.remove)}</button>
     </div>`,
   );

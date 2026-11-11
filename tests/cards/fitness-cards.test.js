@@ -11,7 +11,7 @@ let fn;
 test.before(async () => {
   ctx = await load();
   fn = vm.runInContext(
-    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField, chooseFood, showSavedFood, diarySummaryHTML, mealHTML, resultsHTML, pickedHTML })",
+    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, cancelButtonHTML, amountField, chooseFood, showSavedFood, diarySummaryHTML, mealHTML, resultsHTML, pickedHTML })",
     ctx,
   );
 });
@@ -190,6 +190,10 @@ test("a panel shows its note, warning and error, in that order, escaped", () => 
     '<div class="note">N</div><div class="error">&lt;E&gt;</div>',
   );
   assert.equal(text(fn.panelMessagesHTML({ error: "E", warning: "W", note: "N" })), "N W E");
+});
+
+test("a panel's Cancel button closes it, in the card's language", () => {
+  assert.equal(fn.cancelButtonHTML(fn.translate("de")), '<button class="text" data-action="close">Abbrechen</button>');
 });
 
 test("the add panel has a tab for each way to add food", () => {

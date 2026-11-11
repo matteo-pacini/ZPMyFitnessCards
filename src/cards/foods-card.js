@@ -2,8 +2,6 @@ class FoodsCard extends FoodCard {
   static style = `${super.style}
     .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }
-    .row small { color: var(--secondary-text-color); }
-    .off { display: flex; flex-direction: column; }
   `;
 
   static options = ["title", "locale"];
@@ -69,11 +67,11 @@ class FoodsCard extends FoodCard {
     const t = this._t;
     const buttons = p.confirming
       ? `<span class="error">${esc(fill(t.really_delete, { name: p.food.name }))}</span>
-         <button class="text" data-action="close">${esc(t.cancel)}</button><button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
+         ${cancelButtonHTML(t)}<button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
       : `${p.food.id ? `<button class="text" data-action="delete">${esc(t.delete)}</button>` : ""}
-         <button class="text" data-action="close">${esc(t.cancel)}</button><button class="fill" data-action="save">${esc(t.save_food)}</button>`;
+         ${cancelButtonHTML(t)}<button class="fill" data-action="save">${esc(t.save_food)}</button>`;
     panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${foodFormHTML(p.food, t, Boolean(this._scanner))}
-      ${p.note ? `<div class="note">${esc(p.note)}</div>` : ""}${p.warning ? `<div class="warning">${esc(p.warning)}</div>` : ""}${p.error ? `<div class="error">${esc(p.error)}</div>` : ""}<div class="actions">${buttons}</div>`;
+      ${panelMessagesHTML(p)}<div class="actions">${buttons}</div>`;
   }
 
   // Fill the form from its barcode, or open the saved food that has it.

@@ -30,8 +30,8 @@ class FoodDiaryCard extends FoodCard {
     .tabs button { padding: 8px 10px; border-radius: 6px 6px 0 0; color: var(--secondary-text-color); }
     .tabs button[aria-selected="true"] { color: var(--primary-color); box-shadow: inset 0 -2px 0 var(--primary-color); }
     .searchrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-    .results, .off { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
-    .results .row small, .off .row small { color: var(--secondary-text-color); }
+    .results { display: flex; flex-direction: column; }
+    .results, .off { max-height: 240px; overflow-y: auto; }
     .results .row[aria-pressed="true"] { background: var(--secondary-background-color); }
     .picked { display: flex; flex-direction: column; gap: 10px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -525,7 +525,7 @@ function pickedHTML(p, locale, t) {
     .join("");
   return `<div><b>${esc(p.food.name)}</b></div>
       <div class="grid">
-        <label>${esc(t.grams)}<input data-action="grams" data-field="grams" type="number" min="0" step="any" inputmode="decimal" value="${p.grams ?? ""}"></label>
+        <label>${esc(t.grams)}<input data-action="grams" data-field="grams" ${NUMBER_INPUT} value="${p.grams ?? ""}"></label>
         <label>${esc(t.meal)}<select data-action="meal" data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
       </div>
       ${portions ? `<div class="chips">${portions}</div>` : ""}
@@ -553,22 +553,18 @@ function showSavedFood(p, food) {
   chooseFood(p, food);
 }
 
-// Panel `p`'s note, warning and error, those it has.
-const panelMessagesHTML = (p) =>
-  ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
-
 function addPanelHTML(p, t, scan = false) {
   const tabs = ["search", "quick", "new"]
     .map((tab) => `<button data-action="tab" data-tab="${tab}" role="tab" aria-selected="${p.tab === tab}">${esc(t[`tab_${tab}`])}</button>`)
     .join("");
-  const cancel = `<button class="text" data-action="close">${esc(t.cancel)}</button>`;
+  const cancel = cancelButtonHTML(t);
   let content;
   if (p.tab === "search") {
     const scanButton = scan ? `<button class="text" data-action="scan">${esc(t.scan)}</button>` : "";
     content = `<div class="searchrow"><input type="search" data-action="query" value="${esc(p.query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">${scanButton}</div>
       <div class="scanner" hidden></div><div class="results"></div><div class="off"></div><div class="picked"></div>`;
   } else if (p.tab === "quick") {
-    const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" type="number" min="0" step="any" inputmode="decimal"></label>`;
+    const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" ${NUMBER_INPUT}></label>`;
     content = `<div class="grid"><label>${esc(t.name)}<input data-field="name"></label>${n("kcal", t.kcal)}</div>
       <div class="grid">${MACROS.map((m) => n(m, `${t[m]} (g, ${t.optional})`)).join("")}</div>
       <label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
@@ -588,11 +584,11 @@ const amountField = (entry) => (entry.grams != null ? "grams" : "kcal");
 function editPanelHTML(p, locale, t) {
   const e = p.entry;
   const field = amountField(e);
-  const amount = `<label>${esc(t[field])}<input data-field="${field}" type="number" min="0" step="any" inputmode="decimal" value="${e[field]}"></label>`;
+  const amount = `<label>${esc(t[field])}<input data-field="${field}" ${NUMBER_INPUT} value="${e[field]}"></label>`;
   const buttons = p.confirming
     ? `<span class="error">${esc(fill(t.really_delete, { name: e.name }))}</span>
-       <button class="text" data-action="close">${esc(t.cancel)}</button><button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
-    : `<button class="text" data-action="delete-entry">${esc(t.delete)}</button><button class="text" data-action="close">${esc(t.cancel)}</button>
+       ${cancelButtonHTML(t)}<button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
+    : `<button class="text" data-action="delete-entry">${esc(t.delete)}</button>${cancelButtonHTML(t)}
        <button class="fill" data-action="save-edit">${esc(t.save)}</button>`;
   return `<div class="mealhead"><span>${esc(t.edit_entry)}: ${esc(e.name)}</span><span class="sub num">${number(e.kcal, locale)} ${esc(t.kcal)}</span></div>
     <div class="grid">${amount}<label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, e.meal)}</select></label></div>
@@ -605,5 +601,5 @@ function copyPanelHTML(p, today, t) {
       <label>${esc(t.copy_from_day)}<input data-field="from_day" type="date" value="${p.fromDay}" max="${today}"></label>
       <label>${esc(t.copy_from_meal)}<select data-field="from_meal">${optionList(MEALS, t, p.fromMeal)}</select></label>
     </div>
-    <div class="actions"><button class="text" data-action="close">${esc(t.cancel)}</button><button class="fill" data-action="do-copy">${esc(t.copy)}</button></div>`;
+    <div class="actions">${cancelButtonHTML(t)}<button class="fill" data-action="do-copy">${esc(t.copy)}</button></div>`;
 }
