@@ -157,26 +157,7 @@ class FoodDiaryCard extends FoodCard {
   _renderResults() {
     const box = this._card.querySelector(".results");
     const p = this._panel;
-    if (!box || !p) return;
-    const t = this._t;
-    const query = p.query.trim();
-    const foods = p.results ?? [];
-    if (!foods.length) {
-      const empty = p.results === undefined ? t.loading : query ? fill(t.no_results, { query }) : t.no_recent;
-      const lookUp = p.results && BARCODE.test(query)
-        ? `<button class="text" data-action="lookup-query">${esc(fill(t.look_up_barcode, { code: query }))}</button>`
-        : "";
-      box.innerHTML = `<div class="muted">${esc(empty)}</div>${lookUp}`;
-      return;
-    }
-    box.innerHTML =
-      `<div class="sub">${esc(query ? t.results : t.recent)}</div>` +
-      foods
-        .map(
-          (f) => `<button class="row" data-action="choose" data-id="${f.id}" aria-pressed="${p.food?.id === f.id}">
-            <span>${esc(f.name)}</span><small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, this._locale) }))}</small></button>`,
-        )
-        .join("");
+    if (box && p) box.innerHTML = resultsHTML(p, this._locale, this._t);
   }
 
   _renderOff() {
@@ -187,24 +168,8 @@ class FoodDiaryCard extends FoodCard {
 
   _renderPicked() {
     const box = this._card.querySelector(".picked");
-    const p = this._panel;
     if (!box) return;
-    if (!p.food) {
-      box.innerHTML = "";
-      return;
-    }
-    const t = this._t;
-    const portions = (p.food.portions ?? [])
-      .map((q) => `<button data-action="portion" data-grams="${q.grams}">${esc(q.name)} · ${number(q.grams, this._locale, 1)} g</button>`)
-      .join("");
-    box.innerHTML = `<div><b>${esc(p.food.name)}</b></div>
-      <div class="grid">
-        <label>${esc(t.grams)}<input data-action="grams" data-field="grams" type="number" min="0" step="any" inputmode="decimal" value="${p.grams ?? ""}"></label>
-        <label>${esc(t.meal)}<select data-action="meal" data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
-      </div>
-      ${portions ? `<div class="chips">${portions}</div>` : ""}
-      <div class="preview num"></div>
-      <div class="actions"><button class="fill" data-action="add-entry">${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</button></div>`;
+    box.innerHTML = pickedHTML(this._panel, this._locale, this._t);
     this._renderPreview();
   }
 
@@ -527,6 +492,45 @@ function mealHTML(meal, entries, t, locale) {
         <button class="text" data-action="add" data-meal="${meal}">+ ${esc(t.add_food)}</button>
         <button class="text" data-action="copy" data-meal="${meal}">${esc(t.copy)}</button>
       </div></div>`;
+}
+
+// The saved foods found for add panel `p`'s query, or its recent foods.
+function resultsHTML(p, locale, t) {
+  const query = p.query.trim();
+  const foods = p.results ?? [];
+  if (!foods.length) {
+    const empty = p.results === undefined ? t.loading : query ? fill(t.no_results, { query }) : t.no_recent;
+    const lookUp = p.results && BARCODE.test(query)
+      ? `<button class="text" data-action="lookup-query">${esc(fill(t.look_up_barcode, { code: query }))}</button>`
+      : "";
+    return `<div class="muted">${esc(empty)}</div>${lookUp}`;
+  }
+  return (
+    `<div class="sub">${esc(query ? t.results : t.recent)}</div>` +
+    foods
+      .map(
+        (f) => `<button class="row" data-action="choose" data-id="${f.id}" aria-pressed="${p.food?.id === f.id}">
+            <span>${esc(f.name)}</span><small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, locale) }))}</small></button>`,
+      )
+      .join("")
+  );
+}
+
+// How much of add panel `p`'s chosen food to log, and to which meal; empty
+// until it has one.
+function pickedHTML(p, locale, t) {
+  if (!p.food) return "";
+  const portions = (p.food.portions ?? [])
+    .map((q) => `<button data-action="portion" data-grams="${q.grams}">${esc(q.name)} · ${number(q.grams, locale, 1)} g</button>`)
+    .join("");
+  return `<div><b>${esc(p.food.name)}</b></div>
+      <div class="grid">
+        <label>${esc(t.grams)}<input data-action="grams" data-field="grams" type="number" min="0" step="any" inputmode="decimal" value="${p.grams ?? ""}"></label>
+        <label>${esc(t.meal)}<select data-action="meal" data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
+      </div>
+      ${portions ? `<div class="chips">${portions}</div>` : ""}
+      <div class="preview num"></div>
+      <div class="actions"><button class="fill" data-action="add-entry">${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</button></div>`;
 }
 
 function previewHTML(food, grams, locale, t) {

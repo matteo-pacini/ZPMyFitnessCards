@@ -11,7 +11,7 @@ let fn;
 test.before(async () => {
   ctx = await load();
   fn = vm.runInContext(
-    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField, chooseFood, showSavedFood, diarySummaryHTML, mealHTML })",
+    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField, chooseFood, showSavedFood, diarySummaryHTML, mealHTML, resultsHTML, pickedHTML })",
     ctx,
   );
 });
@@ -121,6 +121,30 @@ test("a meal lists its entries, or says nothing is logged", () => {
   assert.equal(dinner, "Dinner 900 kcal Pizza <large> 900 + Add food Copy");
   assert.equal(text(fn.mealHTML("lunch", [], en(), "en-GB")), "Lunch Nothing logged yet + Add food Copy");
   assert.match(fn.mealHTML("lunch", [], en(), "en-GB"), /data-action="copy" data-meal="lunch"/);
+});
+
+test("search results say why they are empty, and offer to look up a barcode", () => {
+  assert.equal(text(fn.resultsHTML({ query: "", results: undefined }, "en-GB", en())), "Loading…");
+  assert.equal(text(fn.resultsHTML({ query: "kiwi", results: [] }, "en-GB", en())), "No saved food matches “kiwi”.");
+  assert.match(fn.resultsHTML({ query: "5000112637922", results: [] }, "en-GB", en()), /data-action="lookup-query"/);
+  assert.doesNotMatch(fn.resultsHTML({ query: "5000112637922", results: undefined }, "en-GB", en()), /lookup-query/);
+});
+
+test("search results list foods by kcal per 100 g, the chosen one pressed", () => {
+  const oats = { id: 1, name: "Oats", kcal: 389 };
+  const html = fn.resultsHTML({ query: "oa", results: [oats, { id: 2, name: "Oat milk", kcal: 46 }], food: oats }, "en-GB", en());
+  assert.match(text(html), /^Saved foods Oats 389 kcal per 100 g Oat milk 46 kcal per 100 g$/);
+  assert.match(html, /data-id="1" aria-pressed="true"/);
+  assert.match(html, /data-id="2" aria-pressed="false"/);
+});
+
+test("a picked food offers its portions and the meal to add it to", () => {
+  assert.equal(fn.pickedHTML({ query: "" }, "en-GB", en()), "");
+  const food = { id: 1, name: "Oats", kcal: 389, portions: [{ name: "Bowl", grams: 40 }] };
+  const html = fn.pickedHTML({ food, grams: 40, meal: "lunch" }, "en-GB", en());
+  assert.match(html, /data-field="grams"[^>]*value="40"/);
+  assert.match(html, /<option value="lunch" selected>/);
+  assert.match(text(html), /Bowl · 40 g Add to Lunch$/);
 });
 
 test("the preview scales the chosen food", () => {
