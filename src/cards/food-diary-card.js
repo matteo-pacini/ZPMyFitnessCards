@@ -522,7 +522,7 @@ function diaryBodyHTML(data, t, locale) {
 
 function previewHTML(food, grams, locale, t) {
   const values = grams > 0 ? scaled(food, grams) : null;
-  return ["kcal", ...MACROS]
+  return REQUIRED_NUTRIENTS
     .map((n) => `<div><b>${values ? number(values[n], locale, n === "kcal" ? 0 : 1) : "–"}</b><small>${esc(n === "kcal" ? t.kcal : `${t[n]} (g)`)}</small></div>`)
     .join("");
 }
