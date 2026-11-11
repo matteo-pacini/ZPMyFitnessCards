@@ -54,7 +54,7 @@ class FoodsCard extends FoodCard {
 
   _renderOff() {
     const box = this._card?.querySelector(".off");
-    if (box) box.innerHTML = offSearchHTML(this._query, this._off, offLanguage(this._locale), this._locale, this._t);
+    if (box) box.innerHTML = offSearchHTML(this._query, this._off, this._locale, this._t);
   }
 
   _renderPanel() {

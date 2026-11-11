@@ -170,7 +170,7 @@ class FoodDiaryCard extends FoodCard {
   _renderOff() {
     const box = this._card?.querySelector(".panel .off");
     const p = this._panel;
-    if (box && p) box.innerHTML = offSearchHTML(p.query, p.off, offLanguage(this._locale), this._locale, this._t);
+    if (box && p) box.innerHTML = offSearchHTML(p.query, p.off, this._locale, this._t);
   }
 
   _renderPicked() {

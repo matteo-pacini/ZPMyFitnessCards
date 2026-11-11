@@ -1693,10 +1693,10 @@ const offName = (product, lang) =>
 // A product a search found, as a food. The search has no serving sizes.
 const searchedFood = (product, lang, serving) => offFood(product.code, { ...product, product_name: offName(product, lang) }, serving);
 
-function offRowHTML(product, lang, locale, t) {
+function offRowHTML(product, locale, t) {
   const details = [firstBrand(product.brands), product.quantity?.trim()].filter(Boolean).join(" · ");
   return `<button class="row" data-action="off-pick" data-code="${esc(product.code)}">
-    <span>${esc(offName(product, lang) || product.code)}${details ? ` <small>${esc(details)}</small>` : ""}</span>
+    <span>${esc(offName(product, offLanguage(locale)) || product.code)}${details ? ` <small>${esc(details)}</small>` : ""}</span>
     <small class="num">${esc(fill(t.per_100g_value, { kcal: number(product.nutriments["energy-kcal_100g"], locale) }))}</small></button>`;
 }
 
@@ -1704,7 +1704,7 @@ function offRowHTML(product, lang, locale, t) {
 // search Open Food Facts for it, then that search, from `off`. A search for
 // other text than the query is out of date, so the button shows instead.
 // A barcode has its own lookup, and an empty query gets a hint.
-function offSearchHTML(query, off, lang, locale, t) {
+function offSearchHTML(query, off, locale, t) {
   const text = query.trim();
   if (!text) return `<div class="muted">${esc(t.off_hint)}</div>`;
   if (BARCODE.test(text)) return "";
@@ -1716,7 +1716,7 @@ function offSearchHTML(query, off, lang, locale, t) {
       <button class="text" data-action="off-next">${esc(t.try_again)}</button>`;
   } else if (!off.products.length) end = `<div class="muted">${esc(fill(t.off_no_results, { query: text }))}</div>`;
   else if (off.more) end = `<button class="text" data-action="off-next">${esc(t.more)}</button>`;
-  return `<div class="sub">${esc(t.off_results)}</div>${off.products.map((p) => offRowHTML(p, lang, locale, t)).join("")}${end}`;
+  return `<div class="sub">${esc(t.off_results)}</div>${off.products.map((p) => offRowHTML(p, locale, t)).join("")}${end}`;
 }
 
 // Scan with the Home Assistant app's own scanner. Resolves to the code, or
@@ -2269,7 +2269,7 @@ class FoodDiaryCard extends FoodCard {
   _renderOff() {
     const box = this._card?.querySelector(".panel .off");
     const p = this._panel;
-    if (box && p) box.innerHTML = offSearchHTML(p.query, p.off, offLanguage(this._locale), this._locale, this._t);
+    if (box && p) box.innerHTML = offSearchHTML(p.query, p.off, this._locale, this._t);
   }
 
   _renderPicked() {
@@ -2705,7 +2705,7 @@ class FoodsCard extends FoodCard {
 
   _renderOff() {
     const box = this._card?.querySelector(".off");
-    if (box) box.innerHTML = offSearchHTML(this._query, this._off, offLanguage(this._locale), this._locale, this._t);
+    if (box) box.innerHTML = offSearchHTML(this._query, this._off, this._locale, this._t);
   }
 
   _renderPanel() {
