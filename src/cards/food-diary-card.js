@@ -221,6 +221,12 @@ class FoodDiaryCard extends FoodCard {
     this._renderPanel();
   }
 
+  // Send a command; close the panel once it succeeds.
+  async _sendAndClose(message) {
+    const sent = await this._send(message);
+    if (sent.ok) this._closePanel();
+  }
+
   async _search() {
     const p = this._panel;
     const query = p.query.trim();
@@ -342,7 +348,7 @@ class FoodDiaryCard extends FoodCard {
     async "click:add-entry"() {
       const p = this._panel;
       if (!(p.grams > 0)) return this._showError(null, "error_amount");
-      const sent = await this._send({
+      await this._sendAndClose({
         type: "fork_and_scale/entry/add",
         person: this._person.id,
         day: this._day,
@@ -350,14 +356,13 @@ class FoodDiaryCard extends FoodCard {
         food_id: p.food.id,
         grams: p.grams,
       });
-      if (sent.ok) this._closePanel();
     },
     async "click:quick-add"() {
       const name = this._field("name").value.trim();
       const kcal = numberValue(this._field("kcal"));
       if (!name || kcal == null || kcal < 0) return this._showError(null, "error_quick");
       const macros = Object.fromEntries(MACROS.map((m) => [m, numberValue(this._field(m))]));
-      const sent = await this._send({
+      await this._sendAndClose({
         type: "fork_and_scale/entry/add",
         person: this._person.id,
         day: this._day,
@@ -366,7 +371,6 @@ class FoodDiaryCard extends FoodCard {
         kcal,
         ...macros,
       });
-      if (sent.ok) this._closePanel();
     },
     "click:add-portion"() {
       const p = this._panel;
@@ -429,16 +433,14 @@ class FoodDiaryCard extends FoodCard {
       const field = amountField(p.entry);
       const amount = numberValue(this._field(field));
       if (amount == null || amount <= 0) return this._showError(null, "error_amount");
-      const sent = await this._send({ type: "fork_and_scale/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
-      if (sent.ok) this._closePanel();
+      await this._sendAndClose({ type: "fork_and_scale/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
     },
     "click:delete-entry"() {
       this._panel.confirming = true;
       this._renderPanel();
     },
     async "click:really-delete"() {
-      const sent = await this._send({ type: "fork_and_scale/entry/delete", entry_id: this._panel.entry.id });
-      if (sent.ok) this._closePanel();
+      await this._sendAndClose({ type: "fork_and_scale/entry/delete", entry_id: this._panel.entry.id });
     },
     async "click:do-copy"() {
       const sent = await this._send({
