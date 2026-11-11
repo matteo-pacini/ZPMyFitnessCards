@@ -32,7 +32,11 @@ function sparklineSVG(weights, start, today) {
 
 // Today's summary from fork_and_scale/day, and the last 30 days of weights,
 // shown in `unit`.
-function summaryHTML(day, weights, person, start, today, locale, t, unit) {
+const summaryHTML = (day, weights, person, start, today, locale, t, unit) =>
+  summaryFoodHTML(day, locale, t) + summaryWeightHTML(weights, person, start, today, locale, t, unit);
+
+// Today's calories and macros against the goals, and the calories by meal.
+function summaryFoodHTML(day, locale, t) {
   const sums = totals(day.entries);
   const goals = day.goals;
   const left = goals ? goals.kcal - sums.kcal : null;
@@ -47,13 +51,6 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
   const scale = Math.max(goals?.kcal ?? 0, sums.kcal) || 1;
   const stack = byMeal.map((kcal, i) => (kcal > 0 ? `<i class="meal${i}" style="width:${((kcal / scale) * 100).toFixed(2)}%"></i>` : "")).join("");
   const legend = MEALS.map((meal, i) => `<span><i class="meal${i}"></i>${esc(t[meal])} <span class="num">${number(byMeal[i], locale)}</span></span>`).join("");
-
-  const latest = latestKg(weights, person);
-  const band = bandOf(latest, person);
-  let change = "";
-  if (weights.length >= 2) {
-    change = `<small>${esc(fill(t.change_30d, { change: changeText(latest - weights[0].kg, unit, locale, t) }))}</small>`;
-  }
   return `
     <div class="rings">
       <div class="big">${ringSVG(132, 12, goals ? sums.kcal / goals.kcal : 0, "kcal")}<div class="centre">${centre}</div></div>
@@ -61,7 +58,18 @@ function summaryHTML(day, weights, person, start, today, locale, t, unit) {
     </div>
     ${goals ? `<div class="sub num">${esc(fill(t.of_goal, { food: number(sums.kcal, locale), goal: number(goals.kcal, locale) }))}</div>` : ""}
     <div class="stack" role="img" aria-label="${esc(t.kcal)}">${stack}</div>
-    <div class="legend">${legend}</div>
+    <div class="legend">${legend}</div>`;
+}
+
+// The weight now, its BMI band, its change over `weights`, and their sparkline.
+function summaryWeightHTML(weights, person, start, today, locale, t, unit) {
+  const latest = latestKg(weights, person);
+  const band = bandOf(latest, person);
+  let change = "";
+  if (weights.length >= 2) {
+    change = `<small>${esc(fill(t.change_30d, { change: changeText(latest - weights[0].kg, unit, locale, t) }))}</small>`;
+  }
+  return `
     <div class="weight">
       <div><b class="num">${esc(weightText(latest, unit, locale, t))}</b> <span class="chip ${band}">${esc(t[band])}</span>${change}</div>
       ${sparklineSVG(weights, start, today)}

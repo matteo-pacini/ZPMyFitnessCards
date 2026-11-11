@@ -9,7 +9,7 @@ let fn;
 test.before(async () => {
   const ctx = await load();
   fn = vm.runInContext(
-    "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, latestKg, niceStep, ticks, dayScale, linePath, gridHTML, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
+    "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, latestKg, niceStep, ticks, dayScale, linePath, gridHTML, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML, summaryFoodHTML, summaryWeightHTML })",
     ctx,
   );
 });
@@ -235,4 +235,13 @@ test("with no goal yet, the summary shows the calories eaten", () => {
   const shown = text(fn.summaryHTML(day, [], MATTEO, "2026-10-11", "2026-11-09", "en-GB", en(), "kg"));
   assert.match(shown, /^640 kcal Protein 0 g/);
   assert.match(shown, /89 kg Overweight$/);
+});
+
+test("the summary's food and weight are drawn apart", () => {
+  const day = { day: "2026-11-09", goals: null, entries: [{ meal: "lunch", kcal: 700 }] };
+  assert.match(text(fn.summaryFoodHTML(day, "en-GB", en())), /^700 kcal .* Lunch 700 Dinner 0 Snacks 0$/);
+  const one = fn.summaryWeightHTML([{ day: "2026-11-09", kg: 88.6 }], MATTEO, "2026-10-11", "2026-11-09", "en-GB", en(), "kg");
+  // One weigh-in has no change to show, and no line to draw.
+  assert.equal(text(one), "88.6 kg Overweight");
+  assert.doesNotMatch(one, /class="spark"/);
 });
