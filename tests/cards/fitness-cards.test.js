@@ -11,7 +11,7 @@ let fn;
 test.before(async () => {
   ctx = await load();
   fn = vm.runInContext(
-    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField, chooseFood, showSavedFood })",
+    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField, chooseFood, showSavedFood, diarySummaryHTML, mealHTML })",
     ctx,
   );
 });
@@ -104,6 +104,23 @@ test("the diary follows the language for words and numbers", () => {
   const shown = text(fn.diaryBodyHTML(DAY, fn.translate("de"), "de"));
   assert.match(shown, /^2\.000 Ziel − 1\.133 Essen = 867 Übrig/);
   assert.match(shown, /Frühstück 233 kcal/);
+});
+
+test("the diary's summary takes the day's totals from its goal", () => {
+  const sums = { kcal: 1500, protein: 50, carbs: 300, fat: 40 };
+  const goals = { kcal: 2000, protein: 100, carbs: 250, fat: 0 };
+  const shown = text(fn.diarySummaryHTML(sums, goals, en(), "en-GB"));
+  assert.equal(shown, "2,000 Goal − 1,500 Food = 500 Remaining Protein 50 / 100 g Carbs 300 / 250 g Fat 40 / 0 g");
+  // A goal of 0 g fills no bar and is never over.
+  assert.match(fn.diarySummaryHTML(sums, goals, en(), "en-GB"), /class="macro fat"><small>Fat<\/small>\s*<div class="bar"><i style="width:0%">/);
+  assert.equal(text(fn.diarySummaryHTML(sums, null, en(), "en-GB")), "1,500 Food");
+});
+
+test("a meal lists its entries, or says nothing is logged", () => {
+  const dinner = text(fn.mealHTML("dinner", [DAY.entries[1]], en(), "en-GB"));
+  assert.equal(dinner, "Dinner 900 kcal Pizza <large> 900 + Add food Copy");
+  assert.equal(text(fn.mealHTML("lunch", [], en(), "en-GB")), "Lunch Nothing logged yet + Add food Copy");
+  assert.match(fn.mealHTML("lunch", [], en(), "en-GB"), /data-action="copy" data-meal="lunch"/);
 });
 
 test("the preview scales the chosen food", () => {

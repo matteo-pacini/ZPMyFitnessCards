@@ -2561,12 +2561,17 @@ const optionList = (values, labels, selected) =>
 
 // The summary and meals of one day, from fork_and_scale/day.
 function diaryBodyHTML(data, t, locale) {
-  const sums = totals(data.entries);
-  const goals = data.goals;
-  let summary;
-  if (goals) {
-    const left = goals.kcal - sums.kcal;
-    summary = `<div class="summary num">
+  const meals = MEALS.map((meal) => mealHTML(meal, data.entries.filter((e) => e.meal === meal), t, locale));
+  return diarySummaryHTML(totals(data.entries), data.goals, t, locale) + meals.join("");
+}
+
+// The day's totals `sums`, against its `goals` if it has any.
+function diarySummaryHTML(sums, goals, t, locale) {
+  if (!goals) {
+    return `<div class="summary num"><div></div><span></span><div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div></div>`;
+  }
+  const left = goals.kcal - sums.kcal;
+  return `<div class="summary num">
         <div><b>${number(goals.kcal, locale)}</b><small>${esc(t.goal)}</small></div><span class="op">−</span>
         <div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div><span class="op">=</span>
         <div class="${left < 0 ? "over" : "left"}"><b>${number(Math.abs(left), locale)}</b><small>${esc(left < 0 ? t.over : t.remaining)}</small></div>
@@ -2577,27 +2582,24 @@ function diaryBodyHTML(data, t, locale) {
           <div class="bar"><i style="width:${Math.min(share, 1) * 100}%"></i></div>
           <span>${number(sums[m], locale)} / ${number(goals[m], locale)} g</span></div>`;
       }).join("")}</div>`;
-  } else {
-    summary = `<div class="summary num"><div></div><span></span><div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div></div>`;
-  }
-  const meals = MEALS.map((meal) => {
-    const entries = data.entries.filter((e) => e.meal === meal);
-    const rows = entries
-      .map(
-        (e) => `<button class="row" data-action="entry" data-id="${e.id}">
+}
+
+// One meal's `entries`, with buttons to add to it and copy into it.
+function mealHTML(meal, entries, t, locale) {
+  const rows = entries
+    .map(
+      (e) => `<button class="row" data-action="entry" data-id="${e.id}">
           <span>${esc(e.name)}${e.grams != null ? `<span class="amount num">${number(e.grams, locale, 1)} g</span>` : ""}</span>
           <span class="num">${number(e.kcal, locale)}</span></button>`,
-      )
-      .join("");
-    return `<div class="meal" data-meal="${meal}">
+    )
+    .join("");
+  return `<div class="meal" data-meal="${meal}">
       <div class="mealhead"><span>${esc(t[meal])}</span><span class="sub num">${entries.length ? `${number(totals(entries).kcal, locale)} ${esc(t.kcal)}` : ""}</span></div>
       ${rows || `<div class="muted">${esc(t.nothing_logged)}</div>`}
       <div class="mealactions">
         <button class="text" data-action="add" data-meal="${meal}">+ ${esc(t.add_food)}</button>
         <button class="text" data-action="copy" data-meal="${meal}">${esc(t.copy)}</button>
       </div></div>`;
-  }).join("");
-  return summary + meals;
 }
 
 function previewHTML(food, grams, locale, t) {
