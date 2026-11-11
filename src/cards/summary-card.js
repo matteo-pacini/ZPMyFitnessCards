@@ -19,10 +19,9 @@ function sparklineSVG(weights, start, today) {
   const values = weights.map((w) => w.kg);
   const low = Math.min(...values) - 0.2;
   const high = Math.max(...values) + 0.2;
-  const span = Math.max(daysBetween(start, today), 1);
-  const x = (day) => 3 + (daysBetween(start, day) / span) * (width - 6);
+  const x = dayScale(start, today, 3, width - 3);
   const y = (kg) => 3 + ((high - kg) / (high - low)) * (height - 6);
-  const line = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(w.kg).toFixed(1)}`).join("");
+  const line = linePath(weights.map((w) => [x(w.day), y(w.kg)]));
   const last = weights[weights.length - 1];
   return `<svg class="spark" viewBox="0 0 ${width} ${height}" aria-hidden="true">
     <path class="area" d="${line}L${x(last.day).toFixed(1)},${height}L${x(weights[0].day).toFixed(1)},${height}Z"/>

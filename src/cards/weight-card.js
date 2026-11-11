@@ -31,7 +31,7 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
   low = Math.floor(low);
   high = Math.ceil(high);
   const span = Math.max(daysBetween(start, today), 1);
-  const x = (day) => left + (daysBetween(start, day) / span) * (width - left - right);
+  const x = dayScale(start, today, left, width - right);
   const y = (v) => top + ((high - v) / (high - low)) * (height - top - bottom);
   const clampY = (v) => y(Math.min(Math.max(v, low), high));
 
@@ -47,16 +47,14 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
       return `<rect class="band ${band}" x="${left}" y="${clampY(to)}" width="${width - left - right}" height="${tall}"><title>${esc(t[band])}</title></rect>${label}`;
     })
     .join("");
-  const yTicks = ticks(low, high, 4)
-    .map((v) => `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale, 1)}</text>`)
-    .join("");
+  const yTicks = gridHTML(ticks(low, high, 4), y, locale, 1);
   const xCount = Math.min(4, span);
   const xTicks = Array.from({ length: xCount + 1 }, (_, i) => shiftDay(start, Math.round((span * i) / xCount)))
     .map((day, i) => `<text class="axis" x="${x(day)}" y="${height - 8}" text-anchor="${i === 0 ? "start" : i === xCount ? "end" : "middle"}">${esc(shortDate(day, locale, span > 400))}</text>`)
     .join("");
   const goal = `<line class="goal" x1="${left}" x2="${width - right}" y1="${y(goalWeight)}" y2="${y(goalWeight)}"/>
     <text class="goallabel" x="${left + 4}" y="${y(goalWeight) - 4}">${esc(fill(t.goal_weight, { weight: weightText(person.goal_weight_kg, unit, locale, t) }))}</text>`;
-  const path = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(values[i]).toFixed(1)}`).join("");
+  const path = linePath(weights.map((w, i) => [x(w.day), y(values[i])]));
   const points =
     weights.length <= 120
       ? weights.map((w, i) => `<circle class="point" cx="${x(w.day)}" cy="${y(values[i])}" r="3"><title>${esc(shortDate(w.day, locale, true))}: ${esc(weightText(w.kg, unit, locale, t))}</title></circle>`).join("")

@@ -2894,6 +2894,22 @@ function ticks(low, high, count) {
 
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
+// Places a day from `start`, at `from`, to `end`, at `to`.
+function dayScale(start, end, from, to) {
+  const span = Math.max(daysBetween(start, end), 1);
+  return (day) => from + (daysBetween(start, day) / span) * (to - from);
+}
+
+// A line through `points`, [x, y] pairs, as an SVG path's data.
+const linePath = (points) => points.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+
+// A chart's grid line at each of `values`, placed by `y`, with its label on
+// the axis to `digits` decimals.
+const gridHTML = (values, y, locale, digits = 0) =>
+  values
+    .map((v) => `<line class="grid" x1="${CHART.left}" x2="${CHART.width - CHART.right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${CHART.left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale, digits)}</text>`)
+    .join("");
+
 const shortDate = (day, locale, withYear = false) =>
   new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(new Date(day));
 
@@ -3039,7 +3055,7 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
   low = Math.floor(low);
   high = Math.ceil(high);
   const span = Math.max(daysBetween(start, today), 1);
-  const x = (day) => left + (daysBetween(start, day) / span) * (width - left - right);
+  const x = dayScale(start, today, left, width - right);
   const y = (v) => top + ((high - v) / (high - low)) * (height - top - bottom);
   const clampY = (v) => y(Math.min(Math.max(v, low), high));
 
@@ -3055,16 +3071,14 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
       return `<rect class="band ${band}" x="${left}" y="${clampY(to)}" width="${width - left - right}" height="${tall}"><title>${esc(t[band])}</title></rect>${label}`;
     })
     .join("");
-  const yTicks = ticks(low, high, 4)
-    .map((v) => `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale, 1)}</text>`)
-    .join("");
+  const yTicks = gridHTML(ticks(low, high, 4), y, locale, 1);
   const xCount = Math.min(4, span);
   const xTicks = Array.from({ length: xCount + 1 }, (_, i) => shiftDay(start, Math.round((span * i) / xCount)))
     .map((day, i) => `<text class="axis" x="${x(day)}" y="${height - 8}" text-anchor="${i === 0 ? "start" : i === xCount ? "end" : "middle"}">${esc(shortDate(day, locale, span > 400))}</text>`)
     .join("");
   const goal = `<line class="goal" x1="${left}" x2="${width - right}" y1="${y(goalWeight)}" y2="${y(goalWeight)}"/>
     <text class="goallabel" x="${left + 4}" y="${y(goalWeight) - 4}">${esc(fill(t.goal_weight, { weight: weightText(person.goal_weight_kg, unit, locale, t) }))}</text>`;
-  const path = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(values[i]).toFixed(1)}`).join("");
+  const path = linePath(weights.map((w, i) => [x(w.day), y(values[i])]));
   const points =
     weights.length <= 120
       ? weights.map((w, i) => `<circle class="point" cx="${x(w.day)}" cy="${y(values[i])}" r="3"><title>${esc(shortDate(w.day, locale, true))}: ${esc(weightText(w.kg, unit, locale, t))}</title></circle>`).join("")
@@ -3228,9 +3242,7 @@ function trendChartHTML(bars, weekly, locale, t) {
   const slot = (width - left - right) / bars.length;
   const barWidth = Math.max(2, slot * 0.64);
   const labelEvery = Math.ceil(bars.length / 7);
-  const grid = ticks(0, max, 4)
-    .map((v) => `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale)}</text>`)
-    .join("");
+  const grid = gridHTML(ticks(0, max, 4), y, locale);
   const drawn = bars
     .map((bar, i) => {
       const x = left + i * slot + (slot - barWidth) / 2;
@@ -3339,10 +3351,9 @@ function sparklineSVG(weights, start, today) {
   const values = weights.map((w) => w.kg);
   const low = Math.min(...values) - 0.2;
   const high = Math.max(...values) + 0.2;
-  const span = Math.max(daysBetween(start, today), 1);
-  const x = (day) => 3 + (daysBetween(start, day) / span) * (width - 6);
+  const x = dayScale(start, today, 3, width - 3);
   const y = (kg) => 3 + ((high - kg) / (high - low)) * (height - 6);
-  const line = weights.map((w, i) => `${i ? "L" : "M"}${x(w.day).toFixed(1)},${y(w.kg).toFixed(1)}`).join("");
+  const line = linePath(weights.map((w) => [x(w.day), y(w.kg)]));
   const last = weights[weights.length - 1];
   return `<svg class="spark" viewBox="0 0 ${width} ${height}" aria-hidden="true">
     <path class="area" d="${line}L${x(last.day).toFixed(1)},${height}L${x(weights[0].day).toFixed(1)},${height}Z"/>

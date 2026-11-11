@@ -17,6 +17,22 @@ function ticks(low, high, count) {
 
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
+// Places a day from `start`, at `from`, to `end`, at `to`.
+function dayScale(start, end, from, to) {
+  const span = Math.max(daysBetween(start, end), 1);
+  return (day) => from + (daysBetween(start, day) / span) * (to - from);
+}
+
+// A line through `points`, [x, y] pairs, as an SVG path's data.
+const linePath = (points) => points.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+
+// A chart's grid line at each of `values`, placed by `y`, with its label on
+// the axis to `digits` decimals.
+const gridHTML = (values, y, locale, digits = 0) =>
+  values
+    .map((v) => `<line class="grid" x1="${CHART.left}" x2="${CHART.width - CHART.right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${CHART.left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale, digits)}</text>`)
+    .join("");
+
 const shortDate = (day, locale, withYear = false) =>
   new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", ...(withYear ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(new Date(day));
 

@@ -51,9 +51,7 @@ function trendChartHTML(bars, weekly, locale, t) {
   const slot = (width - left - right) / bars.length;
   const barWidth = Math.max(2, slot * 0.64);
   const labelEvery = Math.ceil(bars.length / 7);
-  const grid = ticks(0, max, 4)
-    .map((v) => `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${left - 6}" y="${y(v) + 4}" text-anchor="end">${number(v, locale)}</text>`)
-    .join("");
+  const grid = gridHTML(ticks(0, max, 4), y, locale);
   const drawn = bars
     .map((bar, i) => {
       const x = left + i * slot + (slot - barWidth) / 2;

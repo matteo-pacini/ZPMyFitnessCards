@@ -9,7 +9,7 @@ let fn;
 test.before(async () => {
   const ctx = await load();
   fn = vm.runInContext(
-    "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, niceStep, ticks, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
+    "({ translate, weightUnit, fromKg, toKg, weightText, changeText, weightRange, bandLimits, niceStep, ticks, dayScale, linePath, gridHTML, bandOf, rangeStart, weightChartHTML, trendBars, trendStats, trendChartHTML, ringSVG, summaryHTML })",
     ctx,
   );
 });
@@ -70,6 +70,27 @@ test("axis steps are round numbers", () => {
   assert.equal(fn.niceStep(0, 2400, 4), 1000);
   assert.equal(fn.niceStep(78, 92, 4), 5);
   assert.deepEqual(plain(fn.ticks(78, 92, 4)), [80, 85, 90]);
+});
+
+test("days are placed in proportion between the first and the last", () => {
+  const x = fn.dayScale("2026-11-01", "2026-11-11", 40, 140);
+  assert.equal(x("2026-11-01"), 40);
+  assert.equal(x("2026-11-06"), 90);
+  assert.equal(x("2026-11-11"), 140);
+  // A range that starts and ends on the same day does not divide by 0.
+  assert.equal(fn.dayScale("2026-11-09", "2026-11-09", 0, 10)("2026-11-09"), 0);
+});
+
+test("a line path moves to its first point and draws to the rest, to 0.1", () => {
+  assert.equal(fn.linePath([[1, 2.04], [3.25, 4], [5, 6]]), "M1.0,2.0L3.3,4.0L5.0,6.0");
+  assert.equal(fn.linePath([]), "");
+});
+
+test("grid lines are labelled on the axis", () => {
+  const grid = fn.gridHTML([80, 85.5], (v) => 100 - v, "en-GB", 1);
+  assert.equal((grid.match(/class="grid"/g) ?? []).length, 2);
+  assert.match(grid, /y1="14.5" y2="14.5"\/><text class="axis" x="38" y="18.5" text-anchor="end">85.5</);
+  assert.equal(text(fn.gridHTML([1234.5], (v) => v, "en-GB")), "1,235");
 });
 
 test("a weight's BMI band comes from the person's limits", () => {
