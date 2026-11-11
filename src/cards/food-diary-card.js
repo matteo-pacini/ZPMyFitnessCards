@@ -83,7 +83,7 @@ class FoodDiaryCard extends FoodCard {
 
   _changed(event) {
     if (event.person === null) {
-      if (this._panel?.kind === "add" && this._panel.tab === "search") this._search();
+      if (this._onSearchTab) this._search();
     } else if (this._person && event.person === this._person.id) {
       this._reloadDay();
     }
@@ -139,11 +139,16 @@ class FoodDiaryCard extends FoodCard {
     else if (p.kind === "copy") html = copyPanelHTML(p, this._today, t);
     else html = addPanelHTML(p, t, Boolean(this._scanner));
     panel.innerHTML = html + panelMessagesHTML(p);
-    if (p.kind === "add" && p.tab === "search") {
+    if (this._onSearchTab) {
       this._renderResults();
       this._renderOff();
       this._renderPicked();
     }
+  }
+
+  // Whether the open panel shows the add panel's search tab.
+  get _onSearchTab() {
+    return this._panel?.kind === "add" && this._panel.tab === "search";
   }
 
   _renderResults() {
@@ -211,7 +216,7 @@ class FoodDiaryCard extends FoodCard {
   _openPanel(panel) {
     this._panel = panel;
     this._renderPanel();
-    if (panel.kind === "add" && panel.tab === "search") this._search();
+    if (this._onSearchTab) this._search();
     const first = this._card.querySelector(".panel input:not([type=date]), .panel select");
     first?.focus?.();
   }
