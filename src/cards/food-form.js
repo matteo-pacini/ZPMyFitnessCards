@@ -19,9 +19,9 @@ function foodFormHTML(food, t, scan = false) {
     <div class="barcodes"><button type="button" class="text" data-action="lookup">${esc(t.look_up)}</button>${scan ? `<button type="button" class="text" data-action="scan">${esc(t.scan)}</button>` : ""}</div>
     <div class="scanner" hidden></div>
     <div class="sub">${esc(t.per_100g)}</div>
-    <div class="grid">${["kcal", ...MACROS].map(nutrient).join("")}</div>
+    <div class="grid">${REQUIRED_NUTRIENTS.map(nutrient).join("")}</div>
     <div class="sub">${esc(t.optional)}</div>
-    <div class="grid">${OPTIONAL.map(nutrient).join("")}</div>
+    <div class="grid">${OPTIONAL_NUTRIENTS.map(nutrient).join("")}</div>
     <div class="sub">${esc(t.portions)}</div>
     <div class="portions">${portions.join("")}</div>
     <div><button type="button" class="text" data-action="add-portion">+ ${esc(t.add_portion)}</button></div>
@@ -37,8 +37,8 @@ function readFoodForm(root) {
     name: row.querySelector('[data-portion="name"]').value.trim(),
     grams: numberValue(row.querySelector('[data-portion="grams"]')),
   }));
-  if (!food.name || ["kcal", ...MACROS].some((n) => food[n] == null || food[n] < 0)) return { food, error: "error_required" };
-  if (OPTIONAL.some((n) => food[n] != null && food[n] < 0)) return { food, error: "error_required" };
+  if (!food.name || REQUIRED_NUTRIENTS.some((n) => food[n] == null || food[n] < 0)) return { food, error: "error_required" };
+  if (OPTIONAL_NUTRIENTS.some((n) => food[n] != null && food[n] < 0)) return { food, error: "error_required" };
   const filled = food.portions.filter((p) => p.name || p.grams != null);
   if (filled.some((p) => !p.name || !(p.grams > 0))) return { food, error: "error_portion" };
   return { food: { ...food, portions: filled }, error: null };

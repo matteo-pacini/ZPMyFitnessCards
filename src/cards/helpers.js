@@ -5,8 +5,9 @@ const esc = (s) =>
 
 const MEALS = ["breakfast", "lunch", "dinner", "snacks"];
 const MACROS = ["protein", "carbs", "fat"];
-const OPTIONAL = ["fibre", "sugar", "saturated_fat", "salt"];
-const NUTRIENTS = ["kcal", ...MACROS, ...OPTIONAL];
+const REQUIRED_NUTRIENTS = ["kcal", ...MACROS];
+const OPTIONAL_NUTRIENTS = ["fibre", "sugar", "saturated_fat", "salt"];
+const NUTRIENTS = [...REQUIRED_NUTRIENTS, ...OPTIONAL_NUTRIENTS];
 
 // How long to wait before asking a reloading integration again, in ms.
 const RETRY_MS = 2000;
