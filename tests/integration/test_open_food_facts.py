@@ -41,7 +41,7 @@ def answer(hits: list[dict], page: int = 1, page_count: int = 1) -> dict[str, An
 
 
 async def search(ws, **fields: Any) -> dict[str, Any]:
-    return await ws("foods/search", **{"query": "yogurt greco", "language": "it", **fields})
+    return await ws("openfoodfacts/search", **{"query": "yogurt greco", "language": "it", **fields})
 
 
 async def test_finds_a_page_of_complete_products_in_the_language_and_english(
@@ -74,6 +74,29 @@ async def test_the_last_page_has_no_more_and_english_is_asked_once(
     assert url.query["page"] == "1"
     assert url.query["langs"] == "en"
     assert url.query["fields"] == "code,product_name,product_name_en,brands,quantity,nutriments"
+
+
+async def test_leaves_out_products_without_a_number_for_each_main_value(
+    aioclient_mock: AiohttpClientMocker, ws
+) -> None:
+    def without(key: str, value: Any = None) -> dict[str, Any]:
+        nutriments = {k: v for k, v in YOGURT["nutriments"].items() if k != key}
+        if value is not None:
+            nutriments[key] = value
+        return {**YOGURT, "code": f"odd-{key}-{value}", "nutriments": nutriments}
+
+    odd = [
+        without("energy-kcal_100g"),
+        without("proteins_100g", "9"),
+        without("carbohydrates_100g", True),
+        without("fat_100g", {}),
+        {**YOGURT, "code": "no-nutriments", "nutriments": None},
+        {key: value for key, value in YOGURT.items() if key != "nutriments"},
+    ]
+    whole = {**YOGURT, "nutriments": {**YOGURT["nutriments"], "fat_100g": 0.5}}
+    aioclient_mock.get(SEARCH_URL, json=answer([*odd, YOGURT, whole], page_count=2))
+    reply = await search(ws)
+    assert reply["result"] == {"products": [YOGURT, whole], "more": True}
 
 
 @pytest.mark.parametrize(

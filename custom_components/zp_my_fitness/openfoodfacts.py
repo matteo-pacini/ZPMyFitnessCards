@@ -24,10 +24,10 @@ SEARCH_URL = os.environ.get("ZP_MY_FITNESS_SEARCH_URL", "https://search.openfood
 PAGE_SIZE = 10
 TIMEOUT = aiohttp.ClientTimeout(total=15)
 
-# Only products with all four values a saved food needs, per 100 g.
-COMPLETE = " ".join(
-    f"nutriments.{n}_100g:[0 TO *]" for n in ("energy-kcal", "proteins", "carbohydrates", "fat")
-)
+# The four values a saved food needs, per 100 g, as Open Food Facts names them.
+REQUIRED = ("energy-kcal", "proteins", "carbohydrates", "fat")
+# Only products with all four.
+COMPLETE = " ".join(f"nutriments.{n}_100g:[0 TO *]" for n in REQUIRED)
 
 # Search-a-licious reads q as Lucene syntax. Text it cannot parse, such as an
 # unbalanced "(", makes it search the whole of q as words, COMPLETE included,
@@ -38,6 +38,17 @@ _OPERATORS = re.compile(r"\b(AND|OR|NOT)\b")
 
 class SearchError(Exception):
     """Search-a-licious could not be reached, or answered with an error."""
+
+
+def _complete(hit: dict[str, Any]) -> bool:
+    """Whether `hit` has a number for each of REQUIRED.
+
+    COMPLETE asks for that already, but the index is old and the cards' rows
+    rely on it, so hits are checked again.
+    """
+    nutriments = hit.get("nutriments") or {}
+    values = [nutriments.get(f"{n}_100g") for n in REQUIRED]
+    return all(isinstance(v, int | float) and not isinstance(v, bool) for v in values)
 
 
 def search_query(text: str) -> str:
@@ -53,9 +64,11 @@ async def async_search(hass: HomeAssistant, text: str, language: str, page: int)
     `language` is a two- or three-letter code. Each product has its barcode
     (`code`), `brands`, `quantity` and `nutriments` as Open Food Facts gives
     them, and `product_name` in its main language, `product_name_<language>`
-    and `product_name_en` where it has them. `more` says whether there is a
-    next page. Raises SearchError when Search-a-licious cannot be reached or
-    answers with an error.
+    and `product_name_en` where it has them. Every product has a number for
+    each of REQUIRED; hits without one are left out, so a page can hold fewer
+    than PAGE_SIZE. `more` says whether there is a next page. Raises
+    SearchError when Search-a-licious cannot be reached or answers with an
+    error.
     """
     integration = await async_get_integration(hass, DOMAIN)
     langs = list(dict.fromkeys([language, "en"]))
@@ -83,4 +96,5 @@ async def async_search(hass: HomeAssistant, text: str, language: str, page: int)
         raise SearchError(str(err) or type(err).__name__) from err
     if body.get("errors"):
         raise SearchError(body["errors"][0]["title"])
-    return {"products": body["hits"], "more": page < body["page_count"]}
+    products = [hit for hit in body["hits"] if _complete(hit)]
+    return {"products": products, "more": page < body["page_count"]}

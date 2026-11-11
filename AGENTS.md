@@ -13,7 +13,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `config_flow.py`: the integration and its people, one config sub-entry each.
   - `backup.py`: pauses writes while Home Assistant backs up.
   - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.
-  - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `zp_my_fitness/foods/search`, through its Search-a-licious service.
+  - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `zp_my_fitness/openfoodfacts/search`, through its Search-a-licious service.
 - `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
 - `src/`: plain browser scripts, one per card or family of cards. `fitness-cards.js` holds every card: they share loading, live updates, the food form and the strings. There are no imports and no npm dependencies.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.

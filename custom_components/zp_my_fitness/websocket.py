@@ -420,7 +420,7 @@ async def ws_delete_food(data: FitnessData, _person: None, msg: dict) -> _Error 
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): f"{DOMAIN}/foods/search",
+        vol.Required("type"): f"{DOMAIN}/openfoodfacts/search",
         vol.Required("query"): _name,
         vol.Required("language"): _language,
         vol.Optional("page", default=1): vol.All(int, vol.Range(min=1)),

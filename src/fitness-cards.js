@@ -1770,7 +1770,7 @@ class FitnessCard extends HTMLElement {
     this._renderOff();
     try {
       const found = await this._call({
-        type: "zp_my_fitness/foods/search",
+        type: "zp_my_fitness/openfoodfacts/search",
         query: off.query,
         language: offLanguage(this._locale),
         page: off.page + 1,
