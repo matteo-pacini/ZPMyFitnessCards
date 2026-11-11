@@ -1,5 +1,11 @@
 class FoodDiaryCard extends FoodCard {
   static style = `${super.style}
+    .nav { display: flex; align-items: center; gap: 4px; }
+    .nav .label { min-width: 6.5em; text-align: center; font-weight: var(--ha-font-weight-medium, 500); }
+    .icon { width: 32px; height: 32px; font-size: 1.1rem; line-height: 1; }
+    .icon:hover:not(:disabled) { background: var(--secondary-background-color); }
+    /* Just the calendar button: the label beside it already shows the day. */
+    .nav input[type=date] { width: 34px; padding: 4px; color: transparent; background: none; border: 0; cursor: pointer; }
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
     .summary small, .macro small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
@@ -451,6 +457,27 @@ class FoodDiaryCard extends FoodCard {
     },
   };
 }
+
+function dayLabel(day, today, locale, t) {
+  if (day === today) return t.today;
+  if (day === shiftDay(today, -1)) return t.yesterday;
+  const sameYear = day.slice(0, 4) === today.slice(0, 4);
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+    timeZone: "UTC",
+  }).format(new Date(day));
+}
+
+// A food's nutrients for `grams`; missing optional values stay null.
+function scaled(food, grams) {
+  return Object.fromEntries(NUTRIENTS.map((n) => [n, food[n] == null ? null : (food[n] * grams) / 100]));
+}
+
+const optionList = (values, labels, selected) =>
+  values.map((v) => `<option value="${esc(v)}"${v === selected ? " selected" : ""}>${esc(labels[v] ?? v)}</option>`).join("");
 
 // The summary and meals of one day, from fork_and_scale/day.
 function diaryBodyHTML(data, t, locale) {
