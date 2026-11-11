@@ -70,8 +70,8 @@ from .const import (
     SOURCE_MYFITNESSPAL,
     SUBENTRY_PERSON,
 )
-from .data import today, uses_pounds
-from .db import make_engine
+from .data import database_url, today, uses_pounds
+from .db import key_for_name, make_engine
 from .export import PATH as EXPORT_PATH
 from .goals import ACTIVITY, PACES
 from .history import async_import_calories, async_import_weights, has_statistics
@@ -344,19 +344,21 @@ class PersonSubentryFlow(ConfigSubentryFlow):
     async def _key_for(self, name: str) -> str:
         """The key of someone removed earlier under this name, or a new one.
 
-        Re-adding a person by their old name brings their data back.
+        Re-adding a person by their old name brings their data back. The
+        database is read directly, not through the loaded entry: adding a
+        person reloads the entry, so the next person added may find it
+        reloading, and it may have failed to set up. Raises SQLAlchemyError
+        if the database cannot be read.
         """
         entry = self._get_entry()
-        if entry.state is ConfigEntryState.LOADED:
-            active = {
-                s.data[CONF_KEY]
-                for s in entry.subentries.values()
-                if s.subentry_type == SUBENTRY_PERSON
-            }
-            db = entry.runtime_data.data.db
-            if key := await self.hass.async_add_executor_job(db.key_for_name, name, active):
-                return key
-        return uuid.uuid4().hex
+        active = {
+            s.data[CONF_KEY]
+            for s in entry.subentries.values()
+            if s.subentry_type == SUBENTRY_PERSON
+        }
+        url = database_url(self.hass, entry.data)
+        key = await self.hass.async_add_executor_job(key_for_name, url, name, active)
+        return key or uuid.uuid4().hex
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         """Ask for the person's details."""
@@ -367,8 +369,11 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         if errors:
             return self._form("user", user_input, errors)
         name = data[CONF_NAME].strip()
-        data = {**data, CONF_NAME: name, CONF_KEY: await self._key_for(name)}
-        return self.async_create_entry(title=name, data=data)
+        try:
+            key = await self._key_for(name)
+        except SQLAlchemyError:
+            return self._form("user", user_input, {"base": "database_unavailable"})
+        return self.async_create_entry(title=name, data={**data, CONF_NAME: name, CONF_KEY: key})
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None

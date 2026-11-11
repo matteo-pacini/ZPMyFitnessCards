@@ -47,6 +47,7 @@
         "bad_line": "Zeile {line} von {file} konnte nicht gelesen werden.",
         "bad_row": "Zeile {row} am {day} konnte nicht gelesen werden.",
         "birth_date_future": "Das Geburtsdatum muss in der Vergangenheit liegen.",
+        "database_unavailable": "Die Datenbank konnte nicht gelesen werden, um frühere Daten dieser Person zu finden. Versuche es erneut, sobald ZPMyFitnessCards geladen ist.",
         "date_not_english": "Die Daten im Tagebuch sind nicht auf Englisch. Stelle MyFitnessPal auf Englisch um und speichere die Seite erneut.",
         "height_out_of_range": "Gib eine Größe von 3 ft 4 in bis 8 ft 2 in ein.",
         "macros_not_100": "Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",

@@ -47,6 +47,7 @@
         "bad_line": "Line {line} of {file} could not be read.",
         "bad_row": "Row {row} on {day} could not be read.",
         "birth_date_future": "The birth date must be in the past.",
+        "database_unavailable": "Could not read the database to find this person's earlier data. Try again once ZPMyFitnessCards is loaded.",
         "date_not_english": "The diary's dates are not in English. Switch MyFitnessPal to English, then save the page again.",
         "height_out_of_range": "Enter a height from 3 ft 4 in to 8 ft 2 in.",
         "macros_not_100": "Protein, carbs and fat must add up to 100%.",

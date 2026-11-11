@@ -5,13 +5,14 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import insert
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from custom_components.zp_my_fitness.db import (
     MIGRATIONS,
     VERSION,
     Database,
     _schema_v1,
+    key_for_name,
     make_engine,
     sqlite_url,
 )
@@ -155,10 +156,29 @@ def test_goals_hold_until_the_next_change(db: Database) -> None:
 
 def test_remembers_removed_people_by_name(db: Database) -> None:
     db.sync_people([("k1", "Debora"), ("k2", "Matteo")])
-    assert db.key_for_name("debora", exclude=[]) == "k1"
-    assert db.key_for_name("Debora", exclude=["k1"]) is None
+    assert key_for_name(db.url, "debora", exclude=[]) == "k1"
+    assert key_for_name(db.url, "Debora", exclude=["k1"]) is None
     db.sync_people([("k1", "Deb")])
-    assert db.key_for_name("Debora", exclude=[]) is None
+    assert key_for_name(db.url, "Debora", exclude=[]) is None
+
+
+def test_finds_people_while_another_connection_writes(db: Database) -> None:
+    db.sync_people([("k1", "Debora")])
+    with db._db.begin() as conn:
+        conn.exec_driver_sql("INSERT INTO people (key, name) VALUES ('k2', 'Nora')")
+        # Neither blocked nor shown what is not committed yet.
+        assert key_for_name(db.url, "Debora", exclude=[]) == "k1"
+        assert key_for_name(db.url, "Nora", exclude=[]) is None
+    assert key_for_name(db.url, "Nora", exclude=[]) == "k2"
+
+
+def test_finds_nobody_in_a_database_with_no_tables(database_url: str) -> None:
+    assert key_for_name(database_url, "Debora", exclude=[]) is None
+
+
+def test_a_database_it_cannot_open_raises(tmp_path: Path) -> None:
+    with pytest.raises(OperationalError):
+        key_for_name(sqlite_url(str(tmp_path / "missing" / "test.db")), "Debora", exclude=[])
 
 
 def test_deletes_everything_for_one_person(db: Database) -> None:
@@ -171,7 +191,7 @@ def test_deletes_everything_for_one_person(db: Database) -> None:
     assert db.day_entries("p", "2026-11-09") == []
     assert db.latest_weight("p", "2026-11-09") is None
     assert db.goal_on("p", "2026-11-09") is None
-    assert db.key_for_name("P", exclude=[]) is None
+    assert key_for_name(db.url, "P", exclude=[]) is None
     assert len(db.day_entries("q", "2026-11-09")) == 1
 
 

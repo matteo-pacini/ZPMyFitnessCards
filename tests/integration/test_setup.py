@@ -1,15 +1,17 @@
 """Setting up and unloading the integration."""
 
 import os
+from types import MappingProxyType
 from unittest.mock import patch
 
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.zp_my_fitness import CARDS_FILE
-from custom_components.zp_my_fitness.const import CARDS_URL, DB_FILE
+from custom_components.zp_my_fitness.const import CARDS_URL, DB_FILE, SUBENTRY_PERSON
+from custom_components.zp_my_fitness.coordinator import PersonCoordinator
 
 from .conftest import mock_entry, person
 
@@ -66,3 +68,33 @@ async def test_closes_the_database_when_home_assistant_stops(
     with patch.object(db, "close", wraps=db.close) as close:
         await hass.async_stop()
     close.assert_called_once()
+
+
+async def test_a_person_added_while_setting_up_is_loaded_once_setup_ends(
+    hass: HomeAssistant,
+) -> None:
+    entry = mock_entry(person())
+    entry.add_to_hass(hass)
+    first_refresh = PersonCoordinator.async_config_entry_first_refresh
+
+    async def add_nora_meanwhile(coordinator: PersonCoordinator) -> None:
+        # After setup has read its people, as when people are added one
+        # after another and each reloads the entry.
+        if not any(s.title == "Nora" for s in entry.subentries.values()):
+            hass.config_entries.async_add_subentry(
+                entry,
+                ConfigSubentry(
+                    data=MappingProxyType(person("Nora")),
+                    subentry_type=SUBENTRY_PERSON,
+                    title="Nora",
+                    unique_id=None,
+                ),
+            )
+        await first_refresh(coordinator)
+
+    with patch.object(PersonCoordinator, "async_config_entry_first_refresh", add_nora_meanwhile):
+        # Its result reports the reload that Nora started, already under way.
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert set(entry.runtime_data.coordinators) == {"debora", "nora"}

@@ -47,6 +47,7 @@
         "bad_line": "Rad {line} i {file} kunde inte läsas.",
         "bad_row": "Rad {row} den {day} kunde inte läsas.",
         "birth_date_future": "Födelsedatumet måste ligga bakåt i tiden.",
+        "database_unavailable": "Databasen kunde inte läsas för att hitta personens tidigare data. Försök igen när ZPMyFitnessCards har lästs in.",
         "date_not_english": "Dagbokens datum är inte på engelska. Byt MyFitnessPal till engelska och spara sidan igen.",
         "height_out_of_range": "Ange en längd mellan 3 ft 4 in och 8 ft 2 in.",
         "macros_not_100": "Protein, kolhydrater och fett måste bli 100 % tillsammans.",

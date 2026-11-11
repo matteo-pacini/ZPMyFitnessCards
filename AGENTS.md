@@ -5,7 +5,7 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
 ## Layout
 
 - `custom_components/zp_my_fitness/`: the integration. `brand/` holds its icons.
-  - `db.py`: the database, SQLite or Postgres, through SQLAlchemy Core, with blocking methods. `data.py` (`FitnessData`) is the only caller.
+  - `db.py`: the database, SQLite or Postgres, through SQLAlchemy Core, with blocking methods. `data.py` (`FitnessData`) is the only caller, except for the person form's `key_for_name`.
   - `goals.py`: calorie, macro and BMI maths, and conversions between kg and lb and between cm and feet and inches, with no Home Assistant code.
   - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
   - `websocket.py`: the commands the cards call.
@@ -74,7 +74,7 @@ scripts/throttle 4 nix build -L .#checks.x86_64-linux.e2e-vm-sqlite
 - **Shared scope.** The bundle wraps each card script in its own block and loads as a module, so it is strict code. Never rely on a name from another script, and never declare globals except `window.customCards`.
 - **Languages.** Each card has a `STRINGS` table in 11 languages: en, de, es, fr, it, nl, pl, pt, pt-BR, sv and zh-Hans. Add a key to `en` first, then to each language. The tests check keys and placeholders.
 - **Theming.** Take colours and fonts from Home Assistant theme variables, never hard-coded colours.
-- **People.** Each person is a config sub-entry. Code refers to a person by the `key` in its data, never by name or sub-entry ID. Re-adding a removed person under the same name reuses their key, which brings back their data, entities and history.
+- **People.** Each person is a config sub-entry. Code refers to a person by the `key` in its data, never by name or sub-entry ID. Re-adding a removed person under the same name reuses their key, which brings back their data, entities and history. The form finds that key with `key_for_name`, on a connection of its own, since the entry may be reloading after the last person added, or may have failed to set up. Setup listens for changes to its people before it reads them, so a person added while it runs loads with the reload that follows.
 - **Units.** Everything is stored, and sent and taken by the websocket commands, in kg and cm. Only what a person reads or types follows Home Assistant's unit system: lb, feet and inches when it is US customary (`uses_pounds` in `data.py`, `weightUnit` in the cards), else kg and cm. Convert only where values come in or go out: in the person form, the actions and the cards, and as an imported file in another unit is read (`weights_kg` in `myfitnesspal.py`). Food stays in grams and energy in kcal.
 - **Writes.** Go through `FitnessData`, never `Database` directly. It runs the query in the executor, holds the lock that backups pause on, refreshes goals, corrects the recorder's statistics for past days, and sends `SIGNAL_CHANGED` to the sensors and the cards.
 - **Both databases.** Every query must work on SQLite and Postgres: build it with SQLAlchemy Core, not raw SQL, and test it through `database_url`. Days are ISO date strings in both.

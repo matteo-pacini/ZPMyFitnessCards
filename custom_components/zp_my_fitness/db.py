@@ -30,6 +30,7 @@ from sqlalchemy import (
     event,
     func,
     insert,
+    inspect,
     or_,
     select,
     update,
@@ -231,6 +232,27 @@ def _food(row: Any) -> dict[str, Any] | None:
     return food
 
 
+def key_for_name(url: str, name: str, exclude: Iterable[str]) -> str | None:
+    """The key of a person once called `name` in the database at `url`, unless in `exclude`.
+
+    Names match ignoring case. It reads on a connection of its own, so it
+    works whether or not the integration has the database open, and finds
+    nobody in a database with no tables yet.
+    """
+    engine = make_engine(url)
+    try:
+        with engine.connect() as conn:
+            if not inspect(conn).has_table(PEOPLE.name):
+                return None
+            excluded = set(exclude)
+            for row in conn.execute(select(PEOPLE.c.key, PEOPLE.c.name)):
+                if row.name.casefold() == name.casefold() and row.key not in excluded:
+                    return row.key
+            return None
+    finally:
+        engine.dispose()
+
+
 class NewerSchemaError(Exception):
     """The database is at a schema version that only a newer release knows."""
 
@@ -323,14 +345,6 @@ class Database:
                 conn.execute(
                     upsert.on_conflict_do_update(index_elements=["key"], set_={"name": name})
                 )
-
-    def key_for_name(self, name: str, exclude: Iterable[str]) -> str | None:
-        """The key of a person once called `name`, ignoring case, unless in `exclude`."""
-        excluded = set(exclude)
-        for row in self._all(select(PEOPLE)):
-            if row["name"].casefold() == name.casefold() and row["key"] not in excluded:
-                return row["key"]
-        return None
 
     def delete_person(self, person: str) -> None:
         """Delete everything stored for a person."""

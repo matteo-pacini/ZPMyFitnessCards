@@ -4,7 +4,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
+from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zp_my_fitness.const import DOMAIN, SUBENTRY_PERSON
 
+from ..schemas import LATEST, set_version
 from .conftest import mock_entry, person
 from .test_translations import ENGLISH
 
@@ -84,6 +85,41 @@ async def test_re_adding_a_removed_person_brings_their_data_back(
     result = await _add(hass, entry, name="debora")
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert _people(entry)["debora"]["key"] == "debora"
+
+
+@pytest.mark.parametrize("state", ["unloaded", "failed"])
+async def test_re_adding_a_person_while_the_entry_is_not_loaded_brings_their_data_back(
+    hass: HomeAssistant, entry: MockConfigEntry, state: str
+) -> None:
+    url = entry.runtime_data.data.db.url
+    debora = next(s for s in entry.subentries.values() if s.title == "Debora")
+    assert hass.config_entries.async_remove_subentry(entry, debora.subentry_id)
+    await hass.async_block_till_done()
+    if state == "unloaded":
+        # As while it reloads, after another person was added.
+        assert await hass.config_entries.async_unload(entry.entry_id)
+        assert entry.state is ConfigEntryState.NOT_LOADED
+    else:
+        set_version(url, LATEST + 1)
+        assert not await hass.config_entries.async_reload(entry.entry_id)
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+    result = await _add(hass, entry, name="Debora")
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert _people(entry)["Debora"]["key"] == "debora"
+
+
+async def test_adding_a_person_says_when_the_database_cannot_be_read(
+    hass: HomeAssistant,
+) -> None:
+    entry = mock_entry(
+        person(),
+        data={"engine": "postgresql", "db_url": "postgresql://postgres@/none?host=/nonexistent"},
+    )
+    entry.add_to_hass(hass)
+    result = await _add(hass, entry, name="Nora")
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "database_unavailable"}
+    assert "Nora" not in _people(entry)
 
 
 async def _reconfigure(hass: HomeAssistant, entry: MockConfigEntry, name: str) -> dict:

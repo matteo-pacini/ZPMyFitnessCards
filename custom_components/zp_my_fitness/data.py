@@ -25,6 +25,7 @@ from .const import (
     CONF_BIRTH_DATE,
     CONF_CALORIE_GOAL,
     CONF_CARBS_PCT,
+    CONF_DB_URL,
     CONF_FAT_PCT,
     CONF_GOAL_WEIGHT,
     CONF_HEIGHT,
@@ -36,12 +37,13 @@ from .const import (
     CONF_SEX,
     CONF_START_DATE,
     CONF_START_WEIGHT,
+    DB_FILE,
     DOMAIN,
     MEALS,
     NUTRIENTS,
     SIGNAL_CHANGED,
 )
-from .db import Database
+from .db import Database, sqlite_url
 
 # The daily total sensors, each as (key, unit, how to read it from one day's
 # meal totals). Fixing a past day corrects their recorded history.
@@ -120,6 +122,11 @@ class Person:
 def today() -> date:
     """Today in Home Assistant's time zone."""
     return dt_util.now().date()
+
+
+def database_url(hass: HomeAssistant, entry_data: Mapping[str, Any]) -> str:
+    """The database of the entry with `entry_data`: Postgres if it has a URL, else SQLite."""
+    return entry_data.get(CONF_DB_URL) or sqlite_url(hass.config.path(DB_FILE))
 
 
 def uses_pounds(hass: HomeAssistant) -> bool:

@@ -47,6 +47,7 @@
         "bad_line": "Regel {line} van {file} kon niet worden gelezen.",
         "bad_row": "Rij {row} op {day} kon niet worden gelezen.",
         "birth_date_future": "De geboortedatum moet in het verleden liggen.",
+        "database_unavailable": "De database kon niet worden gelezen om eerdere gegevens van deze persoon te vinden. Probeer het opnieuw zodra ZPMyFitnessCards is geladen.",
         "date_not_english": "De datums in het dagboek zijn niet in het Engels. Zet MyFitnessPal op Engels en sla de pagina opnieuw op.",
         "height_out_of_range": "Voer een lengte van 3 ft 4 in tot 8 ft 2 in in.",
         "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",

@@ -47,6 +47,7 @@
         "bad_line": "无法读取 {file} 的第 {line} 行。",
         "bad_row": "无法读取 {day} 的第 {row} 行。",
         "birth_date_future": "出生日期必须早于今天。",
+        "database_unavailable": "无法读取数据库以查找此人之前的数据。请在 ZPMyFitnessCards 加载后重试。",
         "date_not_english": "日记中的日期不是英文。请将 MyFitnessPal 切换为英文，然后重新保存页面。",
         "height_out_of_range": "请输入 3 ft 4 in 到 8 ft 2 in 之间的身高。",
         "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",

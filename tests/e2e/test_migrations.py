@@ -43,8 +43,9 @@ def old_database(url: str) -> None:
 def old_home(request: pytest.FixtureRequest, search_server: FakeSearch) -> Iterator[Home]:
     """A brand-new Home Assistant whose integration starts on a version 1 database.
 
-    Adding Matteo, the first person, under the name the database knows brings
-    back Matteo's data. The tests look only at Matteo's.
+    Its people are added one right after the other, under the names the
+    database knows, so the second is added while the first's reload runs.
+    Each gets their data back all the same.
     """
     with ExitStack() as cleanup:
         db_url = None
@@ -112,12 +113,13 @@ def test_upgrades_the_old_database_and_the_cards_show_its_data(
     assert "source" in layout(old_home.db_url)["entries"]
     assert config_entry(old_home)["state"] == "loaded"
     assert day(old_home, "Matteo", today()) == OLD_ENTRIES
+    assert day(old_home, "Debora", today()) == OLD_ENTRIES
 
     card = diary(old_home, old_page, "Matteo")
     expect(meal(card, "breakfast")).to_contain_text("Old porridge oats", timeout=TIMEOUT)
     expect(meal(card, "dinner")).to_contain_text("Old quick add")
 
-    card = open_card(old_home, old_page, {"type": "custom:zp-weight-card", "person": "Matteo"})
+    card = open_card(old_home, old_page, {"type": "custom:zp-weight-card", "person": "Debora"})
     expect(card.locator(".recent .item", has_text="80.1 kg")).to_have_count(1, timeout=TIMEOUT)
     expect(card.locator(".recent .item", has_text="80.5 kg")).to_have_count(1)
 
@@ -136,6 +138,7 @@ def test_entries_from_before_the_upgrade_survive_myfitnesspal_imports(
             *OLD_ENTRIES,
             ("breakfast", "MyFitnessPal", kcal),
         ]
+    assert day(old_home, "Debora", today()) == OLD_ENTRIES
 
 
 def test_a_failed_upgrade_leaves_the_database_as_it_was_and_a_reload_finishes_it(

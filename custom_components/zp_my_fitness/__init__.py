@@ -19,10 +19,10 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from . import services, websocket
-from .const import CARDS_URL, CONF_DB_URL, DB_FILE, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
+from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
 from .coordinator import PersonCoordinator
-from .data import FitnessData, Person
-from .db import MIGRATIONS, Database, NewerSchemaError, sqlite_url
+from .data import FitnessData, Person, database_url
+from .db import MIGRATIONS, Database, NewerSchemaError
 from .export import ExportView
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -61,7 +61,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> bool:
     """Open the database and set up each person's sensors."""
-    db = Database(entry.data.get(CONF_DB_URL) or sqlite_url(hass.config.path(DB_FILE)))
+    # Before reading the people: one added while this runs, as when people are
+    # added one after another, must reload the entry again once it is set up.
+    entry.async_on_unload(entry.add_update_listener(_async_reload))
+    db = Database(database_url(hass, entry.data))
     try:
         await hass.async_add_executor_job(db.open)
     except NewerSchemaError as err:
@@ -102,7 +105,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
 
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CHANGED, changed))
     entry.async_on_unload(async_track_time_change(hass, midnight, hour=0, minute=0, second=0))
-    entry.async_on_unload(entry.add_update_listener(_async_reload))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
