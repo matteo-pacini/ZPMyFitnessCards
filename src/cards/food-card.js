@@ -2,6 +2,15 @@
 // Errors show in the card's open panel, `_panel`, which it draws with
 // `_renderPanel`.
 class FoodCard extends FitnessCard {
+  static style = `
+    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
+    .barcodes { display: flex; gap: 12px; }
+    .scanner video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--secondary-background-color); }
+    .note { color: var(--secondary-text-color); }
+    .warning { color: var(--warning-color); }
+  `;
+
   _showError(err, key = "error_failed") {
     if (!this._panel) return;
     this._panel.error = fill(this._t[key], { message: err?.message ?? "" });

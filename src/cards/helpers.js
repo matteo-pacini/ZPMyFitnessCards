@@ -102,9 +102,4 @@ const STYLE = `
   .error { color: var(--error-color); }
   .muted { color: var(--secondary-text-color); }
   .num { font-variant-numeric: tabular-nums; }
-  .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
-  .barcodes { display: flex; gap: 12px; }
-  .scanner video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--secondary-background-color); }
-  .note { color: var(--secondary-text-color); }
-  .warning { color: var(--warning-color); }
 `;

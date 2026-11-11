@@ -1,10 +1,9 @@
 class FoodsCard extends FoodCard {
-  static style = `
+  static style = `${super.style}
     .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }
     .row small { color: var(--secondary-text-color); }
     .off { display: flex; flex-direction: column; }
-    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
   `;
 
   static options = ["title", "locale"];

@@ -1571,11 +1571,6 @@ const STYLE = `
   .error { color: var(--error-color); }
   .muted { color: var(--secondary-text-color); }
   .num { font-variant-numeric: tabular-nums; }
-  .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
-  .barcodes { display: flex; gap: 12px; }
-  .scanner video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--secondary-background-color); }
-  .note { color: var(--secondary-text-color); }
-  .warning { color: var(--warning-color); }
 `;
 
 // src/cards/food-form.js
@@ -1897,6 +1892,15 @@ class FitnessCard extends HTMLElement {
 // Errors show in the card's open panel, `_panel`, which it draws with
 // `_renderPanel`.
 class FoodCard extends FitnessCard {
+  static style = `
+    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
+    .barcodes { display: flex; gap: 12px; }
+    .scanner video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; background: var(--secondary-background-color); }
+    .note { color: var(--secondary-text-color); }
+    .warning { color: var(--warning-color); }
+  `;
+
   _showError(err, key = "error_failed") {
     if (!this._panel) return;
     this._panel.error = fill(this._t[key], { message: err?.message ?? "" });
@@ -2094,7 +2098,7 @@ class CardEditor extends HTMLElement {
 
 // src/cards/food-diary-card.js
 class FoodDiaryCard extends FoodCard {
-  static style = `
+  static style = `${super.style}
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
     .summary small, .macro small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
@@ -2115,7 +2119,6 @@ class FoodDiaryCard extends FoodCard {
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 6px 4px; }
     .row .amount { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); margin-left: 6px; }
     .mealactions { display: flex; gap: 12px; }
-    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
     .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--divider-color); }
     .tabs button { padding: 8px 10px; border-radius: 6px 6px 0 0; color: var(--secondary-text-color); }
     .tabs button[aria-selected="true"] { color: var(--primary-color); box-shadow: inset 0 -2px 0 var(--primary-color); }
@@ -2647,12 +2650,11 @@ function copyPanelHTML(p, today, t) {
 
 // src/cards/foods-card.js
 class FoodsCard extends FoodCard {
-  static style = `
+  static style = `${super.style}
     .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }
     .row small { color: var(--secondary-text-color); }
     .off { display: flex; flex-direction: column; }
-    .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
   `;
 
   static options = ["title", "locale"];
