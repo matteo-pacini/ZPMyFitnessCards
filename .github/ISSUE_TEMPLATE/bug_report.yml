@@ -1,0 +1,97 @@
+name: 🐞 Something isn't working
+description: A card, the setup, an import or an action doesn't do what it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. The details below help find the cause quickly. Fill in what you can.
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before you start
+      options:
+        - label: I looked at [Troubleshooting](https://github.com/matteo-pacini/fork-and-scale#troubleshooting) in the README.
+          required: true
+        - label: I searched [the issues](https://github.com/matteo-pacini/fork-and-scale/issues?q=is%3Aissue) for the same problem.
+          required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: And what did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can it be seen again?
+      placeholder: |
+        1. Open the food diary card.
+        2. Tap "+ Add food" under Lunch.
+        3. …
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen?
+      multiple: true
+      options:
+        - A card, in a browser
+        - A card, in the Home Assistant app on Android
+        - A card, in the Home Assistant app on iPhone or iPad
+        - Setting up Fork & Scale or a person
+        - Importing from MyFitnessPal, or exporting
+        - An action (log_weight, log_food or get_day)
+        - The sensors
+        - Somewhere else
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Fork & Scale version
+      description: Shown under its name on [its page in Settings > Devices & services](https://my.home-assistant.io/redirect/integration/?domain=fork_and_scale).
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: input
+    id: home_assistant
+    attributes:
+      label: Home Assistant version
+      description: Shown in [Settings > About](https://my.home-assistant.io/redirect/info/).
+      placeholder: "2026.11.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - HACS
+        - NixOS
+        - By hand, copying the folder
+    validations:
+      required: true
+  - type: dropdown
+    id: database
+    attributes:
+      label: Where does it keep its data?
+      options:
+        - SQLite (the default)
+        - Postgres
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Anything in the logs?
+      description: |
+        In [Settings > System > Logs](https://my.home-assistant.io/redirect/logs/), look for lines that mention `fork_and_scale`. For a card, the browser's console may show errors too: press F12, then open Console.
+
+        Remove anything private first, such as email addresses or tokens. Please never attach a saved MyFitnessPal page: it holds your account's email address and sign-in tokens. The line or row number in the error message is enough.
+      render: text
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: Screenshots, the card's YAML, or anything else that helps. You can drag images in here.

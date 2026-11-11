@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 🔴 The cards show "Configuration error"
+    url: https://github.com/matteo-pacini/fork-and-scale#configuration-error-in-place-of-the-cards
+    about: A reload usually fixes it. The README explains why it happens.
+  - name: ❓ Help with Home Assistant itself
+    url: https://www.home-assistant.io/help/
+    about: For questions about Home Assistant rather than Fork & Scale.

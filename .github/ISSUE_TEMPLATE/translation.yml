@@ -1,0 +1,50 @@
+name: 🌍 A translation
+description: Wrong, clumsy or missing text in one of the languages.
+labels: ["translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fork & Scale speaks 11 languages, and native speakers haven't checked all of them yet. Corrections are very welcome.
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - Deutsch
+        - English
+        - Español
+        - Français
+        - Italiano
+        - Nederlands
+        - Polski
+        - Português
+        - Português (Brasil)
+        - Svenska
+        - 简体中文
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where is the text?
+      placeholder: The food diary card's Add food panel
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: What it says now
+    validations:
+      required: true
+  - type: textarea
+    id: better
+    attributes:
+      label: What it should say
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: Asking for a new language? Say which one, and whether you could help translate it.

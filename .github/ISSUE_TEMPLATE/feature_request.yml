@@ -1,0 +1,26 @@
+name: 💡 An idea
+description: Something Fork & Scale could do, or do better.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome. Saying what you want to get done helps more than a finished design.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: What are you trying to do, and what gets in the way today?
+      placeholder: I log the same breakfast every day, and typing it in each time takes a while.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could it work?
+      description: If you have an idea. Another app that does it well is a good example too.
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: Screenshots, sketches or links. You can drag images in here.
