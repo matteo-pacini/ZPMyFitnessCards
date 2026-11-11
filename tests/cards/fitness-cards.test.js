@@ -11,7 +11,7 @@ let fn;
 test.before(async () => {
   ctx = await load();
   fn = vm.runInContext(
-    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML })",
+    "({ STRINGS, translate, todayIn, shiftDay, dayLabel, scaled, totals, findPerson, diaryBodyHTML, previewHTML, foodsListHTML, foodFormHTML, editPanelHTML, addPanelHTML, panelMessagesHTML, amountField })",
     ctx,
   );
 });
@@ -117,6 +117,8 @@ test("an entry logged by weight is edited by grams, a quick add by kcal", () => 
   assert.match(byWeight, /data-field="grams"[^>]*value="60"/);
   const quick = fn.editPanelHTML({ entry: DAY.entries[1] }, "en-GB", en());
   assert.match(quick, /data-field="kcal"[^>]*value="900"/);
+  assert.equal(fn.amountField(DAY.entries[0]), "grams");
+  assert.equal(fn.amountField(DAY.entries[1]), "kcal");
   const confirming = text(fn.editPanelHTML({ entry: DAY.entries[1], confirming: true }, "en-GB", en()));
   assert.match(confirming, /Delete Pizza <large>\? Cancel Yes, delete/);
 });

@@ -2499,7 +2499,7 @@ class FoodDiaryCard extends FoodCard {
     },
     async "click:save-edit"() {
       const p = this._panel;
-      const field = p.entry.grams != null ? "grams" : "kcal";
+      const field = amountField(p.entry);
       const amount = numberValue(this._field(field));
       if (amount == null || amount <= 0) return this._showError(null, "error_amount");
       const sent = await this._send({ type: "fork_and_scale/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
@@ -2626,12 +2626,14 @@ function addPanelHTML(p, t, scan = false) {
     <div class="tabs" role="tablist">${tabs}</div>${content}`;
 }
 
+// What an entry's amount is edited in: grams if it was logged by weight,
+// else kcal, as a quick add is.
+const amountField = (entry) => (entry.grams != null ? "grams" : "kcal");
+
 function editPanelHTML(p, locale, t) {
   const e = p.entry;
-  const amount =
-    e.grams != null
-      ? `<label>${esc(t.grams)}<input data-field="grams" type="number" min="0" step="any" inputmode="decimal" value="${e.grams}"></label>`
-      : `<label>${esc(t.kcal)}<input data-field="kcal" type="number" min="0" step="any" inputmode="decimal" value="${e.kcal}"></label>`;
+  const field = amountField(e);
+  const amount = `<label>${esc(t[field])}<input data-field="${field}" type="number" min="0" step="any" inputmode="decimal" value="${e[field]}"></label>`;
   const buttons = p.confirming
     ? `<span class="error">${esc(fill(t.really_delete, { name: e.name }))}</span>
        <button class="text" data-action="close">${esc(t.cancel)}</button><button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
