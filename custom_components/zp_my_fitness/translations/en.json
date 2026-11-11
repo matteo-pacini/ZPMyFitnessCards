@@ -3,6 +3,9 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards is already set up. Add people to it with \"Add person\"."
     },
+    "create_entry": {
+      "default": "ZPMyFitnessCards is set up. Pages that were already open cannot show its cards yet: reload them before you add cards. Then add each person with \"Add person\"."
+    },
     "error": {
       "cannot_connect": "Could not connect. Check the host, port, user, password and database name.",
       "invalid_url": "Enter a URL that starts with postgresql://.",

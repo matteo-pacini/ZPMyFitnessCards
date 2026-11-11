@@ -17,6 +17,7 @@ let
       ../custom_components
       ../tests
       ../pyproject.toml
+      ../README.md
     ];
   };
 

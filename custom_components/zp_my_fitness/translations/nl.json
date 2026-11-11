@@ -3,6 +3,9 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards is al ingesteld. Voeg personen toe met ‘Persoon toevoegen’."
     },
+    "create_entry": {
+      "default": "ZPMyFitnessCards is ingesteld. Pagina’s die al open waren, kunnen de kaarten nog niet tonen: laad ze opnieuw voordat je kaarten toevoegt. Voeg daarna elke persoon toe met ‘Persoon toevoegen’."
+    },
     "error": {
       "cannot_connect": "Verbinden is mislukt. Controleer host, poort, gebruiker, wachtwoord en databasenaam.",
       "invalid_url": "Voer een URL in die begint met postgresql://.",

@@ -381,13 +381,15 @@ def _home(
     configuration: str = CONFIGURATION,
     search_url: str | None = None,
     database: Callable[[str], None] | None = None,
+    integration: bool = True,
 ) -> Iterator[Home]:
     """Start Home Assistant, set it up, yield it, then stop it and delete it.
 
     `configuration` is configuration.yaml with a `{port}` slot. With
     `search_url`, the integration searches Open Food Facts there. With
     `database`, it gets the integration's database URL before Home Assistant
-    starts, to leave a database there as an older release would have.
+    starts, to leave a database there as an older release would have. With
+    `integration` False, the integration is installed but not added.
     """
     config_dir = Path(tempfile.mkdtemp(prefix="zp-my-fitness-e2e-"))
     port = _free_port()
@@ -421,7 +423,8 @@ def _home(
         try:
             _wait_until_up(home, process)
             _onboard(home)
-            _add_integration(home, db_url)
+            if integration:
+                _add_integration(home, db_url)
             _wait_until_running(home)
         except Exception as err:
             # The temporary folder goes with the run, so keep the log's end here.

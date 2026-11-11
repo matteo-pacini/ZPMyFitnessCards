@@ -13,7 +13,7 @@ It is in early development. The integration, its sensors, all five cards and bar
    [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=matteo-pacini&repository=ZPMyFitnessCards&category=integration)
 
 2. Restart Home Assistant.
-3. Add the integration with this button, or add **ZPMyFitnessCards** in **Settings > Devices & services**. Choose where it keeps its data (see [Database](#database)).
+3. Add the integration with this button, or add **ZPMyFitnessCards** in **Settings > Devices & services**. Choose where it keeps its data (see [Database](#database)). Then reload the page, so that your browser loads the cards.
 
    [![Open your Home Assistant instance and start setting up ZPMyFitnessCards.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zp_my_fitness)
 
@@ -27,7 +27,7 @@ To change a person later, use **Change person**. Its **Delete all data** option 
 
 The menu also imports a diary from MyFitnessPal and exports a person's data. See [Import and export](#import-and-export).
 
-The integration loads the cards for you. There is no dashboard resource to add.
+The integration loads the cards for you. There is no dashboard resource to add. If a card shows "Configuration error", see [Troubleshooting](#troubleshooting).
 
 Requires Home Assistant 2025.3 or later.
 
@@ -251,6 +251,15 @@ All five cards come in English, German, Spanish, French, Italian, Dutch, Polish,
 The cards fit a phone's width. These are the food diary, summary, weight and trends cards in the Home Assistant app on Android.
 
 <img src="images/phone-food-diary.png" alt="Food diary in the Home Assistant app" width="200"> <img src="images/phone-summary.png" alt="Summary in the Home Assistant app" width="200"> <img src="images/phone-summary-dark.png" alt="Summary in the Home Assistant app, dark mode" width="200"> <img src="images/phone-weight.png" alt="Weight in the Home Assistant app" width="200"> <img src="images/phone-trends.png" alt="Trends in the Home Assistant app" width="200">
+
+## Troubleshooting
+
+### "Configuration error" in place of the cards
+
+A card shows a red "Configuration error" when the page has not loaded the cards. The card editor's preview gives the reason: `Custom element doesn't exist: zp-food-diary-card`, for example. There are two causes.
+
+- **The page was open before you added the integration.** Home Assistant adds the cards to pages it serves after the integration is set up. Reload the page.
+- **The Home Assistant app, with Home Assistant older than 2026.11.0.** The app starts from a copy of the start page that Home Assistant's frontend saved at its last update, and that copy has no cards if you installed ZPMyFitnessCards after it ([home-assistant/frontend#55272](https://github.com/home-assistant/frontend/issues/55272)). The error then comes back each time the app starts. Reloading the page brings the cards back until the app next starts: in the app, open the dashboard's ⋮ menu, choose **Reload resources**, then **Refresh**. That menu item is there only when your dashboard resources are set in YAML; otherwise, open the dashboard in a browser. Updating Home Assistant to 2026.11.0 or later fixes it for good ([home-assistant/frontend#54790](https://github.com/home-assistant/frontend/pull/54790)).
 
 ## Development
 

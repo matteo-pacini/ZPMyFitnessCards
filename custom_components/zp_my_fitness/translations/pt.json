@@ -3,6 +3,9 @@
     "abort": {
       "single_instance_allowed": "O ZPMyFitnessCards já está configurado. Adicione pessoas com «Adicionar pessoa»."
     },
+    "create_entry": {
+      "default": "O ZPMyFitnessCards está configurado. As páginas que já estavam abertas ainda não podem mostrar os cartões dele: recarregue-as antes de adicionar cartões. Depois, adicione cada pessoa com «Adicionar pessoa»."
+    },
     "error": {
       "cannot_connect": "Não foi possível ligar. Verifique o anfitrião, a porta, o utilizador, a palavra-passe e o nome da base de dados.",
       "invalid_url": "Introduza um URL que comece por postgresql://.",

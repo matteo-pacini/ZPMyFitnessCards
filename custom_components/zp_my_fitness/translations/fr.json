@@ -3,6 +3,9 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards est déjà configuré. Ajoutez des personnes avec « Ajouter une personne »."
     },
+    "create_entry": {
+      "default": "ZPMyFitnessCards est configuré. Les pages déjà ouvertes ne peuvent pas encore afficher ses cartes : rechargez-les avant d’ajouter des cartes. Ajoutez ensuite chaque personne avec « Ajouter une personne »."
+    },
     "error": {
       "cannot_connect": "Connexion impossible. Vérifiez l’hôte, le port, l’utilisateur, le mot de passe et le nom de la base.",
       "invalid_url": "Saisissez une URL qui commence par postgresql://.",

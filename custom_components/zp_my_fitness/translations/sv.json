@@ -3,6 +3,9 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards är redan konfigurerat. Lägg till personer med ”Lägg till person”."
     },
+    "create_entry": {
+      "default": "ZPMyFitnessCards är konfigurerat. Sidor som redan var öppna kan inte visa dess kort ännu: läs in dem igen innan du lägger till kort. Lägg sedan till varje person med ”Lägg till person”."
+    },
     "error": {
       "cannot_connect": "Det gick inte att ansluta. Kontrollera värd, port, användare, lösenord och databasnamn.",
       "invalid_url": "Ange en URL som börjar med postgresql://.",

@@ -3,6 +3,9 @@
     "abort": {
       "single_instance_allowed": "ZPMyFitnessCards 已设置。请用“添加人员”添加人员。"
     },
+    "create_entry": {
+      "default": "ZPMyFitnessCards 已设置。已打开的页面还无法显示它的卡片：添加卡片前，请重新加载这些页面。然后用“添加人员”添加每个人员。"
+    },
     "error": {
       "cannot_connect": "无法连接。请检查主机、端口、用户、密码和数据库名称。",
       "invalid_url": "请输入以 postgresql:// 开头的 URL。",
