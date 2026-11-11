@@ -14,6 +14,7 @@ import pytest
 from playwright.sync_api import Browser, Page, expect
 
 from .conftest import REPO, FakeSearch, Home
+from .test_editor import choose, pick_card
 
 IMAGES = REPO / "images"
 
@@ -110,18 +111,24 @@ def add_sample_data(home: Home) -> None:
             )
 
 
-def shoot(
-    home: Home, browser: Browser, card: dict, name: str, *, dark=False, width=480, setup=None
-):
+def signed_in(home: Home, browser: Browser, *, dark=False, width=480, height=1400) -> Page:
+    """A page in a new context, signed in to `home`. Close its context when done."""
     context = browser.new_context(
-        viewport={"width": width, "height": 1400},
+        viewport={"width": width, "height": height},
         device_scale_factor=2,
         color_scheme="dark" if dark else "light",
     )
-    page: Page = context.new_page()
+    page = context.new_page()
     stored = {**home.tokens, "hassUrl": home.url, "clientId": home.url + "/"}
     stored["expires"] = int(datetime.now().timestamp() * 1000) + home.tokens["expires_in"] * 1000
     page.add_init_script(f"localStorage.setItem('hassTokens', {json.dumps(json.dumps(stored))})")
+    return page
+
+
+def shoot(
+    home: Home, browser: Browser, card: dict, name: str, *, dark=False, width=480, setup=None
+):
+    page = signed_in(home, browser, dark=dark, width=width)
     home.dashboard([card])
     page.goto(home.url + "/" + home.DASHBOARD + "/0")
     element = page.locator(card["type"].removeprefix("custom:"))
@@ -132,7 +139,24 @@ def shoot(
         page.wait_for_timeout(500)
     IMAGES.mkdir(exist_ok=True)
     element.locator("ha-card").screenshot(path=str(IMAGES / f"{name}.png"), animations="disabled")
-    context.close()
+    page.context.close()
+
+
+def shoot_editor(home: Home, browser: Browser, name: str) -> None:
+    """The food diary's visual editor in the dashboard's dialog, with Debora
+    chosen and the person dropdown open."""
+    page = signed_in(home, browser, width=1280, height=1200)
+    dialog = pick_card(home, page, "Food diary")
+    choose(dialog, "Person", "Debora")
+    expect(dialog.locator(".row").first).to_be_visible(timeout=30_000)
+    dialog.get_by_label("Person").click()
+    expect(dialog.get_by_role("menuitem", name="Matteo", exact=True)).to_be_visible()
+    page.wait_for_timeout(500)
+    IMAGES.mkdir(exist_ok=True)
+    page.locator('wa-dialog [part~="dialog"]').screenshot(
+        path=str(IMAGES / f"{name}.png"), animations="disabled"
+    )
+    page.context.close()
 
 
 DIARY = {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora"}
@@ -230,6 +254,7 @@ def search_open_food_facts(search: FakeSearch):
 
 
 def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None:
+    shoot_editor(sample, browser, "card-editor")
     shoot(sample, browser, DIARY, "food-diary")
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
     shoot(sample, browser, DIARY, "food-diary-add", setup=open_add)
@@ -248,6 +273,7 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     assert sorted(taken) == sorted(
         f"{n}.png"
         for n in (
+            "card-editor",
             "food-diary",
             "food-diary-dark",
             "food-diary-add",

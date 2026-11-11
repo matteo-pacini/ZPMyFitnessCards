@@ -166,6 +166,8 @@ To add a card, edit a dashboard, tap **Add card**, and search for the card on th
 - **Language**: one of the cards' languages, or Home Assistant's.
 - **Open on tap**, on the summary card only: a dashboard or page to open when the card is tapped.
 
+<img src="images/card-editor.png" alt="The food diary card's visual editor, choosing the person beside a preview of the card" width="600">
+
 The editor saves the options below, so a card can also be written in YAML.
 
 ### Food diary card
