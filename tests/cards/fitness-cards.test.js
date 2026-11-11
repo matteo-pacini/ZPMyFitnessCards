@@ -174,12 +174,12 @@ test("a chosen food starts at its first portion, else 100 g", () => {
   assert.equal(p.grams, 100);
 });
 
-test("a saved food shows chosen on the search tab, and clears the panel's warning and error", () => {
+test("a saved food shows chosen on the search tab, and clears the panel's note, warning and error", () => {
   const food = { id: 7, name: "Oats", portions: [{ name: "Bowl", grams: 40 }] };
   const p = { kind: "add", meal: "lunch", tab: "new", query: "", warning: "W", error: "E", note: "N" };
   fn.showSavedFood(p, food);
   assert.deepEqual(plain(p), {
-    kind: "add", meal: "lunch", tab: "search", query: "Oats", results: [food], food, grams: 40, warning: null, error: null, note: "N",
+    kind: "add", meal: "lunch", tab: "search", query: "Oats", results: [food], food, grams: 40, note: null, warning: null, error: null,
   });
 });
 

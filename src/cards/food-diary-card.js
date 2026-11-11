@@ -546,9 +546,10 @@ function chooseFood(p, food) {
   p.grams = food.portions?.[0]?.grams ?? 100;
 }
 
-// Show a saved food chosen on add panel `p`'s search tab, as its only result.
+// Show a saved food chosen on add panel `p`'s search tab, as its only
+// result, with no note, warning or error.
 function showSavedFood(p, food) {
-  Object.assign(p, { tab: "search", query: food.name, results: [food], warning: null, error: null });
+  Object.assign(p, { tab: "search", query: food.name, results: [food], note: null, warning: null, error: null });
   chooseFood(p, food);
 }
 

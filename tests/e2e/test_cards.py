@@ -443,7 +443,11 @@ def test_the_diary_looks_up_a_typed_barcode_it_does_not_have(home: Home, page: P
     expect(card.locator('.foodform [data-field="name"]')).to_have_value(
         f"Spaghetti n.5 {DASH} Barilla"
     )
+    expect(card.locator(".panel .note")).to_contain_text("Filled in from Open Food Facts")
     card.locator('[data-action="save-new-food"]').click()
+    # The food is saved now, so the note about the form's values goes.
+    expect(card.locator(".picked")).to_contain_text("Spaghetti n.5", timeout=TIMEOUT)
+    expect(card.locator(".panel .note")).to_have_count(0)
     card.locator('[data-field="grams"]').fill("80")
     card.locator('[data-action="add-entry"]').click()
     row = meal(card, "dinner").locator(".row", has_text="Spaghetti n.5")
