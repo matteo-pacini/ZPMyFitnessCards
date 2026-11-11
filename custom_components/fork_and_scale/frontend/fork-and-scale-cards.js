@@ -1766,6 +1766,9 @@ function assertText(config, keys) {
 
 // Base for every card: config, its editor, language, loading and live updates.
 class FitnessCard extends HTMLElement {
+  // Handlers for events on elements with a data-action, as "kind:action".
+  static actions = {};
+
   // The visual editor, with a field for each of the card's static `options`.
   static getConfigElement() {
     const editor = document.createElement(EDITOR);
@@ -3490,8 +3493,6 @@ class SummaryCard extends PersonCard {
     const { day, weights, start } = this._data;
     body.innerHTML = summaryHTML(day, weights, this._person, start, this._today, this._locale, this._t, weightUnit(this._hass));
   }
-
-  static actions = {};
 
   _build() {
     super._build();

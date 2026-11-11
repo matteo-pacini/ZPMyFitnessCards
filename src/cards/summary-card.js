@@ -154,8 +154,6 @@ class SummaryCard extends PersonCard {
     body.innerHTML = summaryHTML(day, weights, this._person, start, this._today, this._locale, this._t, weightUnit(this._hass));
   }
 
-  static actions = {};
-
   _build() {
     super._build();
     this._card.addEventListener("click", () => {
