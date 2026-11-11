@@ -4,7 +4,7 @@ log_weight:
       required: true
       selector:
         device:
-          integration: zp_my_fitness
+          integration: fork_and_scale
     weight:
       required: true
       example: 68.4
@@ -28,7 +28,7 @@ log_food:
       required: true
       selector:
         device:
-          integration: zp_my_fitness
+          integration: fork_and_scale
     meal:
       required: true
       selector:
@@ -98,7 +98,7 @@ get_day:
       required: true
       selector:
         device:
-          integration: zp_my_fitness
+          integration: fork_and_scale
     day:
       selector:
         date:

@@ -1015,6 +1015,57 @@ wheels = [
 ]
 
 [[package]]
+name = "fork-and-scale"
+version = "0.3.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "gazetteer-matcher" },
+    { name = "gtts" },
+    { name = "ha-ffmpeg" },
+    { name = "hassil" },
+    { name = "home-assistant-frontend" },
+    { name = "home-assistant-intents" },
+    { name = "infrared-protocols" },
+    { name = "mutagen" },
+    { name = "playwright" },
+    { name = "psycopg2-binary" },
+    { name = "pycountry" },
+    { name = "pymetno" },
+    { name = "pymicro-vad" },
+    { name = "pyspeex-noise" },
+    { name = "pytest-homeassistant-custom-component" },
+    { name = "pyturbojpeg" },
+    { name = "radios" },
+    { name = "rf-protocols" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "gazetteer-matcher", specifier = "==1.1.0" },
+    { name = "gtts", specifier = "==2.5.4" },
+    { name = "ha-ffmpeg", specifier = "==3.2.2" },
+    { name = "hassil", specifier = "==3.12.1" },
+    { name = "home-assistant-frontend", specifier = "==20260930.5" },
+    { name = "home-assistant-intents", specifier = "==2026.10.6" },
+    { name = "infrared-protocols", specifier = "==10.1.0" },
+    { name = "mutagen", specifier = "==1.48.1" },
+    { name = "playwright", specifier = "==1.64.1" },
+    { name = "psycopg2-binary", specifier = "==2.9.13" },
+    { name = "pycountry", specifier = "==24.6.1" },
+    { name = "pymetno", specifier = "==0.13.0" },
+    { name = "pymicro-vad", specifier = "==1.0.1" },
+    { name = "pyspeex-noise", specifier = "==1.0.2" },
+    { name = "pytest-homeassistant-custom-component", specifier = "==0.13.375" },
+    { name = "pyturbojpeg", specifier = "==1.8.3" },
+    { name = "radios", specifier = "==1.0.0" },
+    { name = "rf-protocols", specifier = "==4.3.0" },
+]
+
+[[package]]
 name = "freezegun"
 version = "1.5.5"
 source = { registry = "https://pypi.org/simple" }
@@ -3601,55 +3652,4 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/c3/3518c9ebc6ea9c620b7d4b21f4947c54fa4613f7543a42e9a72565fbaf10/zeroconf-0.151.5-cp315-cp315t-musllinux_1_2_x86_64.whl", hash = "sha256:37f8a073825a208878e994300c0feb7d6b253e2af3d258678a8beec6b020506a", size = 2765808, upload-time = "2026-09-28T14:59:43.156Z" },
     { url = "https://files.pythonhosted.org/packages/b4/86/ab74084ccce454ef897cf1e39d09be6d43aa799f1deeaf816296c5dca023/zeroconf-0.151.5-cp315-cp315t-win32.whl", hash = "sha256:a382205700aa8ea63634b4a92b41176a6033bef7ec2380bfd0503e3e11e6d598", size = 1894687, upload-time = "2026-09-28T14:59:44.952Z" },
     { url = "https://files.pythonhosted.org/packages/29/93/263fdd075d310e220d53e77f252862bd50cf69f98d10c7e0b0e1e9679e78/zeroconf-0.151.5-cp315-cp315t-win_amd64.whl", hash = "sha256:00ee9d456519c45c94201334d5cbd2699d5de9cc9ceeb647203b85295640abab", size = 2134526, upload-time = "2026-09-28T14:59:46.913Z" },
-]
-
-[[package]]
-name = "zp-my-fitness-cards"
-version = "0.3.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
-    { name = "gazetteer-matcher" },
-    { name = "gtts" },
-    { name = "ha-ffmpeg" },
-    { name = "hassil" },
-    { name = "home-assistant-frontend" },
-    { name = "home-assistant-intents" },
-    { name = "infrared-protocols" },
-    { name = "mutagen" },
-    { name = "playwright" },
-    { name = "psycopg2-binary" },
-    { name = "pycountry" },
-    { name = "pymetno" },
-    { name = "pymicro-vad" },
-    { name = "pyspeex-noise" },
-    { name = "pytest-homeassistant-custom-component" },
-    { name = "pyturbojpeg" },
-    { name = "radios" },
-    { name = "rf-protocols" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "gazetteer-matcher", specifier = "==1.1.0" },
-    { name = "gtts", specifier = "==2.5.4" },
-    { name = "ha-ffmpeg", specifier = "==3.2.2" },
-    { name = "hassil", specifier = "==3.12.1" },
-    { name = "home-assistant-frontend", specifier = "==20260930.5" },
-    { name = "home-assistant-intents", specifier = "==2026.10.6" },
-    { name = "infrared-protocols", specifier = "==10.1.0" },
-    { name = "mutagen", specifier = "==1.48.1" },
-    { name = "playwright", specifier = "==1.64.1" },
-    { name = "psycopg2-binary", specifier = "==2.9.13" },
-    { name = "pycountry", specifier = "==24.6.1" },
-    { name = "pymetno", specifier = "==0.13.0" },
-    { name = "pymicro-vad", specifier = "==1.0.1" },
-    { name = "pyspeex-noise", specifier = "==1.0.2" },
-    { name = "pytest-homeassistant-custom-component", specifier = "==0.13.375" },
-    { name = "pyturbojpeg", specifier = "==1.8.3" },
-    { name = "radios", specifier = "==1.0.0" },
-    { name = "rf-protocols", specifier = "==4.3.0" },
 ]

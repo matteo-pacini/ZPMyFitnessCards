@@ -1,9 +1,11 @@
-"""Constants for ZPMyFitnessCards."""
+"""Constants for Fork & Scale."""
 
-DOMAIN = "zp_my_fitness"
+DOMAIN = "fork_and_scale"
 
 DB_FILE = f"{DOMAIN}.db"
-CARDS_URL = f"/{DOMAIN}/zp-my-fitness-cards.js"
+# The SQLite file of ZPMyFitnessCards, as Fork & Scale was called up to 0.3.0.
+LEGACY_DB_FILE = "zp_my_fitness.db"
+CARDS_URL = f"/{DOMAIN}/fork-and-scale-cards.js"
 
 # Where the data lives, chosen when adding the integration: an SQLite file in
 # the config folder, or a Postgres database at CONF_DB_URL.

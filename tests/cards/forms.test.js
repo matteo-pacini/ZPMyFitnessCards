@@ -124,7 +124,7 @@ test("dates show the year only when asked", () => {
   assert.equal(fn.shortDate("2026-11-09", "en-GB", true), "9 Nov 26");
 });
 
-const ELEMENTS = ["zp-food-diary-card", "zp-foods-card", "zp-weight-card", "zp-trends-card", "zp-summary-card"];
+const ELEMENTS = ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-weight-card", "fork-and-scale-trends-card", "fork-and-scale-summary-card"];
 
 test("every card has a visual editor form with English labels, and a stub config", () => {
   for (const name of ELEMENTS) {
@@ -134,19 +134,19 @@ test("every card has a visual editor form with English labels, and a stub config
     for (const s of schema) assert.match(computeLabel(s), /^[A-Z]/, `${name}.${s.name}`);
     assert.deepEqual(plain(Card.getStubConfig()), {}, name);
   }
-  const people = ELEMENTS.filter((n) => n !== "zp-foods-card");
+  const people = ELEMENTS.filter((n) => n !== "fork-and-scale-foods-card");
   for (const name of people) {
     const { schema } = ctx.customElements.defined[name].getConfigForm();
     assert.ok(schema.some((s) => s.name === "person"), name);
   }
-  const summary = ctx.customElements.defined["zp-summary-card"].getConfigForm();
+  const summary = ctx.customElements.defined["fork-and-scale-summary-card"].getConfigForm();
   assert.ok(summary.schema.some((s) => s.name === "navigation_path"));
 });
 
 test("cards say which option is wrong", () => {
-  const Summary = ctx.customElements.defined["zp-summary-card"];
+  const Summary = ctx.customElements.defined["fork-and-scale-summary-card"];
   assert.throws(() => new Summary().setConfig({ navigation_path: 3 }), /navigation_path: must be text/);
-  const Weight = ctx.customElements.defined["zp-weight-card"];
+  const Weight = ctx.customElements.defined["fork-and-scale-weight-card"];
   assert.throws(() => new Weight().setConfig({ title: ["x"] }), /title: must be text/);
   assert.throws(() => new Weight().setConfig({ locale: 1 }), /locale: must be text/);
 });

@@ -8,9 +8,9 @@ from homeassistant.core import HomeAssistant
 from sqlalchemy import inspect
 from sqlalchemy.exc import DBAPIError
 
-from custom_components.zp_my_fitness import db as db_module
-from custom_components.zp_my_fitness.const import DB_FILE
-from custom_components.zp_my_fitness.db import (
+from custom_components.fork_and_scale import db as db_module
+from custom_components.fork_and_scale.const import DB_FILE
+from custom_components.fork_and_scale.db import (
     MIGRATIONS,
     Database,
     NewerSchemaError,
@@ -229,9 +229,9 @@ async def test_setup_refuses_a_database_a_newer_release_upgraded(
     }
     # Home Assistant drops the message's last full stop.
     assert entry.reason == (
-        f"A newer release of ZPMyFitnessCards upgraded this database to version {LATEST + 1}."
+        f"A newer release of Fork & Scale upgraded this database to version {LATEST + 1}."
         f" This release knows up to version {LATEST}, so it left the database as it is."
-        " Update ZPMyFitnessCards to use it again"
+        " Update Fork & Scale to use it again"
     )
     assert (layout(url), contents(url)) == before
     assert hass.states.get("sensor.matteo_weight") is None

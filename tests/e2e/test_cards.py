@@ -21,13 +21,13 @@ def today() -> str:
 
 
 def person_id(home: Home, name: str) -> str:
-    return next(p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == name)
+    return next(p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == name)
 
 
 def save_food(home: Home, name: str, **more) -> dict:
     return home.ws(
         {
-            "type": "zp_my_fitness/food/add",
+            "type": "fork_and_scale/food/add",
             "name": name,
             "kcal": 389,
             "protein": 16.9,
@@ -47,7 +47,9 @@ def open_card(home: Home, page: Page, card: dict) -> Locator:
 
 
 def diary(home: Home, page: Page, person: str) -> Locator:
-    card = open_card(home, page, {"type": "custom:zp-food-diary-card", "person": person})
+    card = open_card(
+        home, page, {"type": "custom:fork-and-scale-food-diary-card", "person": person}
+    )
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
     return card
 
@@ -129,7 +131,7 @@ def test_copies_a_meal_from_yesterday_and_moves_between_days(home: Home, page: P
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
     home.ws(
         {
-            "type": "zp_my_fitness/entry/add",
+            "type": "fork_and_scale/entry/add",
             "person": person_id(home, "Matteo"),
             "day": yesterday,
             "meal": "lunch",
@@ -164,7 +166,7 @@ def test_copying_an_empty_meal_says_so(home: Home, page: Page) -> None:
 
 
 def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> None:
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     form = card.locator(".foodform")
     form.locator('[data-field="name"]').fill("Greek yogurt e2e")
@@ -179,7 +181,7 @@ def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> 
     card.locator('[data-action="query"]').fill("yogurt e2e")
     row = card.locator(".row", has_text="Greek yogurt e2e")
     expect(row).to_contain_text("73 kcal per 100 g", timeout=TIMEOUT)
-    saved = home.ws({"type": "zp_my_fitness/food/barcode", "barcode": "5201054017111"})
+    saved = home.ws({"type": "fork_and_scale/food/barcode", "barcode": "5201054017111"})
     assert saved["portions"] == [{"name": "Pot", "grams": 170}]
 
     row.click()
@@ -195,7 +197,7 @@ def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> 
 
 def test_a_used_barcode_is_refused(home: Home, page: Page) -> None:
     save_food(home, "First e2e", barcode="400000000001")
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     form = card.locator(".foodform")
     form.locator('[data-field="name"]').fill("Second e2e")
@@ -209,7 +211,9 @@ def test_a_used_barcode_is_refused(home: Home, page: Page) -> None:
 @pytest.mark.parametrize("language", ["it"])
 def test_follows_the_locale_option(home: Home, page: Page, language: str) -> None:
     card = open_card(
-        home, page, {"type": "custom:zp-food-diary-card", "person": "Debora", "locale": language}
+        home,
+        page,
+        {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora", "locale": language},
     )
     expect(card.locator(".title").first).to_have_text("Diario alimentare")
     expect(meal(card, "breakfast").locator(".mealhead")).to_contain_text("Colazione")
@@ -217,7 +221,7 @@ def test_follows_the_locale_option(home: Home, page: Page, language: str) -> Non
 
 def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page) -> None:
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
-    card = open_card(home, page, {"type": "custom:zp-weight-card", "person": "Debora"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-weight-card", "person": "Debora"})
     expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
     expect(card.locator(".chart")).to_contain_text("Goal 62 kg")
 
@@ -226,7 +230,7 @@ def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page)
     card.locator('[data-action="log"]').click()
     item = card.locator(".recent .item", has_text="69.3 kg")
     expect(item).to_have_count(1, timeout=TIMEOUT)
-    weights = home.ws({"type": "zp_my_fitness/weights", "person": person_id(home, "Debora")})
+    weights = home.ws({"type": "fork_and_scale/weights", "person": person_id(home, "Debora")})
     assert {"day": yesterday, "kg": 69.3} in weights
 
     card.locator('[data-field="weight"]').fill("5")
@@ -242,7 +246,7 @@ def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> Non
     matteo = person_id(home, "Matteo")
     home.ws(
         {
-            "type": "zp_my_fitness/entry/add",
+            "type": "fork_and_scale/entry/add",
             "person": matteo,
             "day": yesterday,
             "meal": "breakfast",
@@ -252,13 +256,13 @@ def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> Non
     )
     home.dashboard(
         [
-            {"type": "custom:zp-trends-card", "person": "Matteo"},
-            {"type": "custom:zp-food-diary-card", "person": "Matteo"},
+            {"type": "custom:fork-and-scale-trends-card", "person": "Matteo"},
+            {"type": "custom:fork-and-scale-food-diary-card", "person": "Matteo"},
         ]
     )
     page.goto(home.url + "/" + home.DASHBOARD + "/0")
-    trends = page.locator("zp-trends-card")
-    diary = page.locator("zp-food-diary-card")
+    trends = page.locator("fork-and-scale-trends-card")
+    diary = page.locator("fork-and-scale-food-diary-card")
     expect(trends.locator(".chart")).to_be_visible(timeout=30_000)
     expect(trends.locator(".stats")).to_contain_text("Average a day")
     expect(diary.locator(".nav .label")).to_have_text("Today", timeout=TIMEOUT)
@@ -279,7 +283,7 @@ def test_the_summary_card_shows_today_and_opens_its_path(home: Home, page: Page)
     debora = person_id(home, "Debora")
     home.ws(
         {
-            "type": "zp_my_fitness/entry/add",
+            "type": "fork_and_scale/entry/add",
             "person": debora,
             "day": today(),
             "meal": "lunch",
@@ -287,14 +291,16 @@ def test_the_summary_card_shows_today_and_opens_its_path(home: Home, page: Page)
             "kcal": 321,
         }
     )
-    eaten = sum(
-        e["kcal"]
-        for e in home.ws({"type": "zp_my_fitness/day", "person": debora, "day": today()})["entries"]
-    )
+    day = home.ws({"type": "fork_and_scale/day", "person": debora, "day": today()})
+    eaten = sum(e["kcal"] for e in day["entries"])
     card = open_card(
         home,
         page,
-        {"type": "custom:zp-summary-card", "person": "Debora", "navigation_path": "/config"},
+        {
+            "type": "custom:fork-and-scale-summary-card",
+            "person": "Debora",
+            "navigation_path": "/config",
+        },
     )
     expect(card.locator(".big .centre")).to_be_visible(timeout=TIMEOUT)
     expect(card.locator(".body")).to_contain_text(f"{round(eaten):,} of", timeout=TIMEOUT)
@@ -400,7 +406,7 @@ def fake_camera(page: Page, code: str | None, *, refuse: bool = False) -> None:
 
 def test_the_saved_foods_card_fills_a_food_from_its_barcode(home: Home, page: Page) -> None:
     asked = mock_open_food_facts(page)
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     form = card.locator(".foodform")
     form.locator('[data-field="barcode"]').fill("123")
@@ -416,7 +422,7 @@ def test_the_saved_foods_card_fills_a_food_from_its_barcode(home: Home, page: Pa
     assert asked == ["5201054017111"]
     card.locator('[data-action="save"]').click()
     expect(card.locator(".panel")).to_be_hidden(timeout=TIMEOUT)
-    saved = home.ws({"type": "zp_my_fitness/food/barcode", "barcode": "5201054017111"})
+    saved = home.ws({"type": "fork_and_scale/food/barcode", "barcode": "5201054017111"})
     assert saved["name"] == f"Greek yogurt 2% {DASH} Fage"
     assert saved["portions"] == [{"name": "Serving", "grams": 170}]
 
@@ -459,7 +465,7 @@ def test_the_diary_says_when_open_food_facts_does_not_know_a_barcode(
 def test_scanning_with_the_browser_reads_the_barcode(home: Home, page: Page) -> None:
     mock_open_food_facts(page)
     fake_camera(page, "8076809513753")
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     card.locator('[data-action="scan"]').click()
     form = card.locator(".foodform")
@@ -480,7 +486,7 @@ def test_scanning_a_saved_food_in_the_diary_chooses_it(home: Home, page: Page) -
 
 def test_without_a_scanner_there_is_no_scan_button(home: Home, page: Page) -> None:
     page.add_init_script("delete window.BarcodeDetector")
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     expect(card.locator('[data-action="lookup"]')).to_be_visible()
     expect(card.locator('[data-action="scan"]')).to_have_count(0)
@@ -556,7 +562,7 @@ def test_a_scan_can_be_cancelled(home: Home, page: Page, where: str) -> None:
         query = card.locator('[data-action="query"]')
         query.fill("before")
     else:
-        card = open_card(home, page, {"type": "custom:zp-foods-card"})
+        card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
         card.locator('[data-action="new"]').click()
         query = card.locator('.foodform [data-field="barcode"]')
         query.fill("12345670")
@@ -569,7 +575,7 @@ def test_a_scan_can_be_cancelled(home: Home, page: Page, where: str) -> None:
 
 def test_a_blocked_camera_is_explained(home: Home, page: Page) -> None:
     fake_camera(page, "12345670", refuse=True)
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     card.locator('[data-action="scan"]').click()
     expect(card.locator(".panel .error")).to_contain_text(
@@ -579,7 +585,7 @@ def test_a_blocked_camera_is_explained(home: Home, page: Page) -> None:
 
 def test_an_unreachable_open_food_facts_is_explained(home: Home, page: Page) -> None:
     page.route("https://world.openfoodfacts.org/**", lambda route: route.abort())
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     card.locator('.foodform [data-field="barcode"]').fill("40000000000105")
     card.locator('[data-action="lookup"]').click()
@@ -671,7 +677,7 @@ def test_a_failed_lookup_fills_the_food_from_the_search_with_a_warning(
         page.route("https://world.openfoodfacts.org/**", lambda route: route.abort())
         code = "40000000000327"
     search.find([hit(code, f"Old crackers e2e {lookup}", 421, brands=["Crunchy"], quantity="")])
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="query"]').fill(f"crackers e2e {lookup}")
     card.locator('[data-action="off-search"]').click()
     card.locator('[data-action="off-pick"]').click()
@@ -690,7 +696,7 @@ def test_a_failed_lookup_fills_the_food_from_the_search_with_a_warning(
     expect(card.locator(".panel .error")).to_have_count(0)
     card.locator('[data-action="save"]').click()
     expect(card.locator(".panel")).to_be_hidden(timeout=TIMEOUT)
-    assert home.ws({"type": "zp_my_fitness/food/barcode", "barcode": code})["kcal"] == 421
+    assert home.ws({"type": "fork_and_scale/food/barcode", "barcode": code})["kcal"] == 421
 
 
 def test_a_failed_search_can_be_retried_and_may_find_nothing(
@@ -729,7 +735,9 @@ def test_searches_open_food_facts_in_the_card_s_language(
         ]
     )
     card = open_card(
-        home, page, {"type": "custom:zp-food-diary-card", "person": "Debora", "locale": "it"}
+        home,
+        page,
+        {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora", "locale": "it"},
     )
     meal(card, "dinner").locator('[data-action="add"]').click()
     card.locator('[data-action="query"]').fill("yogurt greco")
@@ -749,7 +757,7 @@ def test_picking_a_product_already_saved_opens_the_saved_food(
     mock_open_food_facts(page)
     save_food(home, "Saved skyr e2e", barcode="40000000000341")
     search.find([hit("40000000000341", "Skyr e2e already saved", 60)])
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="query"]').fill("skyr e2e already saved")
     card.locator('[data-action="off-search"]').click()
     card.locator('[data-action="off-pick"]').click()
@@ -760,7 +768,7 @@ def test_picking_a_product_already_saved_opens_the_saved_food(
 
 
 def test_the_saved_foods_form_removes_portions_and_cancels(home: Home, page: Page) -> None:
-    card = open_card(home, page, {"type": "custom:zp-foods-card"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-foods-card"})
     card.locator('[data-action="new"]').click()
     card.locator('[data-action="add-portion"]').click()
     card.locator('[data-action="add-portion"]').click()
@@ -773,7 +781,7 @@ def test_the_saved_foods_form_removes_portions_and_cancels(home: Home, page: Pag
 
 
 def test_the_weight_card_switches_range(home: Home, page: Page) -> None:
-    card = open_card(home, page, {"type": "custom:zp-weight-card", "person": "Matteo"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-weight-card", "person": "Matteo"})
     for value in ("all", "365", "90"):
         card.locator(f'[data-action="range"][data-range="{value}"]').click()
         expect(card.locator(f'[data-action="range"][data-range="{value}"]')).to_have_attribute(

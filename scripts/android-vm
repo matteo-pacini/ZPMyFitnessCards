@@ -5,7 +5,7 @@
 # directory given (default: a new temporary one), whether or not it passes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-out=${1:-$(mktemp -d -t zpmf-android-vm-XXXXXX)}
+out=${1:-$(mktemp -d -t fork-and-scale-android-vm-XXXXXX)}
 mkdir -p "$out"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

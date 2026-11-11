@@ -7,7 +7,7 @@ import probatio
 import pytest
 import voluptuous
 
-from custom_components.zp_my_fitness import schema
+from custom_components.fork_and_scale import schema
 
 
 def test_uses_probatio_when_home_assistant_has_it() -> None:

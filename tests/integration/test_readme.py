@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 REPO = Path(__file__).parents[2]
 README = (REPO / "README.md").read_text()
-MANIFEST = json.loads((REPO / "custom_components" / "zp_my_fitness" / "manifest.json").read_text())
+MANIFEST = json.loads((REPO / "custom_components" / "fork_and_scale" / "manifest.json").read_text())
 
 # A my.home-assistant.io button: its badge, then the redirect it links to.
 BUTTON = re.compile(
@@ -52,3 +52,4 @@ def test_the_add_integration_button_starts_this_integration_s_setup() -> None:
 def test_the_custom_repository_named_is_this_one() -> None:
     assert f"add `https://github.com/{repository()}` as a custom repository" in README
     assert MANIFEST["issue_tracker"] == f"https://github.com/{repository()}/issues"
+

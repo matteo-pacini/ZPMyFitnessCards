@@ -1,10 +1,10 @@
 # AGENTS.md
 
-ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with dashboard cards. HACS installs it as an integration, and the integration serves the cards' JavaScript itself.
+Fork & Scale is a Home Assistant custom integration, `fork_and_scale`, with dashboard cards. HACS installs it as an integration, and the integration serves the cards' JavaScript itself.
 
 ## Layout
 
-- `custom_components/zp_my_fitness/`: the integration. `brand/` holds its icons.
+- `custom_components/fork_and_scale/`: the integration. `brand/` holds its icons.
   - `db.py`: the database, SQLite or Postgres, through SQLAlchemy Core, with blocking methods. `data.py` (`FitnessData`) is the only caller, except for the person form's `key_for_name`.
   - `goals.py`: calorie, macro and BMI maths, and conversions between kg and lb and between cm and feet and inches, with no Home Assistant code.
   - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
@@ -13,10 +13,10 @@ ZPMyFitnessCards is a Home Assistant custom integration, `zp_my_fitness`, with d
   - `config_flow.py`: the integration and its people, one config sub-entry each.
   - `backup.py`: pauses writes while Home Assistant backs up.
   - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.
-  - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `zp_my_fitness/openfoodfacts/search`, through its Search-a-licious service.
+  - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `fork_and_scale/openfoodfacts/search`, through its Search-a-licious service.
   - `myfitnesspal.py`: reads MyFitnessPal's Premium export (a ZIP or one of its CSVs) and its printable diary page saved as a complete web page into a `Diary`, with no Home Assistant code. `config_flow.py` uploads the file, asks for meals and the weight unit, and writes through `FitnessData.async_replace_entries`.
   - `export.py`: a person's entries, weights and every saved food as a ZIP of CSVs, served by an admin-only view; "Export data" shows a signed link to it.
-- `custom_components/zp_my_fitness/frontend/zp-my-fitness-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
+- `custom_components/fork_and_scale/frontend/fork-and-scale-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
 - `src/`: plain browser scripts, one per card or family of cards. `fitness-cards.js` holds every card: they share loading, live updates, the food form and the strings. There are no imports and no npm dependencies.
 - `tests/fixtures/myfitnesspal/`: made-up MyFitnessPal files with the real ones' quirks. The ZIP is built from its folder at test time.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
@@ -71,6 +71,7 @@ scripts/throttle 4 nix build -L .#checks.x86_64-linux.e2e-vm-sqlite
 - **Card events.** Cards redraw by setting `innerHTML`, so they handle events by delegation: a `data-action` attribute on the element, and a `kind:action` handler in the class's static `actions`. Redraw only the part that changed while someone types, or the input loses focus.
 - **Card registration.** Define cards on `window.customElements` only after `customElements.whenDefined("home-assistant")`. The frontend swaps in its own registry as it boots and ignores cards defined before that.
 - **Loading the cards.** `add_extra_js_url` puts the bundle only in pages served after the integration is set up. A page already open when it is first added never loads the cards, and shows "Configuration error" for them until reloaded; the setup's success message (`config.create_entry.default`) says so. Before Home Assistant 2026.11.0, the frontend's service worker also starts the companion apps from the start page it cached at its last update, so the apps miss the cards on every cold start until reloaded. The README's Troubleshooting section covers both; keep it in step.
+- **Old name.** Fork & Scale was ZPMyFitnessCards, domain `zp_my_fitness`, up to 0.3.0. Setup takes over the SQLite file it left (`adopt_legacy_database`, `LEGACY_DB_FILE`), and the README's "Coming from ZPMyFitnessCards" says how to move over. Keep both until nobody can still be upgrading from it.
 - **Install steps.** `tests/integration/test_readme.py` checks where the README's my.home-assistant.io buttons lead, and `tests/e2e/test_install.py` follows the README's steps in the browser, from its "Add integration" link to a card. Change those tests with the steps.
 - **New card.** Add its file to `SOURCES` in `scripts/build.js` (unless it joins an existing file) and its element name to `tests/cards/bundle.test.js`. Register it in `window.customCards` with `documentationURL` set to its README anchor, and give it a README section with screenshots.
 - **Shared scope.** The bundle wraps each card script in its own block and loads as a module, so it is strict code. Never rely on a name from another script, and never declare globals except `window.customCards`.
@@ -84,7 +85,7 @@ scripts/throttle 4 nix build -L .#checks.x86_64-linux.e2e-vm-sqlite
 - **Cleanup.** Tests create nothing outside temporary folders and the throwaway Postgres server, and remove both even when they fail.
 - **Daily totals.** Use `state_class: total` with `last_reset` at local midnight, never `total_increasing`: deleting an entry lowers a total, which `total_increasing` would read as a meter reset.
 - **Integration strings.** `translations/*.json` cover the same 11 languages as the cards. `tests/integration/test_translations.py` checks each matches `en.json`.
-- **Open Food Facts.** Tests never call the real service. The barcode lookup runs in the browser, and tests answer it with Playwright's `page.route`. Search by name runs on the Home Assistant server, in `openfoodfacts.py`, because Search-a-licious refuses browsers from other sites. Integration tests answer it with `aioclient_mock`. The e2e tests answer it with `FakeSearch` in `tests/e2e/conftest.py`, a local server that the test Home Assistant reaches through the `ZP_MY_FITNESS_SEARCH_URL` environment variable. That variable is only for tests: keep it out of the config flow, options and `configuration.yaml`.
+- **Open Food Facts.** Tests never call the real service. The barcode lookup runs in the browser, and tests answer it with Playwright's `page.route`. Search by name runs on the Home Assistant server, in `openfoodfacts.py`, because Search-a-licious refuses browsers from other sites. Integration tests answer it with `aioclient_mock`. The e2e tests answer it with `FakeSearch` in `tests/e2e/conftest.py`, a local server that the test Home Assistant reaches through the `FORK_AND_SCALE_SEARCH_URL` environment variable. That variable is only for tests: keep it out of the config flow, options and `configuration.yaml`.
 - **App scanner.** `scanWithApp` wraps `hass.auth.external.receiveMessage`, which the frontend does not document. Keep calling the original handler, which acknowledges each message, and keep typing a barcode working without any scanner.
 - **Coverage.** CI fails if the Python tests cover less than 90% of the integration's lines and branches (`fail_under` in `pyproject.toml`), and reports card unit coverage without enforcing it. Test new code anyway: card code needs a unit test for its pure functions and an end-to-end test for each interaction and failure path.
 - **MyFitnessPal files.** A saved printable diary holds the account's email, location and sign-in tokens. Read only the diary's rows, never store or log the file, and name a line or row in errors, never the file's text. `.private/` holds real files for local checks only; fixtures are made up. `.mhtml` is not supported: Chromium uploads it as `multipart/related`, which Home Assistant's `/api/file_upload` rejects.

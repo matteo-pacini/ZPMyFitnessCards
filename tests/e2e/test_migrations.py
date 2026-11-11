@@ -62,7 +62,7 @@ def old_page(old_home: Home, browser: Browser) -> Iterator[Page]:
 
 
 def config_entry(home: Home) -> dict[str, Any]:
-    [entry] = home.ws({"type": "config_entries/get", "domain": "zp_my_fitness"})
+    [entry] = home.ws({"type": "config_entries/get", "domain": "fork_and_scale"})
     return entry
 
 
@@ -119,11 +119,13 @@ def test_upgrades_the_old_database_and_the_cards_show_its_data(
     expect(meal(card, "breakfast")).to_contain_text("Old porridge oats", timeout=TIMEOUT)
     expect(meal(card, "dinner")).to_contain_text("Old quick add")
 
-    card = open_card(old_home, old_page, {"type": "custom:zp-weight-card", "person": "Debora"})
+    card = open_card(
+        old_home, old_page, {"type": "custom:fork-and-scale-weight-card", "person": "Debora"}
+    )
     expect(card.locator(".recent .item", has_text="80.1 kg")).to_have_count(1, timeout=TIMEOUT)
     expect(card.locator(".recent .item", has_text="80.5 kg")).to_have_count(1)
 
-    card = open_card(old_home, old_page, {"type": "custom:zp-foods-card"})
+    card = open_card(old_home, old_page, {"type": "custom:fork-and-scale-foods-card"})
     expect(card).to_contain_text("Old porridge oats", timeout=TIMEOUT)
 
 
@@ -157,7 +159,7 @@ def test_a_failed_upgrade_leaves_the_database_as_it_was_and_a_reload_finishes_it
             assert (layout(url), contents(url)) == before
             assert version(url) == 1
 
-            old_page.goto(old_home.url + "/config/integrations/integration/zp_my_fitness")
+            old_page.goto(old_home.url + "/config/integrations/integration/fork_and_scale")
             expect(old_page.get_by_text("Failed to set up").first).to_be_visible(timeout=TIMEOUT)
     finally:
         if config_entry(old_home)["disabled_by"]:
@@ -180,19 +182,21 @@ def test_refuses_a_database_a_newer_release_upgraded_and_says_why(
         reload(old_home)
         entry = wait_for_state(old_home, "setup_error")
         message = (
-            f"A newer release of ZPMyFitnessCards upgraded this database to version {LATEST + 1}."
+            f"A newer release of Fork & Scale upgraded this database to version {LATEST + 1}."
             f" This release knows up to version {LATEST}, so it left the database as it is."
-            " Update ZPMyFitnessCards to use it again"
+            " Update Fork & Scale to use it again"
         )
         assert entry["reason"] == message
         assert entry["error_reason_translation_key"] == "newer_database"
         assert (layout(url), contents(url)) == before
 
-        old_page.goto(old_home.url + "/config/integrations/integration/zp_my_fitness")
+        old_page.goto(old_home.url + "/config/integrations/integration/fork_and_scale")
         expect(old_page.get_by_text(f"Failed to set up: {message}")).to_be_visible(timeout=TIMEOUT)
 
         card = open_card(
-            old_home, old_page, {"type": "custom:zp-food-diary-card", "person": "Matteo"}
+            old_home,
+            old_page,
+            {"type": "custom:fork-and-scale-food-diary-card", "person": "Matteo"},
         )
         expect(card.locator(".muted")).to_have_text("Loading…", timeout=TIMEOUT)
     finally:

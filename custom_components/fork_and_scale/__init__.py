@@ -1,7 +1,8 @@
-"""ZPMyFitnessCards: a food diary and weight tracking for each person."""
+"""Fork & Scale: a food diary and weight tracking for each person."""
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -19,17 +20,26 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
 from . import services, websocket
-from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
+from .const import (
+    CARDS_URL,
+    CONF_DB_URL,
+    DOMAIN,
+    LEGACY_DB_FILE,
+    SIGNAL_CHANGED,
+    SUBENTRY_PERSON,
+)
 from .coordinator import PersonCoordinator
-from .data import FitnessData, Person, database_url
+from .data import FitnessData, Person, adopt_legacy_database, database_url
 from .db import MIGRATIONS, Database, NewerSchemaError
 from .export import ExportView
+
+_LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS = [Platform.SENSOR]
 
-CARDS_FILE = Path(__file__).parent / "frontend" / "zp-my-fitness-cards.js"
+CARDS_FILE = Path(__file__).parent / "frontend" / "fork-and-scale-cards.js"
 
 
 @dataclass
@@ -64,6 +74,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     # Before reading the people: one added while this runs, as when people are
     # added one after another, must reload the entry again once it is set up.
     entry.async_on_unload(entry.add_update_listener(_async_reload))
+    if not entry.data.get(CONF_DB_URL) and await hass.async_add_executor_job(
+        adopt_legacy_database, hass.config.config_dir
+    ):
+        _LOGGER.info("Took over %s, the database ZPMyFitnessCards left", LEGACY_DB_FILE)
     db = Database(database_url(hass, entry.data))
     try:
         await hass.async_add_executor_job(db.open)

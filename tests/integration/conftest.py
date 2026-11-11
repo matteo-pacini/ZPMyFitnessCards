@@ -14,7 +14,7 @@ from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
-from custom_components.zp_my_fitness.const import DOMAIN, SUBENTRY_PERSON
+from custom_components.fork_and_scale.const import DOMAIN, SUBENTRY_PERSON
 
 # Monday 9 November 2026, midday in London.
 NOW = "2026-11-09T12:00:00+00:00"
@@ -66,7 +66,7 @@ def mock_entry(*people: dict[str, Any], data: dict[str, Any] | None = None) -> M
     """The integration's entry with these people as sub-entries, on SQLite unless `data` says."""
     return MockConfigEntry(
         domain=DOMAIN,
-        title="ZPMyFitnessCards",
+        title="Fork & Scale",
         data=data or {"engine": "sqlite"},
         subentries_data=[
             ConfigSubentryData(

@@ -2,7 +2,7 @@
 
 Skipped unless COMPANION_APK names the app's APK, which the `android` dev shell
 and the NixOS VM test (nix/e2e-vm.nix) both set. Screenshots go to
-ZPMF_SCREENSHOTS when it is set.
+FORK_AND_SCALE_SCREENSHOTS when it is set.
 """
 
 from __future__ import annotations
@@ -151,7 +151,7 @@ class Device:
 @pytest.fixture(scope="module")
 def device(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Device]:
     """A brand-new Pixel 8 AVD, booted, with the Companion app installed."""
-    root = Path(tempfile.mkdtemp(prefix="zpmf-android-"))
+    root = Path(tempfile.mkdtemp(prefix="fork-and-scale-android-"))
     env = {
         **os.environ,
         # The dev shell's adb and emulator wrappers use this as $HOME.
@@ -160,7 +160,9 @@ def device(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Device]:
         "ANDROID_AVD_HOME": str(root / ".android" / "avd"),
         "ANDROID_EMULATOR_HOME": str(root / ".android"),
     }
-    shots = Path(os.environ.get("ZPMF_SCREENSHOTS") or tmp_path_factory.mktemp("android-shots"))
+    shots = Path(
+        os.environ.get("FORK_AND_SCALE_SCREENSHOTS") or tmp_path_factory.mktemp("android-shots")
+    )
     shots.mkdir(parents=True, exist_ok=True)
     subprocess.run(["create-avd"], env=env, check=True)
     log_path = root / "emulator.log"
@@ -354,7 +356,7 @@ def test_the_cards_show_in_the_app(app_home: Home, app: Page, device: Device) ->
 def test_scans_a_barcode_with_the_app(app_home: Home, app: Page, device: Device) -> None:
     app_home.ws(
         {
-            "type": "zp_my_fitness/food/add",
+            "type": "fork_and_scale/food/add",
             "name": "Greek yogurt 2%",
             "kcal": 73,
             "protein": 10,
@@ -364,7 +366,9 @@ def test_scans_a_barcode_with_the_app(app_home: Home, app: Page, device: Device)
             "portions": [{"name": "Pot", "grams": 170}],
         }
     )
-    card = _open(app_home, app, {"type": "custom:zp-food-diary-card", "person": "Debora"})
+    card = _open(
+        app_home, app, {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora"}
+    )
     # Clicks go through the DOM: the soft keyboard can resize the WebView
     # while Playwright aims a real click.
     card.locator('.meal[data-meal="breakfast"] [data-action="add"]').dispatch_event("click")

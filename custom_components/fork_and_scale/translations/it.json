@@ -1,10 +1,10 @@
 {
   "config": {
     "abort": {
-      "single_instance_allowed": "ZPMyFitnessCards è già configurato. Aggiungi le persone con «Aggiungi persona»."
+      "single_instance_allowed": "Fork & Scale è già configurato. Aggiungi le persone con «Aggiungi persona»."
     },
     "create_entry": {
-      "default": "ZPMyFitnessCards è configurato. Le pagine già aperte non possono ancora mostrarne le schede: ricaricale prima di aggiungere le schede. Poi aggiungi ogni persona con «Aggiungi persona»."
+      "default": "Fork & Scale è configurato. Le pagine già aperte non possono ancora mostrarne le schede: ricaricale prima di aggiungere le schede. Poi aggiungi ogni persona con «Aggiungi persona»."
     },
     "error": {
       "cannot_connect": "Connessione non riuscita. Controlla host, porta, utente, password e nome del database.",
@@ -17,9 +17,9 @@
           "db_url": "URL del database"
         },
         "data_description": {
-          "db_url": "Per esempio postgresql://user:password@192.168.1.10:5432/zp_my_fitness. Il database deve già esistere."
+          "db_url": "Per esempio postgresql://user:password@192.168.1.10:5432/fork_and_scale. Il database deve già esistere."
         },
-        "description": "Usa un database dedicato a ZPMyFitnessCards, non quello del recorder di Home Assistant.",
+        "description": "Usa un database dedicato a Fork & Scale, non quello del recorder di Home Assistant.",
         "title": "Database Postgres"
       },
       "user": {
@@ -29,7 +29,7 @@
         "data_description": {
           "engine": "SQLite conserva un file nella cartella di configurazione, incluso nei backup di Home Assistant. Postgres usa un database che gestisci e salvi tu."
         },
-        "description": "Scegli dove ZPMyFitnessCards conserva i dati. Poi aggiungi ogni persona con «Aggiungi persona».",
+        "description": "Scegli dove Fork & Scale conserva i dati. Poi aggiungi ogni persona con «Aggiungi persona».",
         "title": "Database"
       }
     }
@@ -42,7 +42,7 @@
         "imported": "Importati {weights} pesi e {days} giorni di calorie.",
         "mfp_imported": "Importato da MyFitnessPal:\n\n- Giorni: {days}\n- Voci: {entries}\n- Pesi aggiunti: {weights}\n- Pesi saltati, nei giorni che ne avevano già uno: {skipped}",
         "no_recorder": "Il recorder non è attivo, quindi non c'è cronologia da importare.",
-        "not_loaded": "ZPMyFitnessCards non è caricato. Ricaricalo e riprova.",
+        "not_loaded": "Fork & Scale non è caricato. Ricaricalo e riprova.",
         "reconfigure_successful": "Salvato."
       },
       "entry_type": "Persona",
@@ -50,7 +50,7 @@
         "bad_line": "Impossibile leggere la riga {line} di {file}.",
         "bad_row": "Impossibile leggere la riga {row} del {day}.",
         "birth_date_future": "La data di nascita deve essere nel passato.",
-        "database_unavailable": "Impossibile leggere il database per trovare i dati precedenti di questa persona. Riprova quando ZPMyFitnessCards è caricato.",
+        "database_unavailable": "Impossibile leggere il database per trovare i dati precedenti di questa persona. Riprova quando Fork & Scale è caricato.",
         "date_not_english": "Le date del diario non sono in inglese. Imposta MyFitnessPal in inglese, poi salva di nuovo la pagina.",
         "height_out_of_range": "Inserisci un'altezza tra 3 ft 4 in e 8 ft 2 in.",
         "macros_not_100": "Proteine, carboidrati e grassi devono sommare al 100%.",
@@ -265,10 +265,10 @@
       "message": "Un'aggiunta rapida richiede le kcal."
     },
     "newer_database": {
-      "message": "Una versione più recente di ZPMyFitnessCards ha aggiornato questo database alla versione {version}. Questa versione conosce solo fino alla versione {latest}, quindi non ha toccato il database. Aggiorna ZPMyFitnessCards per usarlo di nuovo."
+      "message": "Una versione più recente di Fork & Scale ha aggiornato questo database alla versione {version}. Questa versione conosce solo fino alla versione {latest}, quindi non ha toccato il database. Aggiorna Fork & Scale per usarlo di nuovo."
     },
     "not_loaded": {
-      "message": "ZPMyFitnessCards non è caricato."
+      "message": "Fork & Scale non è caricato."
     },
     "nutrients_with_saved_food": {
       "message": "kcal, proteine, carboidrati e grassi servono solo per un'aggiunta rapida. Un alimento salvato ha i suoi."
@@ -283,7 +283,7 @@
       "message": "Non c'è nessun alimento salvato chiamato {food}."
     },
     "unknown_person": {
-      "message": "Scegli una persona aggiunta a ZPMyFitnessCards."
+      "message": "Scegli una persona aggiunta a Fork & Scale."
     },
     "weight_out_of_range": {
       "message": "Indica un peso tra {min} e {max} {unit}."
@@ -346,7 +346,7 @@
           "name": "Giorno"
         },
         "device_id": {
-          "description": "La persona, come suo dispositivo in ZPMyFitnessCards.",
+          "description": "La persona, come suo dispositivo in Fork & Scale.",
           "name": "Persona"
         }
       },
@@ -368,7 +368,7 @@
           "name": "Giorno"
         },
         "device_id": {
-          "description": "La persona, come suo dispositivo in ZPMyFitnessCards.",
+          "description": "La persona, come suo dispositivo in Fork & Scale.",
           "name": "Persona"
         },
         "fat": {
@@ -410,7 +410,7 @@
           "name": "Giorno"
         },
         "device_id": {
-          "description": "La persona, come suo dispositivo in ZPMyFitnessCards.",
+          "description": "La persona, come suo dispositivo in Fork & Scale.",
           "name": "Persona"
         },
         "unit": {

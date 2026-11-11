@@ -64,9 +64,9 @@ def mount(page: Page, tag: str, config: dict, fail=None, once=False, subscribe_f
 def test_load_errors_are_shown(home: Home, page: Page) -> None:
     open_home(home, page)
     for tag, config in (
-        ("zp-food-diary-card", {"person": "Debora"}),
-        ("zp-weight-card", {"person": "Debora"}),
-        ("zp-foods-card", {}),
+        ("fork-and-scale-food-diary-card", {"person": "Debora"}),
+        ("fork-and-scale-weight-card", {"person": "Debora"}),
+        ("fork-and-scale-foods-card", {}),
     ):
         card = mount(page, tag, config, fail={"*": "boom"})
         expect(card.locator(".error")).to_have_text(
@@ -77,7 +77,11 @@ def test_load_errors_are_shown(home: Home, page: Page) -> None:
 def test_cards_wait_and_retry_while_the_integration_reloads(home: Home, page: Page) -> None:
     open_home(home, page)
     card = mount(
-        page, "zp-food-diary-card", {"person": "Debora"}, fail={"*": "not_loaded"}, once=True
+        page,
+        "fork-and-scale-food-diary-card",
+        {"person": "Debora"},
+        fail={"*": "not_loaded"},
+        once=True,
     )
     expect(card.locator(".muted")).to_have_text("Loading…")
     # The card tries again after two seconds, and then the calls work.
@@ -86,30 +90,30 @@ def test_cards_wait_and_retry_while_the_integration_reloads(home: Home, page: Pa
 
 def test_a_failed_subscription_still_shows_the_card(home: Home, page: Page) -> None:
     open_home(home, page)
-    card = mount(page, "zp-foods-card", {}, subscribe_fails=True)
+    card = mount(page, "fork-and-scale-foods-card", {}, subscribe_fails=True)
     expect(card.locator(".list")).to_be_visible(timeout=TIMEOUT)
 
 
 def test_says_who_the_card_cannot_find(home: Home, page: Page) -> None:
     open_home(home, page)
-    card = mount(page, "zp-weight-card", {"person": "Nora"})
+    card = mount(page, "fork-and-scale-weight-card", {"person": "Nora"})
     expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
-    card = mount(page, "zp-food-diary-card", {"person": "Nora"})
+    card = mount(page, "fork-and-scale-food-diary-card", {"person": "Nora"})
     expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
     # Nobody is linked to the test owner, so a card without a person has no one.
-    card = mount(page, "zp-summary-card", {})
+    card = mount(page, "fork-and-scale-summary-card", {})
     expect(card.locator(".error")).to_contain_text("No person to show", timeout=TIMEOUT)
 
 
 def test_a_failed_refresh_keeps_the_card_and_retries(home: Home, page: Page) -> None:
     matteo = next(
-        p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Matteo"
+        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Matteo"
     )
     today = page.evaluate(
         "() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())"
     )
     open_home(home, page)
-    card = mount(page, "zp-weight-card", {"person": "Matteo"})
+    card = mount(page, "fork-and-scale-weight-card", {"person": "Matteo"})
     expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
     # From now on its calls fail, so the refresh a change causes fails too.
     page.evaluate(
@@ -120,7 +124,7 @@ def test_a_failed_refresh_keeps_the_card_and_retries(home: Home, page: Page) -> 
           el._hass = { ...el._hass, callWS: fail };
         }"""
     )
-    home.ws({"type": "zp_my_fitness/weight/set", "person": matteo, "day": today, "kg": 77.7})
+    home.ws({"type": "fork_and_scale/weight/set", "person": matteo, "day": today, "kg": 77.7})
     page.wait_for_timeout(500)
     # It keeps what it showed, and keeps trying.
     expect(card.locator(".chart")).to_be_visible()
@@ -133,15 +137,15 @@ def test_a_failed_refresh_keeps_the_card_and_retries(home: Home, page: Page) -> 
 
 def test_weight_card_shows_save_and_delete_errors(home: Home, page: Page) -> None:
     debora = next(
-        p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Debora"
+        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Debora"
     )
-    home.ws({"type": "zp_my_fitness/weight/set", "person": debora, "day": "2026-01-02", "kg": 70})
+    home.ws({"type": "fork_and_scale/weight/set", "person": debora, "day": "2026-01-02", "kg": 70})
     open_home(home, page)
     card = mount(
         page,
-        "zp-weight-card",
+        "fork-and-scale-weight-card",
         {"person": "Debora"},
-        fail={"zp_my_fitness/weight/set": "boom", "zp_my_fitness/weight/delete": "boom"},
+        fail={"fork_and_scale/weight/set": "boom", "fork_and_scale/weight/delete": "boom"},
     )
     expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
     card.locator('[data-field="weight"]').fill("68")
@@ -153,7 +157,7 @@ def test_weight_card_shows_save_and_delete_errors(home: Home, page: Page) -> Non
 
 def test_removed_cards_stop_listening(home: Home, page: Page) -> None:
     open_home(home, page)
-    card = mount(page, "zp-food-diary-card", {"person": "Matteo"})
+    card = mount(page, "fork-and-scale-food-diary-card", {"person": "Matteo"})
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
     # Listen only from here: Home Assistant's own frontend can reject a
     # promise or two while it boots.
@@ -164,7 +168,7 @@ def test_removed_cards_stop_listening(home: Home, page: Page) -> None:
           const el = document.getElementById("mounted");
           el.remove();
           const detail = { person: "x", day: "2026-01-01" };
-          window.dispatchEvent(new CustomEvent("zp-my-fitness-open-day", { detail }));
+          window.dispatchEvent(new CustomEvent("fork-and-scale-open-day", { detail }));
         }"""
     )
     expect(page.locator("#mounted")).to_have_count(0)
@@ -174,7 +178,7 @@ def test_removed_cards_stop_listening(home: Home, page: Page) -> None:
 
 def test_the_summary_card_gives_its_hass_back(home: Home, page: Page) -> None:
     open_home(home, page)
-    mount(page, "zp-summary-card", {"person": "Debora"})
+    mount(page, "fork-and-scale-summary-card", {"person": "Debora"})
     same = page.evaluate("() => document.getElementById('mounted').hass.callWS !== undefined")
     assert same
 
@@ -190,19 +194,19 @@ MEND = "() => { const el = document.getElementById('mounted'); el._hass = el._wo
 
 def test_the_diary_and_saved_foods_recover_from_a_failed_refresh(home: Home, page: Page) -> None:
     matteo = next(
-        p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Matteo"
+        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Matteo"
     )
     today = page.evaluate(
         "() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())"
     )
     open_home(home, page)
 
-    card = mount(page, "zp-food-diary-card", {"person": "Matteo"})
+    card = mount(page, "fork-and-scale-food-diary-card", {"person": "Matteo"})
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
     page.evaluate(BREAK)
     home.ws(
         {
-            "type": "zp_my_fitness/entry/add",
+            "type": "fork_and_scale/entry/add",
             "person": matteo,
             "day": today,
             "meal": "snacks",
@@ -215,12 +219,12 @@ def test_the_diary_and_saved_foods_recover_from_a_failed_refresh(home: Home, pag
     page.evaluate(MEND)
     expect(card.locator(".row", has_text="Recovered apple")).to_have_count(1, timeout=TIMEOUT)
 
-    card = mount(page, "zp-foods-card", {})
+    card = mount(page, "fork-and-scale-foods-card", {})
     expect(card.locator(".list")).to_be_visible(timeout=TIMEOUT)
     page.evaluate(BREAK)
     home.ws(
         {
-            "type": "zp_my_fitness/food/add",
+            "type": "fork_and_scale/food/add",
             "name": "Recovered pear",
             "kcal": 57,
             "protein": 0.4,
@@ -236,7 +240,10 @@ def test_the_diary_and_saved_foods_recover_from_a_failed_refresh(home: Home, pag
 def test_a_failed_food_search_is_shown_in_the_panel(home: Home, page: Page) -> None:
     open_home(home, page)
     card = mount(
-        page, "zp-food-diary-card", {"person": "Debora"}, fail={"zp_my_fitness/food/recent": "boom"}
+        page,
+        "fork-and-scale-food-diary-card",
+        {"person": "Debora"},
+        fail={"fork_and_scale/food/recent": "boom"},
     )
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
     card.locator('.meal[data-meal="lunch"] [data-action="add"]').dispatch_event("click")

@@ -43,13 +43,13 @@ def add_sample_data(home: Home) -> None:
     """Debora's day so far from saved foods, her last four weeks, and a year
     of Matteo's weigh-ins."""
     debora = next(
-        p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Debora"
+        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Debora"
     )
     today = datetime.now(ZoneInfo("Europe/London")).date().isoformat()
     for name, kcal, protein, carbs, fat, portions, meal, grams in FOODS:
         food = home.ws(
             {
-                "type": "zp_my_fitness/food/add",
+                "type": "fork_and_scale/food/add",
                 "name": name,
                 "kcal": kcal,
                 "protein": protein,
@@ -61,7 +61,7 @@ def add_sample_data(home: Home) -> None:
         if meal:
             home.ws(
                 {
-                    "type": "zp_my_fitness/entry/add",
+                    "type": "fork_and_scale/entry/add",
                     "person": debora,
                     "day": today,
                     "meal": meal,
@@ -71,14 +71,14 @@ def add_sample_data(home: Home) -> None:
             )
     # A year of Matteo weighing in every few days, slowly losing weight.
     matteo = next(
-        p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == "Matteo"
+        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Matteo"
     )
     first = date.fromisoformat(today) - timedelta(days=360)
     for n in range(0, 361, 4):
         wobble = ((n * 37) % 11 - 5) / 10
         home.ws(
             {
-                "type": "zp_my_fitness/weight/set",
+                "type": "fork_and_scale/weight/set",
                 "person": matteo,
                 "day": (first + timedelta(days=n)).isoformat(),
                 "kg": round(95 - n * 0.018 + wobble, 1),
@@ -86,7 +86,7 @@ def add_sample_data(home: Home) -> None:
         )
     for n, kg in enumerate((69.8, 69.6, 69.7, 69.4, 69.2, 69.3, 69.0, 68.9)):
         day = (date.fromisoformat(today) - timedelta(days=28 - n * 4)).isoformat()
-        home.ws({"type": "zp_my_fitness/weight/set", "person": debora, "day": day, "kg": kg})
+        home.ws({"type": "fork_and_scale/weight/set", "person": debora, "day": day, "kg": kg})
     # Four weeks of Debora's meals before today, as quick adds.
     for n in range(1, 29):
         day = (date.fromisoformat(today) - timedelta(days=n)).isoformat()
@@ -97,7 +97,7 @@ def add_sample_data(home: Home) -> None:
         ):
             home.ws(
                 {
-                    "type": "zp_my_fitness/entry/add",
+                    "type": "fork_and_scale/entry/add",
                     "person": debora,
                     "day": day,
                     "meal": meal,
@@ -135,11 +135,11 @@ def shoot(
     context.close()
 
 
-DIARY = {"type": "custom:zp-food-diary-card", "person": "Debora"}
-FOODS_CARD = {"type": "custom:zp-foods-card"}
-WEIGHT = {"type": "custom:zp-weight-card", "person": "Matteo"}
-TRENDS = {"type": "custom:zp-trends-card", "person": "Debora"}
-SUMMARY = {"type": "custom:zp-summary-card", "person": "Debora"}
+DIARY = {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora"}
+FOODS_CARD = {"type": "custom:fork-and-scale-foods-card"}
+WEIGHT = {"type": "custom:fork-and-scale-weight-card", "person": "Matteo"}
+TRENDS = {"type": "custom:fork-and-scale-trends-card", "person": "Debora"}
+SUMMARY = {"type": "custom:fork-and-scale-summary-card", "person": "Debora"}
 
 
 def look_up_barcode(card) -> None:

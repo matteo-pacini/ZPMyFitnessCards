@@ -93,7 +93,7 @@ MYFITNESSPAL_FILES = ".zip,.csv,.html"
 # How long the link "Export data" shows works.
 EXPORT_LINK_MINUTES = 5
 
-TITLE = "ZPMyFitnessCards"
+TITLE = "Fork & Scale"
 
 # On US customary installs the person form asks for these instead of the
 # weights in kg and the height in cm. The sub-entry stores kg and cm either way.
@@ -258,7 +258,7 @@ def check_database(url: str) -> str | None:
     return None
 
 
-class ZPMyFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
+class ForkAndScaleConfigFlow(ConfigFlow, domain=DOMAIN):
     """Add the integration: choose where the data lives. People are sub-entries."""
 
     VERSION = 1

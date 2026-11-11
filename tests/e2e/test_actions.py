@@ -19,12 +19,12 @@ from .test_cards import TIMEOUT, diary, meal, open_card, person_id, save_food, t
 def device_id(home: Home, name: str) -> str:
     key = person_id(home, name)
     devices = home.ws({"type": "config/device_registry/list"})
-    return next(d["id"] for d in devices if ["zp_my_fitness", key] in d["identifiers"])
+    return next(d["id"] for d in devices if ["fork_and_scale", key] in d["identifiers"])
 
 
 def act(home: Home, action: str, person: str, **data: Any) -> Any:
     """Call an action through the REST API; return get_day's response."""
-    path = f"/api/services/zp_my_fitness/{action}"
+    path = f"/api/services/fork_and_scale/{action}"
     if action == "get_day":
         path += "?return_response"
     reply = home.api("POST", path, {"device_id": device_id(home, person), **data})
@@ -56,14 +56,14 @@ def test_logged_food_shows_in_an_open_diary(home: Home, page: Page) -> None:
 
 def test_a_logged_weight_shows_in_the_weight_card(home: Home, page: Page) -> None:
     day = (date.fromisoformat(today()) - timedelta(days=3)).isoformat()
-    card = open_card(home, page, {"type": "custom:zp-weight-card", "person": "Debora"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-weight-card", "person": "Debora"})
     expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
 
     act(home, "log_weight", "Debora", weight="67.7", day=day)
 
     expect(card.locator(".recent .item", has_text="67.7 kg")).to_have_count(1, timeout=TIMEOUT)
     debora = person_id(home, "Debora")
-    home.ws({"type": "zp_my_fitness/weight/delete", "person": debora, "day": day})
+    home.ws({"type": "fork_and_scale/weight/delete", "person": debora, "day": day})
 
 
 def test_get_day_returns_the_day(home: Home) -> None:
@@ -97,10 +97,10 @@ def open_action(home: Home, page: Page, name: str, action: str, person: str) -> 
     page.get_by_text("Action", exact=True).first.click()
     page.get_by_placeholder("Search").fill(name)
     page.get_by_text(name, exact=True).click()
-    expect(page.get_by_text(f"zp_my_fitness.{action}", exact=True)).to_be_visible()
+    expect(page.get_by_text(f"fork_and_scale.{action}", exact=True)).to_be_visible()
     page.get_by_text("Select a device").click()
     # Only the people are offered.
-    expect(page.get_by_text("ZPMyFitnessCards", exact=True)).to_have_count(2)
+    expect(page.get_by_text("Fork & Scale", exact=True)).to_have_count(2)
     page.get_by_text(person, exact=True).click()
 
 
@@ -133,9 +133,9 @@ def test_the_action_editor_logs_a_weight(home: Home, page: Page) -> None:
     page.get_by_role("button", name="Perform action").click()
 
     debora = person_id(home, "Debora")
-    weights = {"type": "zp_my_fitness/weights", "person": debora}
+    weights = {"type": "fork_and_scale/weights", "person": debora}
     wait_for(lambda: {"day": today(), "kg": 66.6} in home.ws(weights))
-    home.ws({"type": "zp_my_fitness/weight/delete", "person": debora, "day": today()})
+    home.ws({"type": "fork_and_scale/weight/delete", "person": debora, "day": today()})
 
 
 def test_the_action_editor_quick_adds_food(home: Home, page: Page) -> None:
@@ -145,7 +145,7 @@ def test_the_action_editor_quick_adds_food(home: Home, page: Page) -> None:
     fill(page, "kcal", "700", optional=True)
     page.get_by_role("button", name="Perform action").click()
 
-    day = {"type": "zp_my_fitness/day", "person": person_id(home, "Matteo"), "day": today()}
+    day = {"type": "fork_and_scale/day", "person": person_id(home, "Matteo"), "day": today()}
     entries = wait_for(
         lambda: [e for e in home.ws(day)["entries"] if e["name"] == "Editor pizza e2e"]
     )

@@ -1,6 +1,6 @@
 """Websocket commands the cards call.
 
-People are identified by their key (the `id` that zp_my_fitness/people
+People are identified by their key (the `id` that fork_and_scale/people
 returns). Days are ISO dates in Home Assistant's time zone, never in the
 future. Any logged-in user may read and write; Home Assistant has no
 per-person permissions to apply.
@@ -32,7 +32,7 @@ from .data import FitnessData, Person, food_entry, loaded_data, today
 from .openfoodfacts import SearchError, async_search
 from .schema import vol
 
-# The longest range zp_my_fitness/days answers, in days.
+# The longest range fork_and_scale/days answers, in days.
 MAX_RANGE = 400
 
 ERR_NOT_LOADED = "not_loaded"
@@ -133,7 +133,7 @@ def _command(schema: dict) -> Callable:
         ) -> None:
             data = loaded_data(hass)
             if data is None:
-                connection.send_error(msg["id"], ERR_NOT_LOADED, "ZPMyFitnessCards is not loaded")
+                connection.send_error(msg["id"], ERR_NOT_LOADED, "Fork & Scale is not loaded")
                 return
             person = None
             if "person" in msg:

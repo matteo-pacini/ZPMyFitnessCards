@@ -1,17 +1,17 @@
-// The ZPMyFitnessCards cards.
+// The Fork & Scale cards.
 //
-// custom:zp-food-diary-card   one person's day, meal by meal: add, change,
+// custom:fork-and-scale-food-diary-card   one person's day, meal by meal: add, change,
 //                             delete and copy food
-// custom:zp-foods-card        the house's saved foods, per 100 g
-// custom:zp-weight-card       one person's weight: log it, and chart it with
+// custom:fork-and-scale-foods-card        the house's saved foods, per 100 g
+// custom:fork-and-scale-weight-card       one person's weight: log it, and chart it with
 //                             the BMI bands and their goal
-// custom:zp-trends-card       one person's calories by day or week, by meal,
+// custom:fork-and-scale-trends-card       one person's calories by day or week, by meal,
 //                             against their goal
-// custom:zp-summary-card      one person's day at a glance: calorie and macro
+// custom:fork-and-scale-summary-card      one person's day at a glance: calorie and macro
 //                             rings, meals, and weight
 //
 // They talk to the integration over its websocket commands, and redraw when
-// its zp_my_fitness/subscribe events say something changed.
+// its fork_and_scale/subscribe events say something changed.
 //
 // Config for the cards that show one person (all but saved foods):
 //   person  a person's name; defaults to the person linked to the logged-in user
@@ -58,8 +58,8 @@ const STRINGS = {
     nothing_to_copy: "Nothing to copy: that meal is empty.",
     loading: "Loading…",
     error_failed: "Something went wrong: {message}",
-    unknown_person: "No person named {name}. Add them in Settings, Devices & services, ZPMyFitnessCards.",
-    no_person: "No person to show. Set person: on the card, or link your user to a person in ZPMyFitnessCards.",
+    unknown_person: "No person named {name}. Add them in Settings, Devices & services, Fork & Scale.",
+    no_person: "No person to show. Set person: on the card, or link your user to a person in Fork & Scale.",
     search_placeholder: "Search saved foods",
     results: "Saved foods",
     recent: "Recent",
@@ -182,8 +182,8 @@ const STRINGS = {
     nothing_to_copy: "Nichts zu kopieren: Diese Mahlzeit ist leer.",
     loading: "Wird geladen…",
     error_failed: "Etwas ist schiefgelaufen: {message}",
-    unknown_person: "Keine Person namens {name}. Füge sie unter Einstellungen, Geräte & Dienste, ZPMyFitnessCards hinzu.",
-    no_person: "Keine Person zum Anzeigen. Setze person: in der Karte oder verknüpfe deinen Benutzer mit einer Person in ZPMyFitnessCards.",
+    unknown_person: "Keine Person namens {name}. Füge sie unter Einstellungen, Geräte & Dienste, Fork & Scale hinzu.",
+    no_person: "Keine Person zum Anzeigen. Setze person: in der Karte oder verknüpfe deinen Benutzer mit einer Person in Fork & Scale.",
     search_placeholder: "Gespeicherte Lebensmittel suchen",
     results: "Gespeicherte Lebensmittel",
     recent: "Zuletzt",
@@ -306,8 +306,8 @@ const STRINGS = {
     nothing_to_copy: "No hay nada que copiar: esa comida está vacía.",
     loading: "Cargando…",
     error_failed: "Algo salió mal: {message}",
-    unknown_person: "No hay ninguna persona llamada {name}. Añádela en Ajustes, Dispositivos y servicios, ZPMyFitnessCards.",
-    no_person: "No hay ninguna persona que mostrar. Indica person: en la tarjeta o vincula tu usuario a una persona en ZPMyFitnessCards.",
+    unknown_person: "No hay ninguna persona llamada {name}. Añádela en Ajustes, Dispositivos y servicios, Fork & Scale.",
+    no_person: "No hay ninguna persona que mostrar. Indica person: en la tarjeta o vincula tu usuario a una persona en Fork & Scale.",
     search_placeholder: "Buscar alimentos guardados",
     results: "Alimentos guardados",
     recent: "Recientes",
@@ -430,8 +430,8 @@ const STRINGS = {
     nothing_to_copy: "Rien à copier : ce repas est vide.",
     loading: "Chargement…",
     error_failed: "Une erreur s’est produite : {message}",
-    unknown_person: "Aucune personne nommée {name}. Ajoutez-la dans Paramètres, Appareils et services, ZPMyFitnessCards.",
-    no_person: "Aucune personne à afficher. Indiquez person: sur la carte ou liez votre utilisateur à une personne dans ZPMyFitnessCards.",
+    unknown_person: "Aucune personne nommée {name}. Ajoutez-la dans Paramètres, Appareils et services, Fork & Scale.",
+    no_person: "Aucune personne à afficher. Indiquez person: sur la carte ou liez votre utilisateur à une personne dans Fork & Scale.",
     search_placeholder: "Rechercher dans les aliments enregistrés",
     results: "Aliments enregistrés",
     recent: "Récents",
@@ -554,8 +554,8 @@ const STRINGS = {
     nothing_to_copy: "Niente da copiare: quel pasto è vuoto.",
     loading: "Caricamento…",
     error_failed: "Qualcosa è andato storto: {message}",
-    unknown_person: "Nessuna persona di nome {name}. Aggiungila in Impostazioni, Dispositivi e servizi, ZPMyFitnessCards.",
-    no_person: "Nessuna persona da mostrare. Imposta person: sulla scheda, oppure collega il tuo utente a una persona in ZPMyFitnessCards.",
+    unknown_person: "Nessuna persona di nome {name}. Aggiungila in Impostazioni, Dispositivi e servizi, Fork & Scale.",
+    no_person: "Nessuna persona da mostrare. Imposta person: sulla scheda, oppure collega il tuo utente a una persona in Fork & Scale.",
     search_placeholder: "Cerca tra gli alimenti salvati",
     results: "Alimenti salvati",
     recent: "Recenti",
@@ -678,8 +678,8 @@ const STRINGS = {
     nothing_to_copy: "Niets te kopiëren: die maaltijd is leeg.",
     loading: "Laden…",
     error_failed: "Er ging iets mis: {message}",
-    unknown_person: "Geen persoon met de naam {name}. Voeg die toe via Instellingen, Apparaten en diensten, ZPMyFitnessCards.",
-    no_person: "Geen persoon om te tonen. Stel person: in op de kaart, of koppel je gebruiker aan een persoon in ZPMyFitnessCards.",
+    unknown_person: "Geen persoon met de naam {name}. Voeg die toe via Instellingen, Apparaten en diensten, Fork & Scale.",
+    no_person: "Geen persoon om te tonen. Stel person: in op de kaart, of koppel je gebruiker aan een persoon in Fork & Scale.",
     search_placeholder: "Zoek in opgeslagen voeding",
     results: "Opgeslagen voeding",
     recent: "Recent",
@@ -802,8 +802,8 @@ const STRINGS = {
     nothing_to_copy: "Nie ma czego kopiować: ten posiłek jest pusty.",
     loading: "Ładowanie…",
     error_failed: "Coś poszło nie tak: {message}",
-    unknown_person: "Brak osoby o imieniu {name}. Dodaj ją w Ustawienia, Urządzenia oraz usługi, ZPMyFitnessCards.",
-    no_person: "Brak osoby do pokazania. Ustaw person: w karcie albo powiąż swojego użytkownika z osobą w ZPMyFitnessCards.",
+    unknown_person: "Brak osoby o imieniu {name}. Dodaj ją w Ustawienia, Urządzenia oraz usługi, Fork & Scale.",
+    no_person: "Brak osoby do pokazania. Ustaw person: w karcie albo powiąż swojego użytkownika z osobą w Fork & Scale.",
     search_placeholder: "Szukaj w zapisanych produktach",
     results: "Zapisane produkty",
     recent: "Ostatnie",
@@ -926,8 +926,8 @@ const STRINGS = {
     nothing_to_copy: "Nada para copiar: essa refeição está vazia.",
     loading: "A carregar…",
     error_failed: "Algo correu mal: {message}",
-    unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Definições, Dispositivos e serviços, ZPMyFitnessCards.",
-    no_person: "Não há nenhuma pessoa para mostrar. Defina person: no cartão ou associe o seu utilizador a uma pessoa no ZPMyFitnessCards.",
+    unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Definições, Dispositivos e serviços, Fork & Scale.",
+    no_person: "Não há nenhuma pessoa para mostrar. Defina person: no cartão ou associe o seu utilizador a uma pessoa no Fork & Scale.",
     search_placeholder: "Pesquisar alimentos guardados",
     results: "Alimentos guardados",
     recent: "Recentes",
@@ -1024,8 +1024,8 @@ const STRINGS = {
     error_failed: "Algo deu errado: {message}",
     carbs: "Carboidratos",
     breakfast: "Café da manhã",
-    unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Configurações, Dispositivos e serviços, ZPMyFitnessCards.",
-    no_person: "Não há nenhuma pessoa para mostrar. Defina person: no card ou vincule seu usuário a uma pessoa no ZPMyFitnessCards.",
+    unknown_person: "Não há nenhuma pessoa chamada {name}. Adicione-a em Configurações, Dispositivos e serviços, Fork & Scale.",
+    no_person: "Não há nenhuma pessoa para mostrar. Defina person: no card ou vincule seu usuário a uma pessoa no Fork & Scale.",
     search_placeholder: "Pesquisar alimentos salvos",
     results: "Alimentos salvos",
     no_results: "Nenhum alimento salvo corresponde a “{query}”.",
@@ -1099,8 +1099,8 @@ const STRINGS = {
     nothing_to_copy: "Inget att kopiera: den måltiden är tom.",
     loading: "Laddar…",
     error_failed: "Något gick fel: {message}",
-    unknown_person: "Ingen person som heter {name}. Lägg till personen under Inställningar, Enheter och tjänster, ZPMyFitnessCards.",
-    no_person: "Ingen person att visa. Ange person: på kortet, eller koppla din användare till en person i ZPMyFitnessCards.",
+    unknown_person: "Ingen person som heter {name}. Lägg till personen under Inställningar, Enheter och tjänster, Fork & Scale.",
+    no_person: "Ingen person att visa. Ange person: på kortet, eller koppla din användare till en person i Fork & Scale.",
     search_placeholder: "Sök i sparad mat",
     results: "Sparad mat",
     recent: "Senaste",
@@ -1223,8 +1223,8 @@ const STRINGS = {
     nothing_to_copy: "没有可复制的内容：该餐为空。",
     loading: "正在加载…",
     error_failed: "出现问题：{message}",
-    unknown_person: "没有名为 {name} 的人。请在“设置 > 设备与服务 > ZPMyFitnessCards”中添加。",
-    no_person: "没有可显示的人员。请在卡片中设置 person:，或在 ZPMyFitnessCards 中将你的用户关联到某个人员。",
+    unknown_person: "没有名为 {name} 的人。请在“设置 > 设备与服务 > Fork & Scale”中添加。",
+    no_person: "没有可显示的人员。请在卡片中设置 person:，或在 Fork & Scale 中将你的用户关联到某个人员。",
     search_placeholder: "搜索已保存的食物",
     results: "已保存的食物",
     recent: "最近",
@@ -1342,7 +1342,7 @@ const SEARCH_DELAY_MS = 250;
 
 // Sent on window when the trends card asks to open a day: {person, day}.
 // A food diary showing that person moves to the day.
-const OPEN_DAY = "zp-my-fitness-open-day";
+const OPEN_DAY = "fork-and-scale-open-day";
 
 // Dates are ISO days ("2026-11-09") in Home Assistant's time zone.
 
@@ -1718,7 +1718,7 @@ class FitnessCard extends HTMLElement {
 
   _subscribe() {
     this._unsubscribe = this._hass.connection
-      .subscribeMessage((event) => this._changed(event), { type: "zp_my_fitness/subscribe" })
+      .subscribeMessage((event) => this._changed(event), { type: "fork_and_scale/subscribe" })
       .catch(() => {
         this._unsubscribe = null;
       });
@@ -1753,7 +1753,7 @@ class FitnessCard extends HTMLElement {
     const t = this._t;
     const code = (food.barcode ?? "").trim();
     if (!BARCODE.test(code)) return { food, error: t.error_barcode };
-    const saved = await this._call({ type: "zp_my_fitness/food/barcode", barcode: code }).catch(() => null);
+    const saved = await this._call({ type: "fork_and_scale/food/barcode", barcode: code }).catch(() => null);
     if (saved && saved.id !== food.id) return { food, saved, note: fill(t.already_saved, { name: saved.name }) };
     try {
       const found = await lookUpBarcode(code, t.serving);
@@ -1780,7 +1780,7 @@ class FitnessCard extends HTMLElement {
     this._renderOff();
     try {
       const found = await this._call({
-        type: "zp_my_fitness/openfoodfacts/search",
+        type: "fork_and_scale/openfoodfacts/search",
         query: off.query,
         language: offLanguage(this._locale),
         page: off.page + 1,
@@ -1880,14 +1880,14 @@ class FoodDiaryCard extends FitnessCard {
   };
 
   async _load() {
-    const people = await this._call({ type: "zp_my_fitness/people" });
+    const people = await this._call({ type: "fork_and_scale/people" });
     this._person = findPerson(people, this._config, this._hass);
     this._day ??= this._today;
     this._data = this._person ? await this._fetchDay() : null;
   }
 
   _fetchDay() {
-    return this._call({ type: "zp_my_fitness/day", person: this._person.id, day: this._day });
+    return this._call({ type: "fork_and_scale/day", person: this._person.id, day: this._day });
   }
 
   async _reloadDay() {
@@ -2046,8 +2046,8 @@ class FoodDiaryCard extends FitnessCard {
     const query = p.query.trim();
     try {
       const results = query
-        ? await this._call({ type: "zp_my_fitness/food/search", query })
-        : await this._call({ type: "zp_my_fitness/food/recent", person: this._person.id });
+        ? await this._call({ type: "fork_and_scale/food/search", query })
+        : await this._call({ type: "fork_and_scale/food/recent", person: this._person.id });
       if (this._panel === p && p.query.trim() === query) {
         p.results = results;
         this._renderResults();
@@ -2163,7 +2163,7 @@ class FoodDiaryCard extends FitnessCard {
       const p = this._panel;
       if (!(p.grams > 0)) return this._showError(null, "error_amount");
       const sent = await this._send({
-        type: "zp_my_fitness/entry/add",
+        type: "fork_and_scale/entry/add",
         person: this._person.id,
         day: this._day,
         meal: p.meal,
@@ -2178,7 +2178,7 @@ class FoodDiaryCard extends FitnessCard {
       if (!name || kcal == null || kcal < 0) return this._showError(null, "error_quick");
       const macros = Object.fromEntries(MACROS.map((m) => [m, numberValue(this._field(m))]));
       const sent = await this._send({
-        type: "zp_my_fitness/entry/add",
+        type: "fork_and_scale/entry/add",
         person: this._person.id,
         day: this._day,
         meal: this._field("meal").value,
@@ -2238,7 +2238,7 @@ class FoodDiaryCard extends FitnessCard {
       const { food, error } = readFoodForm(this._card);
       p.newFood = food;
       if (error) return this._showError(null, error);
-      const sent = await this._send({ type: "zp_my_fitness/food/add", ...food }, barcodeError);
+      const sent = await this._send({ type: "fork_and_scale/food/add", ...food }, barcodeError);
       if (!sent.ok) return;
       const saved = sent.result;
       Object.assign(p, { tab: "search", query: saved.name, results: [saved], food: saved, grams: saved.portions[0]?.grams ?? 100, newFood: null, warning: null, error: null });
@@ -2249,7 +2249,7 @@ class FoodDiaryCard extends FitnessCard {
       const field = p.entry.grams != null ? "grams" : "kcal";
       const amount = numberValue(this._field(field));
       if (amount == null || amount <= 0) return this._showError(null, "error_amount");
-      const sent = await this._send({ type: "zp_my_fitness/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
+      const sent = await this._send({ type: "fork_and_scale/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
       if (sent.ok) this._closePanel();
     },
     "click:delete-entry"() {
@@ -2257,12 +2257,12 @@ class FoodDiaryCard extends FitnessCard {
       this._renderPanel();
     },
     async "click:really-delete"() {
-      const sent = await this._send({ type: "zp_my_fitness/entry/delete", entry_id: this._panel.entry.id });
+      const sent = await this._send({ type: "fork_and_scale/entry/delete", entry_id: this._panel.entry.id });
       if (sent.ok) this._closePanel();
     },
     async "click:do-copy"() {
       const sent = await this._send({
-        type: "zp_my_fitness/meal/copy",
+        type: "fork_and_scale/meal/copy",
         person: this._person.id,
         from_day: this._field("from_day").value,
         from_meal: this._field("from_meal").value,
@@ -2276,7 +2276,7 @@ class FoodDiaryCard extends FitnessCard {
   };
 }
 
-// The summary and meals of one day, from zp_my_fitness/day.
+// The summary and meals of one day, from fork_and_scale/day.
 function diaryBodyHTML(data, t, locale) {
   const sums = totals(data.entries);
   const goals = data.goals;
@@ -2402,7 +2402,7 @@ class FoodsCard extends FitnessCard {
 
   async _load() {
     this._query ??= "";
-    this._foods = await this._call({ type: "zp_my_fitness/food/search", query: this._query.trim(), limit: 100 });
+    this._foods = await this._call({ type: "fork_and_scale/food/search", query: this._query.trim(), limit: 100 });
   }
 
   _changed(event) {
@@ -2531,7 +2531,7 @@ class FoodsCard extends FitnessCard {
       const { food, error } = readFoodForm(this._card);
       this._panel.food = { ...food, id };
       if (error) return this._showError(null, error);
-      const message = id ? { type: "zp_my_fitness/food/update", food_id: id, ...food } : { type: "zp_my_fitness/food/add", ...food };
+      const message = id ? { type: "fork_and_scale/food/update", food_id: id, ...food } : { type: "fork_and_scale/food/add", ...food };
       const sent = await this._send(message, barcodeError);
       if (sent.ok) {
         this._panel = null;
@@ -2557,7 +2557,7 @@ class FoodsCard extends FitnessCard {
       this._scanAbort?.abort();
     },
     async "click:really-delete"() {
-      const sent = await this._send({ type: "zp_my_fitness/food/delete", food_id: this._panel.food.id });
+      const sent = await this._send({ type: "fork_and_scale/food/delete", food_id: this._panel.food.id });
       if (sent.ok) {
         this._panel = null;
         this._renderPanel();
@@ -2694,7 +2694,7 @@ function weightChartHTML(weights, person, start, today, locale, t, unit) {
   </svg>`;
 }
 
-// One bar per day, or per week for long ranges, from zp_my_fitness/days.
+// One bar per day, or per week for long ranges, from fork_and_scale/days.
 // A week's bar is the average of its logged days, and so is its goal.
 function trendBars(days, weekly) {
   const logged = (d) => Object.keys(d.meals).length > 0;
@@ -2822,7 +2822,7 @@ class PersonCard extends FitnessCard {
   }
 
   async _load() {
-    const people = await this._call({ type: "zp_my_fitness/people" });
+    const people = await this._call({ type: "fork_and_scale/people" });
     this._person = findPerson(people, this._config, this._hass);
     this._data = this._person ? await this._fetch() : null;
   }
@@ -2888,7 +2888,7 @@ class WeightCard extends PersonCard {
   }
 
   async _fetch() {
-    return this._call({ type: "zp_my_fitness/weights", person: this._person.id });
+    return this._call({ type: "fork_and_scale/weights", person: this._person.id });
   }
 
   _renderBody() {
@@ -2943,7 +2943,7 @@ class WeightCard extends PersonCard {
       this._error = null;
       this._logDay = day;
       try {
-        await this._call({ type: "zp_my_fitness/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
+        await this._call({ type: "fork_and_scale/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
       } catch (err) {
         this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
         this._renderBody();
@@ -2951,7 +2951,7 @@ class WeightCard extends PersonCard {
     },
     async "click:delete-weight"(el) {
       try {
-        await this._call({ type: "zp_my_fitness/weight/delete", person: this._person.id, day: el.dataset.day });
+        await this._call({ type: "fork_and_scale/weight/delete", person: this._person.id, day: el.dataset.day });
       } catch (err) {
         this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
         this._renderBody();
@@ -2989,7 +2989,7 @@ class TrendsCard extends PersonCard {
 
   async _fetch() {
     const today = this._today;
-    return this._call({ type: "zp_my_fitness/days", person: this._person.id, start: shiftDay(today, -(Number(this._range) - 1)), end: today });
+    return this._call({ type: "fork_and_scale/days", person: this._person.id, start: shiftDay(today, -(Number(this._range) - 1)), end: today });
   }
 
   _renderBody() {
@@ -3056,7 +3056,7 @@ function sparklineSVG(weights, start, today) {
   </svg>`;
 }
 
-// Today's summary from zp_my_fitness/day, and the last 30 days of weights,
+// Today's summary from fork_and_scale/day, and the last 30 days of weights,
 // shown in `unit`.
 function summaryHTML(day, weights, person, start, today, locale, t, unit) {
   const sums = totals(day.entries);
@@ -3171,8 +3171,8 @@ class SummaryCard extends PersonCard {
     const today = this._today;
     const start = shiftDay(today, -29);
     const [day, weights] = await Promise.all([
-      this._call({ type: "zp_my_fitness/day", person: this._person.id, day: today }),
-      this._call({ type: "zp_my_fitness/weights", person: this._person.id, start }),
+      this._call({ type: "fork_and_scale/day", person: this._person.id, day: today }),
+      this._call({ type: "fork_and_scale/weights", person: this._person.id, start }),
     ]);
     return { day, weights, start };
   }
@@ -3207,42 +3207,42 @@ class SummaryCard extends PersonCard {
 // loads this file alongside the frontend, so wait for the frontend's own
 // <home-assistant> element, which it defines once that registry is in place.
 customElements.whenDefined("home-assistant").then(() => {
-  window.customElements.define("zp-food-diary-card", FoodDiaryCard);
-  window.customElements.define("zp-foods-card", FoodsCard);
-  window.customElements.define("zp-weight-card", WeightCard);
-  window.customElements.define("zp-trends-card", TrendsCard);
-  window.customElements.define("zp-summary-card", SummaryCard);
+  window.customElements.define("fork-and-scale-food-diary-card", FoodDiaryCard);
+  window.customElements.define("fork-and-scale-foods-card", FoodsCard);
+  window.customElements.define("fork-and-scale-weight-card", WeightCard);
+  window.customElements.define("fork-and-scale-trends-card", TrendsCard);
+  window.customElements.define("fork-and-scale-summary-card", SummaryCard);
   window.customCards = window.customCards || [];
   window.customCards.push(
     {
-      type: "zp-food-diary-card",
+      type: "fork-and-scale-food-diary-card",
       name: "Food diary",
-      description: "One person's food for a day, meal by meal, from ZPMyFitnessCards",
-      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#food-diary-card",
+      description: "One person's food for a day, meal by meal, from Fork & Scale",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#food-diary-card",
     },
     {
-      type: "zp-foods-card",
+      type: "fork-and-scale-foods-card",
       name: "Saved foods",
-      description: "The foods saved in ZPMyFitnessCards, per 100 g",
-      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#saved-foods-card",
+      description: "The foods saved in Fork & Scale, per 100 g",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#saved-foods-card",
     },
     {
-      type: "zp-weight-card",
+      type: "fork-and-scale-weight-card",
       name: "Weight",
-      description: "Log weight, and chart it with the BMI bands and the goal, from ZPMyFitnessCards",
-      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#weight-card",
+      description: "Log weight, and chart it with the BMI bands and the goal, from Fork & Scale",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#weight-card",
     },
     {
-      type: "zp-trends-card",
+      type: "fork-and-scale-trends-card",
       name: "Trends",
-      description: "Calories by day or week, by meal, against the goal, from ZPMyFitnessCards",
-      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#trends-card",
+      description: "Calories by day or week, by meal, against the goal, from Fork & Scale",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#trends-card",
     },
     {
-      type: "zp-summary-card",
+      type: "fork-and-scale-summary-card",
       name: "Fitness summary",
-      description: "One person's day at a glance: calories, macros, meals and weight, from ZPMyFitnessCards",
-      documentationURL: "https://github.com/matteo-pacini/ZPMyFitnessCards#summary-card",
+      description: "One person's day at a glance: calories, macros, meals and weight, from Fork & Scale",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#summary-card",
     },
   );
 });

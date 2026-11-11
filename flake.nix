@@ -1,5 +1,5 @@
 {
-  description = "ZPMyFitnessCards development shell";
+  description = "Fork & Scale development shell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -90,7 +90,7 @@
               # generic Linux binary that NixOS cannot start.
               PLAYWRIGHT_NODEJS_PATH = "${pkgs.nodejs_24}/bin/node";
               # Fonts for that Chromium alone, not for the whole shell.
-              ZPMF_FONTCONFIG_FILE = import ./nix/fonts.nix { inherit pkgs; };
+              FORK_AND_SCALE_FONTCONFIG_FILE = import ./nix/fonts.nix { inherit pkgs; };
             };
 
             shellHook = ''

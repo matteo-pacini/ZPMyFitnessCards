@@ -10,7 +10,7 @@ from .conftest import PEOPLE, Home
 
 
 def person_id(home: Home, name: str) -> str:
-    return next(p["id"] for p in home.ws({"type": "zp_my_fitness/people"}) if p["name"] == name)
+    return next(p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == name)
 
 
 def state(home: Home, entity_id: str) -> float:
@@ -29,7 +29,7 @@ def eventually(home: Home, entity_id: str, value: float, seconds: float = 10) ->
 
 
 def test_lists_the_people_added_in_setup(home: Home) -> None:
-    people = home.ws({"type": "zp_my_fitness/people"})
+    people = home.ws({"type": "fork_and_scale/people"})
     assert [p["name"] for p in people] == PEOPLE
 
 
@@ -39,7 +39,7 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
     today = datetime.now(ZoneInfo("Europe/London")).date().isoformat()
     oats = home.ws(
         {
-            "type": "zp_my_fitness/food/add",
+            "type": "fork_and_scale/food/add",
             "name": "Porridge oats",
             "kcal": 389,
             "protein": 16.9,
@@ -53,7 +53,7 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
     debora = state(home, "sensor.debora_calories_today")
     home.ws(
         {
-            "type": "zp_my_fitness/entry/add",
+            "type": "fork_and_scale/entry/add",
             "person": matteo,
             "day": today,
             "meal": "breakfast",
@@ -61,7 +61,7 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
             "grams": 100,
         }
     )
-    home.ws({"type": "zp_my_fitness/weight/set", "person": matteo, "day": today, "kg": 68.5})
+    home.ws({"type": "fork_and_scale/weight/set", "person": matteo, "day": today, "kg": 68.5})
 
     assert eventually(home, "sensor.matteo_calories_today", calories + 389)
     assert eventually(home, "sensor.matteo_breakfast_calories", breakfast + 389)
@@ -71,10 +71,10 @@ def test_logging_food_and_weight_updates_the_sensors(home: Home) -> None:
 
 
 def test_the_food_diary_card_shows_its_person(home: Home, page: Page) -> None:
-    home.dashboard([{"type": "custom:zp-food-diary-card", "person": "Debora"}])
+    home.dashboard([{"type": "custom:fork-and-scale-food-diary-card", "person": "Debora"}])
     page.goto(home.url + "/" + home.DASHBOARD + "/0")
-    card = page.locator("zp-food-diary-card")
+    card = page.locator("fork-and-scale-food-diary-card")
     expect(card.locator(".title")).to_have_text("Food diary", timeout=30_000)
     expect(card.locator(".person")).to_have_text("Debora")
     errors = [line for line in home.log().splitlines() if " ERROR " in line]
-    assert not [line for line in errors if "zp_my_fitness" in line]
+    assert not [line for line in errors if "fork_and_scale" in line]

@@ -16,13 +16,13 @@ from .test_cards import TIMEOUT, open_card, person_id, today
 
 
 def weights(home: Home, name: str) -> list[dict[str, Any]]:
-    return home.ws({"type": "zp_my_fitness/weights", "person": person_id(home, name)})
+    return home.ws({"type": "fork_and_scale/weights", "person": person_id(home, name)})
 
 
 @pytest.mark.usefixtures("us_customary")
 def test_the_weight_card_logs_shows_and_deletes_in_lb(home: Home, page: Page) -> None:
     day = (date.fromisoformat(today()) - timedelta(days=2)).isoformat()
-    card = open_card(home, page, {"type": "custom:zp-weight-card", "person": "Debora"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-weight-card", "person": "Debora"})
     # 62 kg.
     expect(card.locator(".chart")).to_contain_text("Goal 136.7 lb", timeout=TIMEOUT)
     expect(card.locator(".now")).to_contain_text(" lb")
@@ -45,7 +45,7 @@ def test_the_weight_card_logs_shows_and_deletes_in_lb(home: Home, page: Page) ->
 
 
 def test_open_cards_follow_a_change_of_unit_system(home: Home, page: Page) -> None:
-    card = open_card(home, page, {"type": "custom:zp-summary-card", "person": "Debora"})
+    card = open_card(home, page, {"type": "custom:fork-and-scale-summary-card", "person": "Debora"})
     weight = card.locator(".weight b")
     expect(weight).to_have_text(re.compile(r" kg$"), timeout=TIMEOUT)
     with home.us_customary():
@@ -69,7 +69,7 @@ def test_the_actions_weigh_in_lb(home: Home) -> None:
         assert message == "Give a weight from 44.1 to 881.8 lb"
     finally:
         debora = person_id(home, "Debora")
-        home.ws({"type": "zp_my_fitness/weight/delete", "person": debora, "day": day})
+        home.ws({"type": "fork_and_scale/weight/delete", "person": debora, "day": day})
 
 
 # The person form, in lb, feet and inches.
@@ -78,7 +78,7 @@ NAME = "Imperial e2e"
 
 
 def entry_id(home: Home) -> str:
-    [entry] = home.api("GET", "/api/config/config_entries/entry?domain=zp_my_fitness")
+    [entry] = home.api("GET", "/api/config/config_entries/entry?domain=fork_and_scale")
     return entry["entry_id"]
 
 
@@ -91,7 +91,7 @@ def person(home: Home, name: str) -> dict[str, Any]:
 
     def find() -> dict[str, Any] | None:
         try:
-            people = home.ws({"type": "zp_my_fitness/people"})
+            people = home.ws({"type": "fork_and_scale/people"})
         except AssertionError:
             return None
         return next((p for p in people if p["name"] == name), None)
@@ -175,7 +175,7 @@ def test_adds_and_changes_a_person_in_lb_feet_and_inches(home: Home) -> None:
 
 @pytest.mark.usefixtures("us_customary")
 def test_the_person_form_shows_lb_feet_and_inches(home: Home, page: Page) -> None:
-    page.goto(home.url + "/config/integrations/integration/zp_my_fitness")
+    page.goto(home.url + "/config/integrations/integration/fork_and_scale")
     page.get_by_role("button", name="Add person").click()
     # The dialog's form is slotted into it, so look for its fields on the page.
     for field in ("Height (ft)*", "Height (in)*", "Starting weight*", "Goal weight*"):

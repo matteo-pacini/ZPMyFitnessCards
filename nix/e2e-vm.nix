@@ -35,7 +35,7 @@ let
       PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
       # The Playwright wheel's bundled Node is a generic Linux binary.
       PLAYWRIGHT_NODEJS_PATH = "${pkgs.nodejs_24}/bin/node";
-      ZPMF_FONTCONFIG_FILE = import ./fonts.nix { inherit pkgs; };
+      FORK_AND_SCALE_FONTCONFIG_FILE = import ./fonts.nix { inherit pkgs; };
     };
   };
 
@@ -53,7 +53,7 @@ let
   web =
     database: other:
     pkgs.testers.runNixOSTest {
-      name = "zp-my-fitness-e2e-${database}";
+      name = "fork-and-scale-e2e-${database}";
       nodes.machine = {
         imports = [ common ];
         virtualisation = {
@@ -70,7 +70,7 @@ in
   web-postgresql = web "postgresql" "sqlite";
 
   android = pkgs.testers.runNixOSTest {
-    name = "zp-my-fitness-android";
+    name = "fork-and-scale-android";
     nodes.machine = {
       imports = [ common ];
       virtualisation = {
@@ -93,7 +93,7 @@ in
         ANDROID_HOME = android.sdkRoot;
         ANDROID_SDK_ROOT = android.sdkRoot;
         COMPANION_APK = "${android.companion}";
-        ZPMF_SCREENSHOTS = "/home/tester/screenshots";
+        FORK_AND_SCALE_SCREENSHOTS = "/home/tester/screenshots";
       };
     };
     testScript = copySource + ''

@@ -1,14 +1,14 @@
 {
-  "domain": "zp_my_fitness",
-  "name": "ZPMyFitnessCards",
+  "domain": "fork_and_scale",
+  "name": "Fork & Scale",
   "after_dependencies": ["frontend", "recorder"],
   "codeowners": ["@matteo-pacini"],
   "config_flow": true,
   "dependencies": ["file_upload", "http", "websocket_api"],
-  "documentation": "https://github.com/matteo-pacini/ZPMyFitnessCards",
+  "documentation": "https://github.com/matteo-pacini/fork-and-scale",
   "integration_type": "service",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/matteo-pacini/ZPMyFitnessCards/issues",
+  "issue_tracker": "https://github.com/matteo-pacini/fork-and-scale/issues",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.3.0"

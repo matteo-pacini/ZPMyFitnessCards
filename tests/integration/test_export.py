@@ -85,14 +85,14 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
     placeholders = done["description_placeholders"]
     assert (placeholders["name"], placeholders["minutes"]) == ("Debora", "5")
     url = link_url(placeholders)
-    assert url.startswith("/api/zp_my_fitness/export/debora?authSig=")
+    assert url.startswith("/api/fork_and_scale/export/debora?authSig=")
 
     # The link alone is enough: no other sign-in.
     response = await (await hass_client_no_auth()).get(url)
     assert response.status == 200
     assert response.content_type == "application/zip"
     assert response.headers["Content-Disposition"] == (
-        'attachment; filename="zp-my-fitness-debora-2026-11-09.zip"'
+        'attachment; filename="fork-and-scale-debora-2026-11-09.zip"'
     )
     archive = zipfile.ZipFile(io.BytesIO(await response.read()))
     assert archive.namelist() == ["entries.csv", "weights.csv", "foods.csv"]
@@ -151,10 +151,10 @@ async def test_the_link_is_short_lived_and_for_admins_only(
     freezer: FrozenDateTimeFactory,
 ) -> None:
     client = await hass_client_no_auth()
-    assert (await client.get("/api/zp_my_fitness/export/debora")).status == 401
+    assert (await client.get("/api/fork_and_scale/export/debora")).status == 401
     viewer = hass.auth.async_validate_access_token(hass_read_only_access_token)
     theirs = async_sign_path(
-        hass, "/api/zp_my_fitness/export/debora", timedelta(minutes=5), refresh_token_id=viewer.id
+        hass, "/api/fork_and_scale/export/debora", timedelta(minutes=5), refresh_token_id=viewer.id
     )
     assert (await client.get(theirs)).status == 401
 
@@ -169,6 +169,6 @@ async def test_answers_not_found_for_unknown_people_and_while_unloaded(
     hass: HomeAssistant, entry: MockConfigEntry, hass_client: ClientSessionGenerator
 ) -> None:
     client = await hass_client()
-    assert (await client.get("/api/zp_my_fitness/export/nobody")).status == 404
+    assert (await client.get("/api/fork_and_scale/export/nobody")).status == 404
     assert await hass.config_entries.async_unload(entry.entry_id)
-    assert (await client.get("/api/zp_my_fitness/export/debora")).status == 404
+    assert (await client.get("/api/fork_and_scale/export/debora")).status == 404

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.zp_my_fitness.myfitnesspal import (
+from custom_components.fork_and_scale.myfitnesspal import (
     Diary,
     Unreadable,
     entries,

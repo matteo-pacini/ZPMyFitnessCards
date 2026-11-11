@@ -10,7 +10,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.zp_my_fitness.const import DOMAIN
+from custom_components.fork_and_scale.const import DOMAIN
 
 
 def state(hass: HomeAssistant, entity_id: str) -> float:

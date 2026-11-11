@@ -8,7 +8,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.zp_my_fitness import backup
+from custom_components.fork_and_scale import backup
 
 
 async def test_writes_wait_while_a_backup_runs(

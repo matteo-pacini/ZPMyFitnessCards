@@ -7,7 +7,7 @@ same REST API the UI uses, and saves a test dashboard. The folder is deleted
 afterwards, so every session starts from nothing.
 
 That Home Assistant searches Open Food Facts on a local fake (`search`), set
-through ZP_MY_FITNESS_SEARCH_URL, since the VM checks run with no network.
+through FORK_AND_SCALE_SEARCH_URL, since the VM checks run with no network.
 """
 
 from __future__ import annotations
@@ -37,8 +37,8 @@ import aiohttp
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
 
-from custom_components.zp_my_fitness.const import DB_FILE
-from custom_components.zp_my_fitness.db import sqlite_url
+from custom_components.fork_and_scale.const import DB_FILE
+from custom_components.fork_and_scale.db import sqlite_url
 
 from ..conftest import new_database
 
@@ -142,7 +142,7 @@ class Home:
         with ThreadPoolExecutor(1) as pool:
             return pool.submit(asyncio.run, call()).result()
 
-    DASHBOARD = "zp-test"
+    DASHBOARD = "fs-test"
 
     def dashboard(self, cards: list[dict[str, Any]]) -> None:
         """Show `cards` on the test dashboard, creating it the first time."""
@@ -152,7 +152,7 @@ class Home:
                 {
                     "type": "lovelace/dashboards/create",
                     "url_path": self.DASHBOARD,
-                    "title": "ZP test",
+                    "title": "FS test",
                     "mode": "storage",
                 }
             )
@@ -245,11 +245,11 @@ def _onboard(home: Home) -> None:
 
 
 def _add_integration(home: Home, db_url: str | None) -> str:
-    """Add ZPMyFitnessCards on SQLite, or on Postgres at `db_url`, then each person.
+    """Add Fork & Scale on SQLite, or on Postgres at `db_url`, then each person.
 
     Everything goes through the same REST calls the UI's dialogs make.
     """
-    flow = home.api("POST", "/api/config/config_entries/flow", {"handler": "zp_my_fitness"})
+    flow = home.api("POST", "/api/config/config_entries/flow", {"handler": "fork_and_scale"})
     step = f"/api/config/config_entries/flow/{flow['flow_id']}"
     if db_url is None:
         entry = home.api("POST", step, {"engine": "sqlite"})
@@ -275,13 +275,13 @@ def _add_integration(home: Home, db_url: str | None) -> str:
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         try:
-            people = home.ws({"type": "zp_my_fitness/people"})
+            people = home.ws({"type": "fork_and_scale/people"})
         except AssertionError:
             people = []
         if sorted(p["name"] for p in people) == sorted(PEOPLE):
             return entry_id
         time.sleep(0.2)
-    raise TimeoutError("ZPMyFitnessCards did not finish loading its people")
+    raise TimeoutError("Fork & Scale did not finish loading its people")
 
 
 class FakeSearch:
@@ -391,12 +391,12 @@ def _home(
     starts, to leave a database there as an older release would have. With
     `integration` False, the integration is installed but not added.
     """
-    config_dir = Path(tempfile.mkdtemp(prefix="zp-my-fitness-e2e-"))
+    config_dir = Path(tempfile.mkdtemp(prefix="fork-and-scale-e2e-"))
     port = _free_port()
     (config_dir / "configuration.yaml").write_text(configuration.format(port=port))
     (config_dir / "custom_components").mkdir()
-    (config_dir / "custom_components" / "zp_my_fitness").symlink_to(
-        REPO / "custom_components" / "zp_my_fitness"
+    (config_dir / "custom_components" / "fork_and_scale").symlink_to(
+        REPO / "custom_components" / "fork_and_scale"
     )
     home = Home(
         url=f"http://127.0.0.1:{port}",
@@ -412,7 +412,7 @@ def _home(
     # integrations that fail without their packages are not ones it uses.
     env = {**os.environ, "TMPDIR": str(config_dir / "tmp")}
     if search_url:
-        env["ZP_MY_FITNESS_SEARCH_URL"] = search_url
+        env["FORK_AND_SCALE_SEARCH_URL"] = search_url
     process = subprocess.Popen(
         [sys.executable, "-m", "homeassistant", "--config", str(config_dir), "--skip-pip"],
         stdout=subprocess.DEVNULL,
@@ -460,7 +460,7 @@ def browser() -> Iterator[Browser]:
         f"{driver}: set playwright=={driver} in pyproject.toml"
     )
     # The shell's fonts in place of the host's, so pages render alike everywhere.
-    env = {**os.environ, "FONTCONFIG_FILE": os.environ["ZPMF_FONTCONFIG_FILE"]}
+    env = {**os.environ, "FONTCONFIG_FILE": os.environ["FORK_AND_SCALE_FONTCONFIG_FILE"]}
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(env=env)
         yield browser

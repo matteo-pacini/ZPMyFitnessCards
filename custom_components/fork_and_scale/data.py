@@ -10,6 +10,7 @@ import asyncio
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, time
+from pathlib import Path
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
@@ -39,6 +40,7 @@ from .const import (
     CONF_START_WEIGHT,
     DB_FILE,
     DOMAIN,
+    LEGACY_DB_FILE,
     MEALS,
     NUTRIENTS,
     SIGNAL_CHANGED,
@@ -122,6 +124,24 @@ class Person:
 def today() -> date:
     """Today in Home Assistant's time zone."""
     return dt_util.now().date()
+
+
+def adopt_legacy_database(config_dir: str) -> bool:
+    """Rename ZPMyFitnessCards' SQLite file to Fork & Scale's, unless that exists already.
+
+    Its write-ahead log and shared-memory files go with it. Returns whether
+    it renamed anything. Blocks.
+    """
+    new, old = Path(config_dir, DB_FILE), Path(config_dir, LEGACY_DB_FILE)
+    if new.exists() or not old.exists():
+        return False
+    # The main file last: until it moves, a crash here leaves the old name
+    # complete, and the next setup tries again.
+    for suffix in ("-wal", "-shm", ""):
+        moving = old.with_name(old.name + suffix)
+        if moving.exists():
+            moving.rename(new.with_name(new.name + suffix))
+    return True
 
 
 def database_url(hass: HomeAssistant, entry_data: Mapping[str, Any]) -> str:

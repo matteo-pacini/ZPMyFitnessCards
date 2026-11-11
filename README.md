@@ -1,21 +1,21 @@
-# ZPMyFitnessCards
+# Fork & Scale
 
 A food diary and weight tracking for everyone in your home, inside Home Assistant.
 
-ZPMyFitnessCards is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
+Fork & Scale is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
 
 It is in early development. The integration, its sensors, all five cards and barcodes work.
 
 ## Install
 
-1. Open the repository in HACS with this button, then download ZPMyFitnessCards. Or, in HACS, add `https://github.com/matteo-pacini/ZPMyFitnessCards` as a custom repository of type Integration.
+1. Open the repository in HACS with this button, then download Fork & Scale. Or, in HACS, add `https://github.com/matteo-pacini/fork-and-scale` as a custom repository of type Integration.
 
-   [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=matteo-pacini&repository=ZPMyFitnessCards&category=integration)
+   [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=matteo-pacini&repository=fork-and-scale&category=integration)
 
 2. Restart Home Assistant.
-3. Add the integration with this button, or add **ZPMyFitnessCards** in **Settings > Devices & services**. Choose where it keeps its data (see [Database](#database)). Then reload the page, so that your browser loads the cards.
+3. Add the integration with this button, or add **Fork & Scale** in **Settings > Devices & services**. Choose where it keeps its data (see [Database](#database)). Then reload the page, so that your browser loads the cards.
 
-   [![Open your Home Assistant instance and start setting up ZPMyFitnessCards.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=zp_my_fitness)
+   [![Open your Home Assistant instance and start setting up Fork & Scale.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=fork_and_scale)
 
 4. On its page, use **Add person** for each person.
 
@@ -30,6 +30,16 @@ The menu also imports a diary from MyFitnessPal and exports a person's data. See
 The integration loads the cards for you. There is no dashboard resource to add. If a card shows "Configuration error", see [Troubleshooting](#troubleshooting).
 
 Requires Home Assistant 2025.3 or later.
+
+### Coming from ZPMyFitnessCards
+
+Fork & Scale was called ZPMyFitnessCards, with the domain `zp_my_fitness`, up to version 0.3.0. To move over and keep your data:
+
+1. In **Settings > Devices & services**, delete ZPMyFitnessCards. Its data stays where it is: `zp_my_fitness.db` in the configuration folder, or your Postgres database.
+2. Update it in HACS, then restart Home Assistant. GitHub forwards the old repository address to the new one. If the old `custom_components/zp_my_fitness` folder is still there afterwards, delete it.
+3. Add Fork & Scale. On SQLite it takes over `zp_my_fitness.db`. On Postgres, give the same URL as before.
+4. Add each person again under the same name. Their data comes back, and their sensors get the same entity IDs, so their history carries on.
+5. In your dashboards, change each `custom:zp-…` card to `custom:fork-and-scale-…`, for example `custom:zp-weight-card` to `custom:fork-and-scale-weight-card`. In automations and scripts, change the `zp_my_fitness.` actions to `fork_and_scale.`.
 
 ## Units
 
@@ -61,9 +71,9 @@ The daily totals keep long-term statistics, so a statistics graph with `stat_typ
 
 Automations, scripts and Assist can log and read with three actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
 
-- `zp_my_fitness.log_weight` records a weight, in lb with US customary units and in kg otherwise, or in the `unit` you give, `kg` or `lb`. It takes 20 to 400 kg, which is 44.1 to 881.8 lb. A day keeps one weight, so logging again replaces it.
-- `zp_my_fitness.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
-- `zp_my_fitness.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`.
+- `fork_and_scale.log_weight` records a weight, in lb with US customary units and in kg otherwise, or in the `unit` you give, `kg` or `lb`. It takes 20 to 400 kg, which is 44.1 to 881.8 lb. A day keeps one weight, so logging again replaces it.
+- `fork_and_scale.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
+- `fork_and_scale.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`.
 
 Choose the person in the action editor, which fills in their `device_id`. For example, to log each new reading from a smart scale:
 
@@ -73,7 +83,7 @@ triggers:
     entity_id: sensor.bathroom_scale_weight
     not_to: [unavailable, unknown]
 actions:
-  - action: zp_my_fitness.log_weight
+  - action: fork_and_scale.log_weight
     data:
       device_id: 5f1c0d7e9a2b4c6d8e0f1a2b3c4d5e6f
       weight: "{{ trigger.to_state.state }}"
@@ -83,7 +93,7 @@ And to send the day's calories at night:
 
 ```yaml
 actions:
-  - action: zp_my_fitness.get_day
+  - action: fork_and_scale.get_day
     data:
       device_id: 5f1c0d7e9a2b4c6d8e0f1a2b3c4d5e6f
     response_variable: day
@@ -119,8 +129,8 @@ The link works for five minutes, and only for administrators.
 
 When you add the integration, you choose where its data lives:
 
-- **SQLite**, the default: a file, `zp_my_fitness.db`, in the configuration folder. Home Assistant backups include it, and pause writes while they copy it.
-- **Postgres**: a database you run, given as a URL such as `postgresql://user:password@192.168.1.10:5432/zp_my_fitness`. Create an empty database for it first; don't share the one Home Assistant's recorder uses. The integration creates its tables and checks the connection before saving. Home Assistant backups do not include it, so back it up yourself, for example with `pg_dump`. Home Assistant stores the URL, password included, in its configuration, as it does the recorder's.
+- **SQLite**, the default: a file, `fork_and_scale.db`, in the configuration folder. Home Assistant backups include it, and pause writes while they copy it.
+- **Postgres**: a database you run, given as a URL such as `postgresql://user:password@192.168.1.10:5432/fork_and_scale`. Create an empty database for it first; don't share the one Home Assistant's recorder uses. The integration creates its tables and checks the connection before saving. Home Assistant backups do not include it, so back it up yourself, for example with `pg_dump`. Home Assistant stores the URL, password included, in its configuration, as it does the recorder's.
 
 Postgres needs the psycopg2 driver. If your recorder already runs on Postgres with a `postgresql://` URL, Home Assistant has it; if not, setup says it is missing.
 
@@ -146,7 +156,7 @@ It follows Home Assistant's theme, light or dark, and its language.
 <img src="images/food-diary-dark.png" alt="Food diary in dark mode" width="400">
 
 ```yaml
-type: custom:zp-food-diary-card
+type: custom:fork-and-scale-food-diary-card
 person: Debora
 ```
 
@@ -163,7 +173,7 @@ The foods everyone in the house shares, with their values per 100 g. Search them
 <img src="images/saved-foods.png" alt="Saved foods" width="400">
 
 ```yaml
-type: custom:zp-foods-card
+type: custom:fork-and-scale-foods-card
 ```
 
 | Option | Description |
@@ -207,7 +217,7 @@ With US customary units, it shows and takes every weight in lb.
 <img src="images/weight-lb.png" alt="Weight in lb" width="400">
 
 ```yaml
-type: custom:zp-weight-card
+type: custom:fork-and-scale-weight-card
 person: Matteo
 ```
 
@@ -220,7 +230,7 @@ One person's calories, stacked by meal, with a mark at each day's calorie goal. 
 <img src="images/trends-week.png" alt="Trends over 7 days" width="400">
 
 ```yaml
-type: custom:zp-trends-card
+type: custom:fork-and-scale-trends-card
 person: Debora
 ```
 
@@ -233,7 +243,7 @@ One person's day at a glance, for a main dashboard: a ring of the calories eaten
 <img src="images/summary-dark.png" alt="Summary in dark mode" width="400">
 
 ```yaml
-type: custom:zp-summary-card
+type: custom:fork-and-scale-summary-card
 person: Debora
 navigation_path: /dashboard-meds/debora
 ```
@@ -256,10 +266,10 @@ The cards fit a phone's width. These are the food diary, summary, weight and tre
 
 ### "Configuration error" in place of the cards
 
-A card shows a red "Configuration error" when the page has not loaded the cards. The card editor's preview gives the reason: `Custom element doesn't exist: zp-food-diary-card`, for example. There are two causes.
+A card shows a red "Configuration error" when the page has not loaded the cards. The card editor's preview gives the reason: `Custom element doesn't exist: fork-and-scale-food-diary-card`, for example. There are two causes.
 
 - **The page was open before you added the integration.** Home Assistant adds the cards to pages it serves after the integration is set up. Reload the page.
-- **The Home Assistant app, with Home Assistant older than 2026.11.0.** The app starts from a copy of the start page that Home Assistant's frontend saved at its last update, and that copy has no cards if you installed ZPMyFitnessCards after it ([home-assistant/frontend#55272](https://github.com/home-assistant/frontend/issues/55272)). The error then comes back each time the app starts. Reloading the page brings the cards back until the app next starts: in the app, open the dashboard's ⋮ menu, choose **Reload resources**, then **Refresh**. That menu item is there only when your dashboard resources are set in YAML; otherwise, open the dashboard in a browser. Updating Home Assistant to 2026.11.0 or later fixes it for good ([home-assistant/frontend#54790](https://github.com/home-assistant/frontend/pull/54790)).
+- **The Home Assistant app, with Home Assistant older than 2026.11.0.** The app starts from a copy of the start page that Home Assistant's frontend saved at its last update, and that copy has no cards if you installed Fork & Scale after it ([home-assistant/frontend#55272](https://github.com/home-assistant/frontend/issues/55272)). The error then comes back each time the app starts. Reloading the page brings the cards back until the app next starts: in the app, open the dashboard's ⋮ menu, choose **Reload resources**, then **Refresh**. That menu item is there only when your dashboard resources are set in YAML; otherwise, open the dashboard in a browser. Updating Home Assistant to 2026.11.0 or later fixes it for good ([home-assistant/frontend#54790](https://github.com/home-assistant/frontend/pull/54790)).
 
 ## Development
 

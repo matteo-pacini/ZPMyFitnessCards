@@ -18,7 +18,7 @@ from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.zp_my_fitness.const import SUBENTRY_PERSON
+from custom_components.fork_and_scale.const import SUBENTRY_PERSON
 
 from .conftest import MYFITNESSPAL, myfitnesspal_zip
 
@@ -228,7 +228,7 @@ async def test_corrects_past_days_statistics_and_tells_the_cards(
     hass: HomeAssistant, importer, ws
 ) -> None:
     client = ws.client
-    await client.send_json_auto_id({"type": "zp_my_fitness/subscribe"})
+    await client.send_json_auto_id({"type": "fork_and_scale/subscribe"})
     assert (await client.receive_json())["success"]
     recorder = MagicMock()
     hass.config.components.add("recorder")

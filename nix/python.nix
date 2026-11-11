@@ -44,4 +44,4 @@ let
     ]
   );
 in
-pythonSet.mkVirtualEnv "zp-my-fitness-env" workspace.deps.all
+pythonSet.mkVirtualEnv "fork-and-scale-env" workspace.deps.all

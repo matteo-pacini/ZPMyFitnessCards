@@ -20,7 +20,7 @@ from .const import DOMAIN
 
 # The end-to-end tests set this to a fake of their own: their Home Assistant
 # has no network in the VM checks. Nothing a person configures reaches it.
-SEARCH_URL = os.environ.get("ZP_MY_FITNESS_SEARCH_URL", "https://search.openfoodfacts.org/search")
+SEARCH_URL = os.environ.get("FORK_AND_SCALE_SEARCH_URL", "https://search.openfoodfacts.org/search")
 PAGE_SIZE = 10
 TIMEOUT = aiohttp.ClientTimeout(total=15)
 
@@ -81,7 +81,8 @@ async def async_search(hass: HomeAssistant, text: str, language: str, page: int)
         "fields": f"code,product_name,{names},brands,quantity,nutriments",
     }
     headers = {
-        "User-Agent": f"{integration.name}/{integration.version} ({integration.documentation})"
+        # A product token, not the name: it may not hold spaces or "&".
+        "User-Agent": f"ForkAndScale/{integration.version} ({integration.documentation})"
     }
     try:
         async with async_get_clientsession(hass).get(
