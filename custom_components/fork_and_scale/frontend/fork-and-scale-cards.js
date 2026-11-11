@@ -2081,8 +2081,88 @@ class CardEditor extends HTMLElement {
   }
 }
 
+// src/cards/person-card.js
+// The first day a range shows, ending today. "all" starts at `firstDay`,
+// the first day with data, or 30 days back when there is none before today.
+function rangeStart(range, today, firstDay) {
+  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
+  return shiftDay(today, -(Number(range) - 1));
+}
+
+const rangeButtons = (ranges, selected, t) =>
+  !ranges.length ? "" : `<div class="ranges" role="group">${ranges
+    .map((r) => `<button data-action="range" data-range="${r}" aria-pressed="${String(r) === String(selected)}">${esc(t[`range_${r}`])}</button>`)
+    .join("")}</div>`;
+
+// The loading of a card that shows one person, as a subclass of `Base`: the
+// person its config names, or the logged-in user's, and that person's data
+// from the card's `_fetch`, drawn with `_renderBody`. Its title is its
+// config's, else the string its static `titleKey` names.
+const ShowsPerson = (Base) =>
+  class extends Base {
+    async _load() {
+      const people = await this._call({ type: "fork_and_scale/people" });
+      this._person = findPerson(people, this._config, this._hass);
+      this._data = this._person ? await this._fetch() : null;
+    }
+
+    async _refresh() {
+      try {
+        this._data = await this._fetch();
+        this._renderBody();
+      } catch {
+        this._start();
+      }
+    }
+
+    get _titleHTML() {
+      return `<div class="title">${esc(this._config.title || this._t[this.constructor.titleKey])}</div>`;
+    }
+
+    // While there is no person to show, draw why: loading, a failure, or
+    // none found. Returns whether it drew.
+    _renderNoPerson() {
+      if (this._person) return false;
+      const t = this._t;
+      let message = t.loading;
+      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
+      else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
+      this._card.innerHTML = `${this._titleHTML}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
+      return true;
+    }
+  };
+
+// Base for the cards that show one person.
+class PersonCard extends ShowsPerson(FitnessCard) {
+  static options = ["person", "title", "locale"];
+  // The style of rangeButtons. A card's own style adds to it.
+  static style = `
+    .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
+    .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
+  `;
+
+  set hass(hass) {
+    const unit = this._hass && weightUnit(this._hass);
+    super.hass = hass;
+    // Home Assistant's unit system changed: show weights in the new unit.
+    if (unit && unit !== weightUnit(hass)) this._render();
+  }
+
+  _changed(event) {
+    if (this._person && event.person === this._person.id) this._refresh();
+  }
+
+  _render() {
+    if (!this._card || this._renderNoPerson()) return;
+    this._card.innerHTML = `<div class="head"><div>${this._titleHTML}<div class="sub person">${esc(this._person.name)}</div></div>
+      ${rangeButtons(this.constructor.ranges, this._range, this._t)}</div><div class="body"></div>`;
+    this._renderBody();
+  }
+}
+
 // src/cards/food-diary-card.js
-class FoodDiaryCard extends FoodCard {
+class FoodDiaryCard extends ShowsPerson(FoodCard) {
   static style = `${super.style}
     .nav { display: flex; align-items: center; gap: 4px; }
     .nav .label { min-width: 6.5em; text-align: center; font-weight: var(--ha-font-weight-medium, 500); }
@@ -2126,6 +2206,7 @@ class FoodDiaryCard extends FoodCard {
   `;
 
   static options = ["person", "title", "locale"];
+  static titleKey = "title_diary";
 
   getCardSize() {
     return 8;
@@ -2145,52 +2226,29 @@ class FoodDiaryCard extends FoodCard {
     if (this._person && event.detail.person === this._person.id) this._goTo(event.detail.day);
   };
 
-  async _load() {
-    const people = await this._call({ type: "fork_and_scale/people" });
-    this._person = findPerson(people, this._config, this._hass);
+  _load() {
     this._day ??= this._today;
-    this._data = this._person ? await this._fetchDay() : null;
+    return super._load();
   }
 
-  _fetchDay() {
+  _fetch() {
     return this._call({ type: "fork_and_scale/day", person: this._person.id, day: this._day });
-  }
-
-  async _reloadDay() {
-    try {
-      this._data = await this._fetchDay();
-      this._renderBody();
-    } catch {
-      this._start();
-    }
   }
 
   _changed(event) {
     if (event.person === null) {
       if (this._onSearchTab) this._search();
     } else if (this._person && event.person === this._person.id) {
-      this._reloadDay();
+      this._refresh();
     }
   }
 
   _render() {
-    if (!this._card) return;
-    const t = this._t;
-    if (!this._person) {
-      let message = t.loading;
-      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
-      else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
-      this._card.innerHTML = `${this._titleHTML}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
-      return;
-    }
+    if (!this._card || this._renderNoPerson()) return;
     this._card.innerHTML = `<div class="head"></div><div class="body"></div><div class="panel" hidden></div>`;
     this._renderHead();
     this._renderBody();
     this._renderPanel();
-  }
-
-  get _titleHTML() {
-    return `<div class="title">${esc(this._config.title || this._t.title_diary)}</div>`;
   }
 
   _renderHead() {
@@ -2328,7 +2386,7 @@ class FoodDiaryCard extends FoodCard {
     this._panel = null;
     this._renderHead();
     this._renderPanel();
-    await this._reloadDay();
+    await this._refresh();
   }
 
   static actions = {
@@ -2971,72 +3029,6 @@ const BAND_STYLE = `
   .chip.overweight, .band.overweight { background: var(--warning-color, var(--amber-color)); fill: var(--warning-color, var(--amber-color)); }
   .chip.obese, .band.obese { background: var(--error-color); fill: var(--error-color); }
 `;
-
-// src/cards/person-card.js
-// The first day a range shows, ending today. "all" starts at `firstDay`,
-// the first day with data, or 30 days back when there is none before today.
-function rangeStart(range, today, firstDay) {
-  if (range === "all") return firstDay && firstDay < today ? firstDay : shiftDay(today, -29);
-  return shiftDay(today, -(Number(range) - 1));
-}
-
-const rangeButtons = (ranges, selected, t) =>
-  !ranges.length ? "" : `<div class="ranges" role="group">${ranges
-    .map((r) => `<button data-action="range" data-range="${r}" aria-pressed="${String(r) === String(selected)}">${esc(t[`range_${r}`])}</button>`)
-    .join("")}</div>`;
-
-// Base for the cards that show one person.
-class PersonCard extends FitnessCard {
-  static options = ["person", "title", "locale"];
-  // The style of rangeButtons. A card's own style adds to it.
-  static style = `
-    .ranges { display: flex; gap: 4px; flex-wrap: wrap; }
-    .ranges button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
-    .ranges button[aria-pressed="true"] { background: var(--primary-color); color: var(--text-primary-color); border-color: var(--primary-color); }
-  `;
-
-  set hass(hass) {
-    const unit = this._hass && weightUnit(this._hass);
-    super.hass = hass;
-    // Home Assistant's unit system changed: show weights in the new unit.
-    if (unit && unit !== weightUnit(hass)) this._render();
-  }
-
-  async _load() {
-    const people = await this._call({ type: "fork_and_scale/people" });
-    this._person = findPerson(people, this._config, this._hass);
-    this._data = this._person ? await this._fetch() : null;
-  }
-
-  async _refresh() {
-    try {
-      this._data = await this._fetch();
-      this._renderBody();
-    } catch {
-      this._start();
-    }
-  }
-
-  _changed(event) {
-    if (this._person && event.person === this._person.id) this._refresh();
-  }
-
-  _render() {
-    if (!this._card) return;
-    const t = this._t;
-    const title = `<div class="title">${esc(this._config.title || t[this.constructor.titleKey])}</div>`;
-    if (!this._person) {
-      let message = t.loading;
-      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
-      else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
-      this._card.innerHTML = `${title}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
-      return;
-    }
-    this._card.innerHTML = `<div class="head"><div>${title}<div class="sub person">${esc(this._person.name)}</div></div>
-      ${rangeButtons(this.constructor.ranges, this._range, t)}</div><div class="body"></div>`;
-    this._renderBody();
-  }
-}
 
 // src/cards/weight-card.js
 const MIN_KG = 20;

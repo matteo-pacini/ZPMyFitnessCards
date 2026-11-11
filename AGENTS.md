@@ -27,7 +27,7 @@ Fork & Scale is a Home Assistant custom integration, `fork_and_scale`, with dash
   - `food-card.js`: `FoodCard`, the base of the food diary and saved foods cards: barcode lookups and scans, Open Food Facts searches, and errors in the card's open panel.
   - `editor.js`: the visual editor every card opens, with a field for each option in the card's static `options`, drawn with the frontend's `ha-form`.
   - `charts.js` and `weights.js`: chart helpers, and weight units and BMI bands, for more than one card.
-  - `person-card.js`: `PersonCard`, the base of the cards that show one person.
+  - `person-card.js`: `ShowsPerson`, which loads the one person a card shows, for the food diary and `PersonCard`, and `PersonCard`, the base of the weight, trends and summary cards.
   - `register.js`: defines the cards and their editor once the frontend is ready.
 - `tests/fixtures/myfitnesspal/`: made-up MyFitnessPal files with the real ones' quirks. The ZIP is built from its folder at test time.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.

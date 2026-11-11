@@ -1,4 +1,4 @@
-class FoodDiaryCard extends FoodCard {
+class FoodDiaryCard extends ShowsPerson(FoodCard) {
   static style = `${super.style}
     .nav { display: flex; align-items: center; gap: 4px; }
     .nav .label { min-width: 6.5em; text-align: center; font-weight: var(--ha-font-weight-medium, 500); }
@@ -42,6 +42,7 @@ class FoodDiaryCard extends FoodCard {
   `;
 
   static options = ["person", "title", "locale"];
+  static titleKey = "title_diary";
 
   getCardSize() {
     return 8;
@@ -61,52 +62,29 @@ class FoodDiaryCard extends FoodCard {
     if (this._person && event.detail.person === this._person.id) this._goTo(event.detail.day);
   };
 
-  async _load() {
-    const people = await this._call({ type: "fork_and_scale/people" });
-    this._person = findPerson(people, this._config, this._hass);
+  _load() {
     this._day ??= this._today;
-    this._data = this._person ? await this._fetchDay() : null;
+    return super._load();
   }
 
-  _fetchDay() {
+  _fetch() {
     return this._call({ type: "fork_and_scale/day", person: this._person.id, day: this._day });
-  }
-
-  async _reloadDay() {
-    try {
-      this._data = await this._fetchDay();
-      this._renderBody();
-    } catch {
-      this._start();
-    }
   }
 
   _changed(event) {
     if (event.person === null) {
       if (this._onSearchTab) this._search();
     } else if (this._person && event.person === this._person.id) {
-      this._reloadDay();
+      this._refresh();
     }
   }
 
   _render() {
-    if (!this._card) return;
-    const t = this._t;
-    if (!this._person) {
-      let message = t.loading;
-      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
-      else if (this._data === null) message = this._config.person ? fill(t.unknown_person, { name: this._config.person }) : t.no_person;
-      this._card.innerHTML = `${this._titleHTML}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
-      return;
-    }
+    if (!this._card || this._renderNoPerson()) return;
     this._card.innerHTML = `<div class="head"></div><div class="body"></div><div class="panel" hidden></div>`;
     this._renderHead();
     this._renderBody();
     this._renderPanel();
-  }
-
-  get _titleHTML() {
-    return `<div class="title">${esc(this._config.title || this._t.title_diary)}</div>`;
   }
 
   _renderHead() {
@@ -244,7 +222,7 @@ class FoodDiaryCard extends FoodCard {
     this._panel = null;
     this._renderHead();
     this._renderPanel();
-    await this._reloadDay();
+    await this._refresh();
   }
 
   static actions = {
