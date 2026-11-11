@@ -7,6 +7,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 out=${1:-$(mktemp -d -t fork-and-scale-android-vm-XXXXXX)}
 mkdir -p "$out"
+# The driver runs from $work, which a relative folder would be read from.
+out=$(realpath "$out")
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 nix build .#checks.x86_64-linux.android-vm.driver -o "$work/driver"
