@@ -124,6 +124,8 @@ When you add the integration, you choose where its data lives:
 
 Postgres needs the psycopg2 driver. If your recorder already runs on Postgres with a `postgresql://` URL, Home Assistant has it; if not, setup says it is missing.
 
+A new release may upgrade the database when Home Assistant starts. Each step of an upgrade is saved whole or not at all, so a failed upgrade leaves the database as it was, and the next start tries again. After an upgrade, an older release cannot read the database: it refuses to load and says so, and changes nothing. Update the integration again, or restore a backup from before the upgrade.
+
 ## Cards
 
 ### Food diary card

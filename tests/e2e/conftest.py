@@ -37,6 +37,9 @@ import aiohttp
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
 
+from custom_components.zp_my_fitness.const import DB_FILE
+from custom_components.zp_my_fitness.db import sqlite_url
+
 from ..conftest import new_database
 
 REPO = Path(__file__).resolve().parents[2]
@@ -102,6 +105,8 @@ class Home:
 
     url: str
     config_dir: Path
+    # The integration's database: SQLite in config_dir, or a Postgres database.
+    db_url: str
     tokens: dict[str, Any] = field(default_factory=dict)
 
     def api(self, method: str, path: str, body: dict | None = None, auth: bool = True) -> Any:
@@ -372,12 +377,17 @@ def home(request: pytest.FixtureRequest, search_server: FakeSearch) -> Iterator[
 
 
 def _home(
-    db_url: str | None, configuration: str = CONFIGURATION, search_url: str | None = None
+    db_url: str | None,
+    configuration: str = CONFIGURATION,
+    search_url: str | None = None,
+    database: Callable[[str], None] | None = None,
 ) -> Iterator[Home]:
     """Start Home Assistant, set it up, yield it, then stop it and delete it.
 
     `configuration` is configuration.yaml with a `{port}` slot. With
-    `search_url`, the integration searches Open Food Facts there.
+    `search_url`, the integration searches Open Food Facts there. With
+    `database`, it gets the integration's database URL before Home Assistant
+    starts, to leave a database there as an older release would have.
     """
     config_dir = Path(tempfile.mkdtemp(prefix="zp-my-fitness-e2e-"))
     port = _free_port()
@@ -386,7 +396,13 @@ def _home(
     (config_dir / "custom_components" / "zp_my_fitness").symlink_to(
         REPO / "custom_components" / "zp_my_fitness"
     )
-    home = Home(url=f"http://127.0.0.1:{port}", config_dir=config_dir)
+    home = Home(
+        url=f"http://127.0.0.1:{port}",
+        config_dir=config_dir,
+        db_url=db_url or sqlite_url(str(config_dir / DB_FILE)),
+    )
+    if database:
+        database(home.db_url)
     # Uploaded files go to Home Assistant's temporary folder, kept here so
     # that they go with the run.
     (config_dir / "tmp").mkdir()
@@ -451,6 +467,11 @@ def browser() -> Iterator[Browser]:
 @pytest.fixture
 def page(home: Home, browser: Browser) -> Iterator[Page]:
     """A browser tab, logged in as the owner."""
+    yield from logged_in_page(home, browser)
+
+
+def logged_in_page(home: Home, browser: Browser) -> Iterator[Page]:
+    """A browser tab on `home`, logged in as the owner, closed when the generator ends."""
     context = browser.new_context(viewport={"width": 1280, "height": 900})
     stored = {
         **home.tokens,

@@ -204,6 +204,16 @@ def make_engine(url: str) -> Engine:
             cursor.execute("PRAGMA journal_mode = WAL")
             cursor.execute("PRAGMA foreign_keys = ON")
             cursor.close()
+            # Python's sqlite3 begins a transaction only before INSERT, UPDATE
+            # and DELETE, so a migration's ALTER TABLE would commit on its own
+            # even if the rest of the migration failed. Stop it beginning any,
+            # and begin every transaction below instead:
+            # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#sqlite-enabling-transactions
+            dbapi_connection.isolation_level = None
+
+        @event.listens_for(engine, "begin")
+        def _begin(conn: Connection) -> None:
+            conn.exec_driver_sql("BEGIN")
 
         return engine
     return create_engine(url, pool_pre_ping=True)
@@ -219,6 +229,14 @@ def _food(row: Any) -> dict[str, Any] | None:
     food = dict(row._mapping)
     food["portions"] = json.loads(food["portions"])
     return food
+
+
+class NewerSchemaError(Exception):
+    """The database is at a schema version that only a newer release knows."""
+
+    def __init__(self, version: int) -> None:
+        super().__init__(f"schema version {version}; this release knows up to {len(MIGRATIONS)}")
+        self.version = version
 
 
 class Database:
@@ -241,17 +259,29 @@ class Database:
         return self._engine
 
     def open(self) -> None:
-        """Connect, creating the tables if needed, and upgrade the schema."""
+        """Connect, creating the tables if needed, and upgrade the schema.
+
+        Raises NewerSchemaError, and changes nothing, if a newer release of the
+        integration has upgraded the database past what this one knows. On any
+        failure the database is left at the last version that completed, and
+        closed.
+        """
         self._engine = make_engine(self.url)
-        with self._db.begin() as conn:
-            VERSION.create(conn, checkfirst=True)
-        version = self.schema_version()
-        for number, migrate in enumerate(MIGRATIONS[version:], start=version + 1):
-            # The migration and its version bump commit together, or not at all.
+        try:
             with self._db.begin() as conn:
-                migrate(conn)
-                conn.execute(delete(VERSION))
-                conn.execute(insert(VERSION).values(version=number))
+                VERSION.create(conn, checkfirst=True)
+            version = self.schema_version()
+            if version > len(MIGRATIONS):
+                raise NewerSchemaError(version)
+            for number, migrate in enumerate(MIGRATIONS[version:], start=version + 1):
+                # The migration and its version bump commit together, or not at all.
+                with self._db.begin() as conn:
+                    migrate(conn)
+                    conn.execute(delete(VERSION))
+                    conn.execute(insert(VERSION).values(version=number))
+        except BaseException:
+            self.close()
+            raise
 
     def close(self) -> None:
         """Close every connection."""

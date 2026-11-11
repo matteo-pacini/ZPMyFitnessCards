@@ -260,6 +260,9 @@
     "kcal_required": {
       "message": "快速添加需要填写千卡。"
     },
+    "newer_database": {
+      "message": "较新版本的 ZPMyFitnessCards 已将此数据库升级到版本 {version}。此版本最高只支持版本 {latest}，因此未改动数据库。请更新 ZPMyFitnessCards 后再使用。"
+    },
     "not_loaded": {
       "message": "ZPMyFitnessCards 未加载。"
     },

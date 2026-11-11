@@ -260,6 +260,9 @@
     "kcal_required": {
       "message": "En snabbinmatning behöver kcal."
     },
+    "newer_database": {
+      "message": "En nyare version av ZPMyFitnessCards har uppdaterat den här databasen till version {version}. Den här versionen känner bara till version {latest} och har lämnat databasen orörd. Uppdatera ZPMyFitnessCards för att använda den igen."
+    },
     "not_loaded": {
       "message": "ZPMyFitnessCards är inte inläst."
     },

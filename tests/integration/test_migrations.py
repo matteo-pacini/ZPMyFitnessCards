@@ -1,0 +1,243 @@
+"""Upgrading the database from one schema version to the next, and failing to."""
+
+from typing import Any
+
+import pytest
+from homeassistant.config_entries import ConfigEntryState
+from homeassistant.core import HomeAssistant
+from sqlalchemy import inspect
+from sqlalchemy.exc import DBAPIError
+
+from custom_components.zp_my_fitness import db as db_module
+from custom_components.zp_my_fitness.const import DB_FILE
+from custom_components.zp_my_fitness.db import (
+    MIGRATIONS,
+    Database,
+    NewerSchemaError,
+    _schema_v1,
+    make_engine,
+    sqlite_url,
+)
+
+from ..schemas import (
+    LATEST,
+    SAMPLE_DAY,
+    SAMPLE_PEOPLE,
+    add_version_1_sample,
+    contents,
+    database_at,
+    failing_version_bumps,
+    layout,
+    set_version,
+    version,
+)
+from .conftest import mock_entry, person
+
+VERSION_1_COLUMNS = {name: list(table.c.keys()) for name, table in _schema_v1().tables.items()}
+
+
+class Crash(Exception):
+    """A failure in the middle of a migration."""
+
+
+def version_1_database(url: str) -> dict[str, list[tuple]]:
+    """Make the database at `url` one that version 1 left with the sample; return its rows."""
+    database_at(url, 1)
+    add_version_1_sample(url)
+    return contents(url)
+
+
+# The database alone
+
+
+def test_a_transaction_undoes_its_schema_changes_with_its_writes(database_url: str) -> None:
+    engine = make_engine(database_url)
+    try:
+        with pytest.raises(Crash), engine.begin() as conn:
+            conn.exec_driver_sql("CREATE TABLE scratch (n INTEGER)")
+            conn.exec_driver_sql("INSERT INTO scratch VALUES (1)")
+            conn.exec_driver_sql("ALTER TABLE scratch ADD COLUMN m INTEGER")
+            raise Crash
+        assert "scratch" not in inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+
+
+def test_upgrades_a_version_1_database_keeping_everything_in_it(database_url: str) -> None:
+    before = version_1_database(database_url)
+    db = Database(database_url)
+    db.open()
+    assert db.schema_version() == LATEST
+    db.close()
+    assert contents(database_url, VERSION_1_COLUMNS) == {
+        t: rows for t, rows in before.items() if t in VERSION_1_COLUMNS
+    }
+    assert {row.source for row in contents(database_url, {"entries": ["source"]})["entries"]} == {
+        None
+    }
+
+
+@pytest.mark.parametrize("number", range(1, LATEST + 1))
+def test_a_migration_that_fails_midway_changes_nothing_and_the_next_open_finishes(
+    database_url: str, number: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    database_at(database_url, number - 1)
+    if number > 1:
+        add_version_1_sample(database_url)
+    before = layout(database_url), contents(database_url)
+    real = MIGRATIONS[number - 1]
+
+    def crashing(conn: Any) -> None:
+        real(conn)
+        raise Crash
+
+    monkeypatch.setattr(
+        db_module, "MIGRATIONS", [*MIGRATIONS[: number - 1], crashing, *MIGRATIONS[number:]]
+    )
+    db = Database(database_url)
+    with pytest.raises(Crash):
+        db.open()
+    # Closed, so a Postgres server keeps no connection from a failed open.
+    assert db._engine is None
+    assert (layout(database_url), contents(database_url)) == before
+    assert version(database_url) == (number - 1 or None)
+
+    monkeypatch.undo()
+    db.open()
+    assert db.schema_version() == LATEST
+    db.close()
+
+
+def test_a_version_bump_the_database_refuses_undoes_its_migration(database_url: str) -> None:
+    version_1_database(database_url)
+    before = layout(database_url), contents(database_url)
+    db = Database(database_url)
+    with failing_version_bumps(database_url):
+        with pytest.raises(DBAPIError, match="version bump fails on purpose"):
+            db.open()
+        assert db._engine is None
+        assert (layout(database_url), contents(database_url)) == before
+        assert "source" not in layout(database_url)["entries"]
+    db.open()
+    assert db.schema_version() == LATEST
+    assert [e["name"] for e in db.day_entries("matteo", SAMPLE_DAY)] == [
+        "Old porridge oats",
+        "Old quick add",
+    ]
+    db.close()
+
+
+def test_refuses_a_database_a_newer_release_upgraded_and_changes_nothing(
+    database_url: str,
+) -> None:
+    database_at(database_url, LATEST)
+    add_version_1_sample(database_url)
+    set_version(database_url, LATEST + 1)
+    before = layout(database_url), contents(database_url)
+    db = Database(database_url)
+    with pytest.raises(NewerSchemaError) as raised:
+        db.open()
+    assert raised.value.version == LATEST + 1
+    assert str(raised.value) == f"schema version {LATEST + 1}; this release knows up to {LATEST}"
+    assert db._engine is None
+    assert (layout(database_url), contents(database_url)) == before
+
+
+def test_opens_a_database_at_the_latest_version_without_touching_it(database_url: str) -> None:
+    database_at(database_url, LATEST)
+    add_version_1_sample(database_url)
+    before = layout(database_url), contents(database_url)
+    db = Database(database_url)
+    db.open()
+    db.close()
+    assert (layout(database_url), contents(database_url)) == before
+
+
+# Setting up the integration
+
+
+def entry_url(hass: HomeAssistant, entry_data: dict[str, Any]) -> str:
+    """The database the entry with `entry_data` opens."""
+    return entry_data.get("db_url") or sqlite_url(hass.config.path(DB_FILE))
+
+
+def sample_entry(entry_data: dict[str, Any]):
+    """The integration's entry with the sample's people, as they were added."""
+    return mock_entry(
+        *(person(name, key=key) for key, name in SAMPLE_PEOPLE.items()), data=entry_data
+    )
+
+
+async def test_setup_upgrades_a_version_1_database(
+    hass: HomeAssistant, entry_data: dict[str, Any]
+) -> None:
+    url = entry_url(hass, entry_data)
+    version_1_database(url)
+    entry = sample_entry(entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert version(url) == LATEST
+    db = entry.runtime_data.data.db
+    for key in SAMPLE_PEOPLE:
+        assert [(e["name"], e["kcal"], e["source"]) for e in db.day_entries(key, SAMPLE_DAY)] == [
+            ("Old porridge oats", 155.6, None),
+            ("Old quick add", 640, None),
+        ]
+    assert float(hass.states.get("sensor.matteo_weight").state) == 80.1
+
+
+async def test_setup_fails_when_an_upgrade_fails_and_a_reload_finishes_it(
+    hass: HomeAssistant, entry_data: dict[str, Any]
+) -> None:
+    url = entry_url(hass, entry_data)
+    version_1_database(url)
+    before = layout(url), contents(url)
+    entry = sample_entry(entry_data)
+    entry.add_to_hass(hass)
+    with failing_version_bumps(url):
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+        assert (layout(url), contents(url)) == before
+        assert hass.states.get("sensor.matteo_weight") is None
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert version(url) == LATEST
+    assert float(hass.states.get("sensor.matteo_weight").state) == 80.1
+
+
+async def test_setup_refuses_a_database_a_newer_release_upgraded(
+    hass: HomeAssistant, entry_data: dict[str, Any]
+) -> None:
+    url = entry_url(hass, entry_data)
+    database_at(url, LATEST)
+    add_version_1_sample(url)
+    set_version(url, LATEST + 1)
+    before = layout(url), contents(url)
+    entry = sample_entry(entry_data)
+    entry.add_to_hass(hass)
+    assert not await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_ERROR
+    assert entry.error_reason_translation_key == "newer_database"
+    assert entry.error_reason_translation_placeholders == {
+        "version": str(LATEST + 1),
+        "latest": str(LATEST),
+    }
+    # Home Assistant drops the message's last full stop.
+    assert entry.reason == (
+        f"A newer release of ZPMyFitnessCards upgraded this database to version {LATEST + 1}."
+        f" This release knows up to version {LATEST}, so it left the database as it is."
+        " Update ZPMyFitnessCards to use it again"
+    )
+    assert (layout(url), contents(url)) == before
+    assert hass.states.get("sensor.matteo_weight") is None
+
+    # Back at a version it knows, as after updating, it loads.
+    set_version(url, LATEST)
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED

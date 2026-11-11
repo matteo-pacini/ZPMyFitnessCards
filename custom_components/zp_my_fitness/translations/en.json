@@ -260,6 +260,9 @@
     "kcal_required": {
       "message": "A quick add needs the kcal."
     },
+    "newer_database": {
+      "message": "A newer release of ZPMyFitnessCards upgraded this database to version {version}. This release knows up to version {latest}, so it left the database as it is. Update ZPMyFitnessCards to use it again."
+    },
     "not_loaded": {
       "message": "ZPMyFitnessCards is not loaded."
     },

@@ -11,6 +11,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_change
@@ -21,7 +22,7 @@ from . import services, websocket
 from .const import CARDS_URL, CONF_DB_URL, DB_FILE, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
 from .coordinator import PersonCoordinator
 from .data import FitnessData, Person
-from .db import Database, sqlite_url
+from .db import MIGRATIONS, Database, NewerSchemaError, sqlite_url
 from .export import ExportView
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -61,7 +62,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> bool:
     """Open the database and set up each person's sensors."""
     db = Database(entry.data.get(CONF_DB_URL) or sqlite_url(hass.config.path(DB_FILE)))
-    await hass.async_add_executor_job(db.open)
+    try:
+        await hass.async_add_executor_job(db.open)
+    except NewerSchemaError as err:
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key="newer_database",
+            translation_placeholders={"version": str(err.version), "latest": str(len(MIGRATIONS))},
+        ) from err
     people = [
         Person.from_subentry(s)
         for s in entry.subentries.values()

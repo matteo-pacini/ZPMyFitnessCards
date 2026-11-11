@@ -1,5 +1,8 @@
 """The SQLite database, without Home Assistant."""
 
+import sqlite3
+from pathlib import Path
+
 import pytest
 from sqlalchemy import insert
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +13,7 @@ from custom_components.zp_my_fitness.db import (
     Database,
     _schema_v1,
     make_engine,
+    sqlite_url,
 )
 from custom_components.zp_my_fitness.goals import Goals
 
@@ -40,6 +44,34 @@ def test_creates_the_latest_schema_and_reopens_without_migrating(database_url: s
     assert again.schema_version() == len(MIGRATIONS)
     assert again.search_foods("oats", 10)[0]["name"] == "Porridge oats"
     again.close()
+
+
+def test_sqlite_keeps_foreign_keys_and_the_write_ahead_log(tmp_path: Path) -> None:
+    db = Database(sqlite_url(str(tmp_path / "test.db")))
+    db.open()
+    with db._db.connect() as conn:
+        assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
+        assert conn.exec_driver_sql("PRAGMA journal_mode").scalar() == "wal"
+    db.close()
+
+
+def test_sqlite_checkpoint_moves_the_write_ahead_log_into_the_file(tmp_path: Path) -> None:
+    path = tmp_path / "test.db"
+    db = Database(sqlite_url(str(path)))
+    db.open()
+    # The last connection to close empties the log anyway, so keep one open.
+    other = sqlite3.connect(path)
+    try:
+        other.execute("SELECT 1").fetchone()
+        db.add_food(OATS)
+        wal = tmp_path / "test.db-wal"
+        assert wal.stat().st_size > 0
+        db.checkpoint()
+        assert wal.stat().st_size == 0
+        assert other.execute("SELECT name FROM foods").fetchall() == [("Porridge oats",)]
+    finally:
+        other.close()
+        db.close()
 
 
 def test_foods_search_by_name_or_barcode(db: Database) -> None:
