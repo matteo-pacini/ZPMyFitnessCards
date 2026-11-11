@@ -3157,6 +3157,12 @@ class WeightCard extends PersonCard {
         .join("")}</div>` : ""}`;
   }
 
+  // A failed command's error, shown under the log form.
+  _showFailure(err) {
+    this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
+    this._renderBody();
+  }
+
   static actions = {
     "click:range"(el) {
       this._chosenRange = el.dataset.range;
@@ -3177,16 +3183,14 @@ class WeightCard extends PersonCard {
       try {
         await this._call({ type: "fork_and_scale/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
       } catch (err) {
-        this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
-        this._renderBody();
+        this._showFailure(err);
       }
     },
     async "click:delete-weight"(el) {
       try {
         await this._call({ type: "fork_and_scale/weight/delete", person: this._person.id, day: el.dataset.day });
       } catch (err) {
-        this._error = fill(this._t.error_failed, { message: err?.message ?? "" });
-        this._renderBody();
+        this._showFailure(err);
       }
     },
   };
