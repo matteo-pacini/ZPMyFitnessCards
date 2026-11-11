@@ -78,10 +78,15 @@ class FoodsCard extends FoodCard {
 
   // Fill the form from its barcode, or open the saved food that has it.
   async _fillFromBarcode() {
-    const looked = await this._lookUp(this._panel.food);
+    this._showLookedUp(await this._lookUp(this._panel.food), this._panel);
+  }
+
+  // Open what _lookUp or _lookUpPicked found: the saved food that has the
+  // barcode, or `panel` with the food filled in.
+  _showLookedUp(looked, panel) {
     this._panel = looked.saved
       ? { food: looked.saved, note: looked.note }
-      : { ...this._panel, food: looked.food, note: looked.note ?? null, warning: null, error: looked.error ?? null };
+      : { ...panel, food: looked.food, note: looked.note ?? null, warning: looked.warning ?? null, error: looked.error ?? null };
     this._renderPanel();
   }
 
@@ -121,11 +126,7 @@ class FoodsCard extends FoodCard {
     // Opens New food, filled in, or the saved food with the product's barcode.
     async "click:off-pick"(el) {
       const product = this._off.products.find((x) => x.code === el.dataset.code);
-      const looked = await this._lookUpPicked(product);
-      this._panel = looked.saved
-        ? { food: looked.saved, note: looked.note }
-        : { food: looked.food, note: looked.note ?? null, warning: looked.warning ?? null };
-      this._renderPanel();
+      this._showLookedUp(await this._lookUpPicked(product), {});
       this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
     },
     "click:add-portion"() {
