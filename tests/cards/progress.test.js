@@ -244,3 +244,15 @@ test("the summary's food and weight are drawn apart", () => {
   assert.equal(text(one), "88.6 kg Overweight");
   assert.doesNotMatch(one, /class="spark"/);
 });
+
+test("the summary's weight is the last weigh-in, however old; its change and line are the last 30 days'", () => {
+  const old = [
+    { day: "2026-08-01", kg: 99 },
+    { day: "2026-09-01", kg: 98.2 },
+  ];
+  const shown = fn.summaryWeightHTML(old, MATTEO, "2026-10-11", "2026-11-09", "en-GB", en(), "kg");
+  assert.equal(text(shown), "98.2 kg Obese");
+  assert.doesNotMatch(shown, /class="spark"/);
+  const lately = [...old, { day: "2026-10-20", kg: 96 }, { day: "2026-11-08", kg: 95 }];
+  assert.match(text(fn.summaryWeightHTML(lately, MATTEO, "2026-10-11", "2026-11-09", "en-GB", en(), "kg")), /^95 kg Overweight −1 kg in 30 days$/);
+});

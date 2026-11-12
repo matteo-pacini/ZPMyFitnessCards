@@ -338,6 +338,23 @@ def test_the_summary_card_shows_today_and_opens_its_path(home: Home, page: Page)
     expect(page).to_have_url(re.compile(r"/config"), timeout=TIMEOUT)
 
 
+def test_the_summary_card_shows_a_weigh_in_from_over_a_month_ago(home: Home, page: Page) -> None:
+    long_ago = (date.fromisoformat(today()) - timedelta(days=45)).isoformat()
+    # Sam starts at 70 kg and 170 cm: a healthy weight. 88 kg is obese.
+    with person_named(home, "Sam e2e"):
+        home.ws(
+            {
+                "type": "metron/weight/set",
+                "person": person_id(home, "Sam e2e"),
+                "day": long_ago,
+                "kg": 88,
+            }
+        )
+        card = open_card(home, page, {"type": "custom:metron-summary-card", "person": "Sam e2e"})
+        expect(card.locator(".weight b")).to_have_text("88 kg", timeout=TIMEOUT)
+        expect(card.locator(".weight .chip")).to_have_text("Obese")
+
+
 def test_open_cards_move_to_the_new_day_at_midnight(home: Home, page: Page) -> None:
     midnight = datetime.now(ZoneInfo("Europe/London")).replace(
         hour=0, minute=0, second=0, microsecond=0

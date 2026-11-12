@@ -4795,8 +4795,8 @@ function sparklineSVG(weights, start, today) {
   </svg>`;
 }
 
-// Today's summary from metron/day, and the last 30 days of weights,
-// shown in `unit`.
+// Today's summary from metron/day, and the weights, oldest first, from
+// metron/weights, shown in `unit`: their change and sparkline from `start`.
 const summaryHTML = (day, weights, person, start, today, locale, t, unit) =>
   summaryFoodHTML(day, locale, t) + summaryWeightHTML(weights, person, start, today, locale, t, unit);
 
@@ -4826,18 +4826,20 @@ function summaryFoodHTML(day, locale, t) {
     <div class="legend">${legend}</div>`;
 }
 
-// The weight now, its BMI band, its change over `weights`, and their sparkline.
+// The weight now, however long ago it was weighed, its BMI band, and the
+// change and sparkline of the weights from `start`.
 function summaryWeightHTML(weights, person, start, today, locale, t, unit) {
   const latest = latestKg(weights, person);
   const band = bandOf(latest, person);
+  const recent = weights.filter((w) => w.day >= start);
   let change = "";
-  if (weights.length >= 2) {
-    change = `<small>${esc(fill(t.change_30d, { change: changeText(latest - weights[0].kg, unit, locale, t) }))}</small>`;
+  if (recent.length >= 2) {
+    change = `<small>${esc(fill(t.change_30d, { change: changeText(latest - recent[0].kg, unit, locale, t) }))}</small>`;
   }
   return `
     <div class="weight">
       <div><b class="num">${esc(weightText(latest, unit, locale, t))}</b> <span class="chip ${band}">${esc(t[band])}</span>${change}</div>
-      ${sparklineSVG(weights, start, today)}
+      ${sparklineSVG(recent, start, today)}
     </div>`;
 }
 
@@ -4898,12 +4900,11 @@ class SummaryCard extends PersonCard {
 
   async _fetch() {
     const today = this._today;
-    const start = shiftDay(today, -29);
     const [day, weights] = await Promise.all([
       this._call({ type: "metron/day", person: this._person.id, day: today }),
-      this._call({ type: "metron/weights", person: this._person.id, start }),
+      this._call({ type: "metron/weights", person: this._person.id }),
     ]);
-    return { day, weights, start };
+    return { day, weights, start: shiftDay(today, -29) };
   }
 
   _render() {
