@@ -27,7 +27,7 @@ It is in early development. The integration, its sensors, all six cards and barc
 
 4. On its page, use **Add person** for each person.
 
-Each person has a name, sex, birth date, height, starting weight and date, goal weight, activity level and weekly pace. From these the integration works out a calorie goal with the Mifflin-St Jeor formula, and follows it as the weight changes. You can type your own calorie goal instead, and set the protein, carbs and fat split, which defaults to 20%, 50% and 30%.
+Each person has a name, sex, birth date, height, starting weight and date, goal weight, activity level and weekly pace. From these the integration works out a calorie goal with the Mifflin-St Jeor formula, and follows it as the weight changes. You can type your own calorie goal instead, and set the protein, carbs and fat split, which defaults to 20%, 50% and 30%. A watch or phone can raise the goal on active days: see [Active calories](#active-calories).
 
 To change a person later, use **Change person**. Its **Delete all data** option erases their food, weights, goals and own saved meals, and the foods they saved that no one else has logged and no meal uses. Foods still in use stay, for the household.
 
@@ -98,7 +98,7 @@ Then, when adding the integration, choose Postgres and give the URL `postgresql:
 
 ## Units
 
-Units follow Home Assistant's unit system, in **Settings > System > General**. With US customary units, everyone sees and types weights in lb and heights in feet and inches: in the person form, the weight sensors, the actions and the cards. Any other unit system uses kg and cm. Energy is always in kcal, and food always in grams.
+Units follow Home Assistant's unit system, in **Settings > System > General**. With US customary units, everyone sees and types weights in lb and heights in feet and inches: in the person form, the weight sensors, the actions and the cards. Any other unit system uses kg and cm. Energy is always in kcal, and food always in grams. An active calories sensor in kJ is converted to kcal as it is read.
 
 The data is always stored in kg and cm, so changing the unit system only changes what you see. When you change it, let Home Assistant update the units of existing sensors, and the weight sensors follow.
 
@@ -112,24 +112,28 @@ Each person is a device with these sensors, named after them, for example `senso
 | --- | --- | --- |
 | Calories, protein, carbs, fat, fibre, sugar, saturated fat and salt today | kcal or g | Start again at midnight. |
 | Breakfast, lunch, dinner and snacks calories | kcal | Start again at midnight. |
-| Calories remaining | kcal | Calorie goal minus calories today. |
-| Calorie, protein, carbs and fat goal | kcal or g | |
+| Calories remaining | kcal | Calorie goal plus activity, minus calories today. |
+| Calorie, protein, carbs and fat goal | kcal or g | The calorie goal is the goal before activity. The protein, carbs and fat goals split the goal with activity. |
+| Activity | kcal | What [active calories](#active-calories) added to today's goal. Only while they are allowed. Starts again at midnight. |
 | Weight | kg or lb | The last weigh-in, or the starting weight before the first. |
 | Weight change | kg or lb | Since the starting weight. |
-| Daily burn | kcal | Estimated calories burnt a day. |
+| Daily burn | kcal | Estimated calories burnt a day, with today's activity. |
+
+The Activity sensor has these attributes: `measured`, the kcal measured or logged today; `counted`, the share of it that counts, up to the cap; `share` and `cap`, the person's settings; `source`, the sensor's entity ID or `action`; and `status`, one of `waiting`, `level`, `counting`, `capped`, `unavailable` or `missing`.
 
 The weight sensor also has these attributes, always in kg and cm: `underweight_below_kg`, `overweight_from_kg` and `obese_from_kg` (the BMI band limits for the person's height), `bmi_band`, `goal_weight_kg`, `height_cm` and `weighed_on`.
 
-The daily totals keep long-term statistics, so a statistics graph with `stat_types: change` and `period: day` shows each day's intake. Changing a past day in the diary also corrects its statistics.
+The daily totals and Activity keep long-term statistics, so a statistics graph with `stat_types: change` and `period: day` shows each day's intake or activity. Changing a past day in the diary also corrects its statistics.
 
 ## Actions
 
-Automations, scripts and Assist can log and read with four actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
+Automations, scripts and Assist can log and read with five actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
 
 - `metron.log_weight` records a weight, in lb with US customary units and in kg otherwise, or in the `unit` you give, `kg` or `lb`. It takes 20 to 400 kg, which is 44.1 to 881.8 lb. A day keeps one weight, so logging again replaces it.
 - `metron.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
 - `metron.log_meal` logs every food of a saved meal under a meal. Give the saved meal's name as `saved_meal`, in any case, and the `meal`. It logs everyone's meals and the person's own; another person's own meal is refused.
-- `metron.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`.
+- `metron.log_active_calories` sets a person's [active calories](#active-calories) for the day, as `kcal`, from 0 to 10,000. Give the figure measured: the person's share and cap apply, as for a sensor. It replaces the figure already there, even with a lower one. The person must have Allow active calories ticked, and the day can't be before their start date.
+- `metron.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`. The goals include activity, and `activity` says what it added: `source`, `measured`, `counted`, `added`, `allowed` (what the activity level allows for), `share`, `cap` and, for today, `status`. It is null on a day without activity.
 
 Choose the person in the action editor, which fills in their `device_id`. For example, to log each new reading from a smart scale:
 
@@ -158,6 +162,106 @@ actions:
       message: "{{ day.totals.kcal | round }} of {{ day.goals.kcal | round }} kcal today"
 ```
 
+## Active calories
+
+A watch or phone can raise a person's calorie goal by the activity it measures. Turn it on in the person's **Change person**, **Change details**, in the **Active calories** section:
+
+- **Allow active calories** turns it on. The rest of the section applies only while it is ticked.
+- **Share counted** is the share of the measured figure that counts: 75% unless you change it.
+- **Most counted a day** is the most that counts, 1,500 kcal unless you change it. A figure over it counts as this much, and the food diary says so, with the figure measured, so a wrong reading is plain to see.
+- **Sensor** is optional: a sensor of today's active calories, in kcal or kJ, that starts from 0 each day. Leave it empty to send the figure from an automation with `metron.log_active_calories` instead. You can use both: the latest figure wins, and after that the sensor only raises it.
+
+<img src="images/person-form-active-calories.png" alt="The person form's Active calories section: Allow active calories ticked, 75% counted, at most 1,500 kcal a day, and Garmin Connect's Active calories as the sensor" width="500">
+
+The activity level stays the floor. Each level already allows for some activity: the resting burn times the level's multiplier less Sedentary's 1.2, which is none for Sedentary. Only what counts beyond that is added to the goal. So the goal never drops below the activity level's, and a quiet day, or a watch that is off, leaves it as it was. For example, Anna's resting burn is 1,395 kcal, and Light allows for 244 kcal of activity. Her watch measures 906 kcal. At 75%, 680 counts, so her goal rises by 436, from 1,368 to 1,804 kcal. A typed calorie goal gets activity on top the same way, and the activity level says how much activity it already includes.
+
+Why 75%: a watch's figure can be well off for any one person, either way, and counting only part of it keeps the goal on the careful side. A study of 1,754 people also found that only about 72% of extra activity shows up as extra calories burnt, since the body burns a little less at rest on active days ([Careau and others, 2021](https://doi.org/10.1016/j.cub.2021.08.016)). Don't go much below 50%: many watches already read low.
+
+In the food diary, a day with activity reads Goal + Activity − Food = Remaining. Goal is the goal before activity, and Activity is what it added. The line under it says what was measured, how much of it counts, and how much of that the activity level already allows for. Past days keep their own figures and line. The summary card's ring measures against the whole goal, and its line names the activity: "850 of 1,804 kcal, 436 from activity".
+
+<img src="images/food-diary-activity.png" alt="Food diary with activity: Goal plus Activity minus Food equals Remaining, and a line that explains the Activity" width="400">
+
+### Which sensor
+
+| Integration | Sensor | Notes |
+| --- | --- | --- |
+| Garmin Connect (HACS) | Active calories | Not Calories, which includes the calories burnt at rest. |
+| Google Health | Active calories | |
+| Withings | Active calories burnt today | Its unit is `calories`, which Metron reads as kcal. |
+| Home Assistant app on iPhone | Active Energy | |
+| Oura (HACS) | | Through an automation: see below. |
+| Polar (HACS) | | Through an automation: see below. |
+| Health Connect, in the Home Assistant app on Android | | Through a template sensor: see below. |
+
+A reading counts for today only if it changed since midnight, any `last_reset` it has is since midnight, and it is not exactly yesterday's figure. That leaves out the total from yesterday that some sources still show after midnight. The day's figure only rises: a lower reading is left out. While the sensor is unavailable, the diary says so, and the last reading from today still counts. If the sensor is deleted or renamed, the diary says that too, and today's last reading still counts until you choose another in the person's details.
+
+The form takes a sensor in kcal, `calories` or kJ, and converts kJ to kcal. It refuses any other unit, including `cal`, which Home Assistant means as a thousandth of a kcal. An energy sensor shown in another unit, such as Wh, can be set to kcal or kJ in its settings. For any other sensor, make a template sensor that gives its figure in kcal, or send it from an automation. The form also refuses a sensor that reads more than 10,000 kcal: that is a total that never starts again at 0. Make a [utility meter](https://www.home-assistant.io/integrations/utility_meter/) from it, with a daily cycle, in **Settings > Devices & services > Helpers**, and choose the meter.
+
+These don't give a day's active calories, so they don't work:
+
+- Strava: its calories are per activity.
+- Health Connect's "Active calories burned": only the newest single record.
+- Whoop: its day figures cover a Whoop cycle, not a calendar day.
+
+### From an automation
+
+`metron.log_active_calories` sets the day's figure, so an automation can send it from any source. Pass `day` when the source says which day its figure is for. Replace the entity IDs and the device ID with yours; the action editor fills in the device ID when you choose the person.
+
+**Oura.** An Oura day starts at 4 a.m., so between midnight and 4 a.m. the ring's figure is still the day before's. Its `last_reset` says which day it is:
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: sensor.oura_ring_active_calories
+    not_to: [unavailable, unknown]
+actions:
+  - action: metron.log_active_calories
+    data:
+      device_id: 5f1c0d7e9a2b4c6d8e0f1a2b3c4d5e6f
+      kcal: "{{ trigger.to_state.state }}"
+      day: "{{ (trigger.to_state.attributes.last_reset | as_datetime | as_local).date() }}"
+```
+
+**Polar.** Its Daily activity Calories sensor is the total, with the calories burnt at rest. The active calories are its `active-calories` attribute, for the day in its `date` attribute, the last day the watch synced:
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: sensor.polar_daily_activity_calories
+conditions:
+  - condition: template
+    value_template: "{{ state_attr('sensor.polar_daily_activity_calories', 'active-calories') | is_number }}"
+actions:
+  - action: metron.log_active_calories
+    data:
+      device_id: 5f1c0d7e9a2b4c6d8e0f1a2b3c4d5e6f
+      kcal: "{{ state_attr('sensor.polar_daily_activity_calories', 'active-calories') }}"
+      day: "{{ state_attr('sensor.polar_daily_activity_calories', 'date') }}"
+```
+
+**Health Connect.** Its active calories sensor holds only the newest single record, but its total calories burnt counts from midnight. Take away the basal rate for the part of the day gone by, in a template sensor, then choose that sensor in the person's details. It counts nothing until the phone sends the new day's total:
+
+```yaml
+template:
+  - sensor:
+      - name: Active calories today
+        unit_of_measurement: kcal
+        availability: >-
+          {{ has_value('sensor.pixel_health_connect_total_calories_burned')
+             and has_value('sensor.pixel_health_connect_basal_metabolic_rate') }}
+        state: >-
+          {%- set total = states.sensor.pixel_health_connect_total_calories_burned -%}
+          {%- set basal = states('sensor.pixel_health_connect_basal_metabolic_rate') | float -%}
+          {%- set gone_by = (now() - today_at()).total_seconds() / 86400 -%}
+          {%- if total.last_changed < today_at() -%}
+            0
+          {%- else -%}
+            {{ [total.state | float - basal * gone_by, 0] | max | round }}
+          {%- endif -%}
+```
+
+An automation can send the same figure with the action instead, triggered by the total.
+
 ## Import and export
 
 ### From MyFitnessPal
@@ -179,6 +283,7 @@ A saved printable diary also holds your MyFitnessPal account's email address, lo
 - `weights.csv`: each day's weight in kg.
 - `foods.csv`: the saved foods, with their values per 100 g, barcodes, portions and who saved them. This is the household's shared list, so it is the same for everyone.
 - `meals.csv`: everyone's saved meals and the person's own, an item a row. An item of a saved food gives the food and its grams, as its values follow the food. A fixed item, from a quick add, gives its values.
+- `activity.csv`: each day's active calories: where they came from, the kcal measured, counted and added, what the activity level allowed for, and the share and cap that day.
 
 The link works for five minutes, and only for administrators.
 
@@ -208,7 +313,7 @@ The editor saves the options below, so a card can also be written in YAML.
 
 ### Food diary card
 
-One person's day, meal by meal: the calorie goal, what they have eaten and what is left, protein, carbs and fat against their goals, and each meal's entries.
+One person's day, meal by meal: the calorie goal, what they have eaten and what is left, protein, carbs and fat against their goals, and each meal's entries. On a day with [active calories](#active-calories), the goal splits into the goal and the activity, with a line that explains the activity.
 
 <img src="images/food-diary.png" alt="Food diary" width="400">
 
@@ -336,7 +441,7 @@ person: Debora
 
 ### Summary card
 
-One person's day at a glance, for a main dashboard: a ring of the calories eaten against the goal, with what is left (or over) in the middle; rings for protein, carbs and fat; a bar splitting the day's calories by meal; and the latest weight with its BMI band, the change over 30 days and a sparkline. It moves to the new day at midnight.
+One person's day at a glance, for a main dashboard: a ring of the calories eaten against the goal, with what is left (or over) in the middle; rings for protein, carbs and fat; a bar splitting the day's calories by meal; and the latest weight with its BMI band, the change over 30 days and a sparkline. With [active calories](#active-calories), the line under the rings names them. It moves to the new day at midnight.
 
 <img src="images/summary.png" alt="Summary" width="400">
 

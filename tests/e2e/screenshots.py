@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from playwright.sync_api import Browser, Page, expect
 
+from .active_calories import WATCH, change_person, settled
 from .conftest import REPO, FakeSearch, Home
 from .test_editor import choose, pick_card
 
@@ -135,6 +136,18 @@ def add_sample_data(home: Home) -> None:
             )
 
 
+# Debora's watch, as Garmin Connect names its active calories.
+GARMIN = "sensor.garmin_connect_active_calories"
+
+
+def allow_active_calories(home: Home) -> None:
+    """Give Debora active calories from her watch, which has measured 906 kcal today."""
+    attributes = {"friendly_name": "Garmin Connect Active calories", **WATCH}
+    home.api("POST", f"/api/states/{GARMIN}", {"state": "906", "attributes": attributes})
+    change_person(home, "Debora", active_calories_enabled=True, active_calories_entity=GARMIN)
+    settled(home, "Debora", lambda activity: activity is not None and activity["measured"] == 906)
+
+
 def signed_in(home: Home, browser: Browser, *, dark=False, width=480, height=1400) -> Page:
     """A page in a new context, signed in to `home`. Close its context when done."""
     context = browser.new_context(
@@ -225,6 +238,25 @@ def shoot_editor(home: Home, browser: Browser, name: str) -> None:
     page.locator('wa-dialog [part~="dialog"]').screenshot(
         path=str(IMAGES / f"{name}.png"), animations="disabled"
     )
+    page.context.close()
+
+
+def shoot_person_form(home: Home, browser: Browser, name: str) -> None:
+    """The Active calories section of Debora's Change details, with her watch chosen."""
+    page = signed_in(home, browser, width=1280, height=1400)
+    page.goto(home.url + "/config/integrations/integration/metron")
+    row = page.locator("ha-config-sub-entry-row", has_text="Debora")
+    row.get_by_role("button", name="Change person").click()
+    dialog = page.locator("dialog-data-entry-flow")
+    dialog.get_by_text("Change details").click()
+    section = dialog.locator("ha-form-expandable")
+    expect(section.get_by_text("Garmin Connect Active calories")).to_be_visible(timeout=30_000)
+    section.scroll_into_view_if_needed()
+    # Away from the fields, which show a hover.
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(500)
+    IMAGES.mkdir(exist_ok=True)
+    section.screenshot(path=str(IMAGES / f"{name}.png"), animations="disabled")
     page.context.close()
 
 
@@ -367,6 +399,10 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     shoot(sample, browser, TRENDS, "trends-week")
     shoot(sample, browser, SUMMARY, "summary")
     shoot(sample, browser, SUMMARY, "summary-dark", dark=True)
+    # Last, so that the images before show Debora without activity.
+    allow_active_calories(sample)
+    shoot(sample, browser, DIARY, "food-diary-activity")
+    shoot_person_form(sample, browser, "person-form-active-calories")
     # The phone-*.png images come from scripts/phone-screenshots.
     taken = (p.name for p in IMAGES.glob("*.png") if not p.name.startswith("phone-"))
     assert sorted(taken) == sorted(
@@ -390,5 +426,7 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
             "trends-week",
             "summary",
             "summary-dark",
+            "food-diary-activity",
+            "person-form-active-calories",
         )
     )
