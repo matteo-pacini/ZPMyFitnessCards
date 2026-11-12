@@ -6,6 +6,8 @@ body:
     attributes:
       value: |
         Ideas are welcome. Saying what you want to get done helps more than a finished design.
+
+        A new feature or change is discussed here, and approved with the `approved` label, before anyone starts a pull request for it. See [CONTRIBUTING.md](https://github.com/matteo-pacini/metron/blob/master/CONTRIBUTING.md).
   - type: textarea
     id: problem
     attributes:

@@ -371,6 +371,10 @@ A card shows a red "Configuration error" when the page has not loaded the cards.
 - **The page was open before you added the integration.** Home Assistant adds the cards to pages it serves after the integration is set up. Reload the page.
 - **The Home Assistant app, with Home Assistant older than 2026.11.0.** The app starts from a copy of the start page that Home Assistant's frontend saved at its last update, and that copy has no cards if you installed Metron after it ([home-assistant/frontend#55272](https://github.com/home-assistant/frontend/issues/55272)). The error then comes back each time the app starts. Reloading the page brings the cards back until the app next starts: in the app, open the dashboard's ⋮ menu, choose **Reload resources**, then **Refresh**. That menu item is there only when your dashboard resources are set in YAML; otherwise, open the dashboard in a browser. Updating Home Assistant to 2026.11.0 or later fixes it for good ([home-assistant/frontend#54790](https://github.com/home-assistant/frontend/pull/54790)).
 
+## Contributing
+
+Ideas, fixes and translations are welcome. Bug fixes, typos and translation corrections can go straight to a pull request. Anything else starts as an issue, and waits there until it is approved; a change people can see is shown in that issue before it is built. Every change comes with its tests: unit and integration tests, and end-to-end tests in a laptop browser for every flow it changes. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
+
 ## Development
 
 See [AGENTS.md](AGENTS.md) for the layout and commands. Everything runs in the Nix dev shell:
