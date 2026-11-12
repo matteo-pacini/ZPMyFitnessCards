@@ -20,6 +20,7 @@ from ..conftest import new_database
 from ..integration.test_readme import buttons
 from .conftest import CONFIGURATION, FakeSearch, Home, _home, logged_in_page
 from .test_cards import TIMEOUT
+from .test_units import person
 
 # Home Assistant's "my" integration answers the links my.home-assistant.io
 # sends a browser to; default_config loads it, so most installs have it.
@@ -100,7 +101,9 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
     dialog.get_by_role("button", name="Submit").click()
     dialog.get_by_role("button", name="Finish").click()
 
-    [nora] = new_home.ws({"type": "metron/people"})
+    # Adding a person reloads the integration in the background.
+    nora = person(new_home, "Nora")
+    assert [p["name"] for p in new_home.ws({"type": "metron/people"})] == ["Nora"]
     assert (nora["name"], nora["height_cm"], nora["start_weight_kg"], nora["goal_weight_kg"]) == (
         "Nora",
         168,
