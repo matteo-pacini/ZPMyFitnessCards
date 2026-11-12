@@ -652,6 +652,40 @@ def h10_delete_a_meal(s: Screen) -> None:
     assert [e["name"] for e in s.entries("Debora", day)] == ["Toast"]
 
 
+def h11_save_a_meal_for_everyone(s: Screen) -> None:
+    """Matteo saves his lunch for everyone; its quick add keeps its values."""
+    day = s.day(21)
+    rice = s.food(s.name("H11 rice"), 130)
+    sauce = s.name("H11 curry sauce")
+    s.entry("Matteo", day, "lunch", food_id=rice["id"], grams=150)
+    s.entry("Matteo", day, "lunch", name=sauce, kcal=210, protein=4, carbs=12, fat=16)
+    card = s.diary("Matteo", day)
+    s.tap(meal_section(card, "lunch").locator('[data-action="save-as-meal"]'))
+    panel = card.locator(".panel")
+    s.type(panel.locator('[data-field="meal-name"]'), s.name("H11 curry night"))
+    share = panel.locator('[data-action="share"]')
+    s.tap(share)
+    expect(share).to_be_checked()
+    s.tap(panel.locator('[data-action="save-meal"]'))
+    expect(panel).to_be_hidden(timeout=TIMEOUT)
+
+    [saved] = [m for m in s.ws({"type": "metron/meals"}) if m["name"] == s.name("H11 curry night")]
+    assert saved["owner"] is None
+    food, fixed = saved["items"]
+    assert (food["food_id"], food["grams"]) == (rice["id"], 150)
+    assert (fixed["name"], fixed["kcal"], fixed["protein"], fixed["carbs"], fixed["fat"]) == (
+        sauce,
+        210,
+        4,
+        12,
+        16,
+    )
+    # Everyone's, so Debora's card shows it too.
+    meals = s.meals_card(person="Debora")
+    row = meals.locator(".mealrow", has_text=s.name("H11 curry night"))
+    expect(row).to_contain_text("Everyone", timeout=TIMEOUT)
+
+
 # Edge cases
 
 
@@ -1014,6 +1048,69 @@ def e10_save_a_food_again(s: Screen) -> None:
     assert {f["saved_by"] for f in found} == {s.person("Debora"), s.person("Matteo")}
 
 
+def e11_change_a_meal_in_the_card(s: Screen) -> None:
+    """A meal's quick add and items changed in the card, and a meal changed meanwhile."""
+    toast = s.food(s.name("E11 toast"), 260)
+    latte = s.name("E11 latte")
+    s.saved_meal(
+        s.name("E11 breakfast"),
+        None,
+        [
+            {"food_id": toast["id"], "grams": 60},
+            {"name": latte, "kcal": 150, "protein": 8, "carbs": 12, "fat": 6},
+        ],
+    )
+    card = s.meals_card()
+    panel = card.locator(".panel")
+
+    def open_meal() -> None:
+        s.type(card.locator('[data-action="query"]'), s.name("E11 breakfast"))
+        s.tap(card.locator(".mealrow", has_text=s.name("E11 breakfast")))
+        expect(panel.locator('[data-action="fixed"][data-key="kcal"]')).to_be_visible()
+
+    def saved() -> dict:
+        meals = s.ws({"type": "metron/meals"})
+        return next(m for m in meals if latte in [i["name"] for i in m["items"]])
+
+    # With every item removed, there is nothing to save.
+    open_meal()
+    s.tap(panel.locator('[data-action="remove-item"]').first)
+    s.tap(panel.locator('[data-action="remove-item"]').first)
+    expect(panel.locator('[data-action="remove-item"]')).to_have_count(0)
+    s.tap(panel.locator('[data-action="save-meal"]'))
+    expect(panel.locator(".error")).to_contain_text("Add at least one food")
+    s.tap(panel.locator('[data-action="close"]'))
+
+    # The quick add's kcal changed, and the toast taken out.
+    open_meal()
+    s.type(panel.locator('[data-action="fixed"][data-key="kcal"]'), "180")
+    s.tap(panel.locator('[data-action="remove-item"]').first)
+    s.tap(panel.locator('[data-action="save-meal"]'))
+    expect(panel).to_be_hidden(timeout=TIMEOUT)
+    meal = saved()
+    assert [(i["name"], i["kcal"]) for i in meal["items"]] == [(latte, 180)]
+
+    # Changed elsewhere meanwhile: saving or deleting it as it was read is refused.
+    open_meal()
+    s.ws(
+        {
+            "type": "metron/meal/update",
+            "meal_id": meal["id"],
+            "version": meal["version"],
+            "items": [{"name": latte, "kcal": 180, "protein": 8, "carbs": 12, "fat": 7}],
+        }
+    )
+    s.type(panel.locator('[data-field="meal-name"]'), s.name("E11 weekday breakfast"))
+    s.tap(panel.locator('[data-action="save-meal"]'))
+    changed = f"{s.name('E11 breakfast')} was changed or deleted meanwhile."
+    expect(panel.locator(".error")).to_contain_text(changed, timeout=TIMEOUT)
+    s.tap(panel.locator('[data-action="delete-meal"]'))
+    s.tap(panel.locator('[data-action="really-delete"]'))
+    expect(panel.locator('[data-action="really-delete"]')).to_have_count(0, timeout=TIMEOUT)
+    expect(panel.locator(".error")).to_contain_text(changed)
+    assert (saved()["name"], saved()["items"][0]["fat"]) == (s.name("E11 breakfast"), 7)
+
+
 FLOWS = [
     h1_save_breakfast_as_meal,
     h2_add_everyone_s_meal,
@@ -1025,6 +1122,7 @@ FLOWS = [
     h8_pick_from_a_name_search,
     h9_scan_in_the_saved_foods_card,
     h10_delete_a_meal,
+    h11_save_a_meal_for_everyone,
     e1_name_clashes,
     e2_two_people_at_once,
     e3_delete_a_food_in_two_meals,
@@ -1035,6 +1133,7 @@ FLOWS = [
     e8_keyboard_only,
     e9_a_removed_person_s_meals,
     e10_save_a_food_again,
+    e11_change_a_meal_in_the_card,
 ]
 
 
