@@ -258,6 +258,9 @@
     "barcode_taken": {
       "message": "{name} já tem este código de barras."
     },
+    "database_unavailable": {
+      "message": "O Metron ainda não consegue acessar o banco de dados, então o Home Assistant vai tentar de novo em breve. O banco de dados diz: {error}"
+    },
     "future_day": {
       "message": "{day} está no futuro."
     },

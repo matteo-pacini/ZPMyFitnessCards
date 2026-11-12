@@ -1,6 +1,7 @@
 """Setting up and unloading the integration."""
 
 import os
+from pathlib import Path
 from types import MappingProxyType
 from unittest.mock import patch
 
@@ -63,6 +64,20 @@ async def test_leaves_the_frontend_alone_when_it_does_not_run(hass: HomeAssistan
     with patch("custom_components.metron.add_extra_js_url") as add:
         assert await hass.config_entries.async_setup(entry.entry_id)
     add.assert_not_called()
+
+
+async def test_tries_again_while_postgres_cannot_be_reached(
+    hass: HomeAssistant, tmp_path: Path
+) -> None:
+    # As when Postgres starts after Home Assistant: no server on this socket yet.
+    url = f"postgresql://hass@/metron?host={tmp_path}"
+    entry = mock_entry(person(), data={"engine": "postgresql", "db_url": url})
+    entry.add_to_hass(hass)
+    assert not await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    assert entry.error_reason_translation_key == "database_unavailable"
+    assert str(tmp_path) in entry.error_reason_translation_placeholders["error"]
 
 
 async def test_closes_the_database_when_home_assistant_stops(

@@ -258,6 +258,9 @@
     "barcode_taken": {
       "message": "{name} har redan den här streckkoden."
     },
+    "database_unavailable": {
+      "message": "Metron når inte sin databas ännu, så Home Assistant försöker igen snart. Databasen säger: {error}"
+    },
     "future_day": {
       "message": "{day} ligger i framtiden."
     },

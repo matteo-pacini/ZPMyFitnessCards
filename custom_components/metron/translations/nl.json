@@ -258,6 +258,9 @@
     "barcode_taken": {
       "message": "{name} heeft deze streepjescode al."
     },
+    "database_unavailable": {
+      "message": "Metron kan zijn database nog niet bereiken, dus Home Assistant probeert het zo opnieuw. De database meldt: {error}"
+    },
     "future_day": {
       "message": "{day} ligt in de toekomst."
     },

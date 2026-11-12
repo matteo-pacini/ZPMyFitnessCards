@@ -258,6 +258,9 @@
     "barcode_taken": {
       "message": "{name} 已有此条形码。"
     },
+    "database_unavailable": {
+      "message": "Metron 暂时无法连接其数据库，Home Assistant 稍后会重试。数据库返回：{error}"
+    },
     "future_day": {
       "message": "{day} 是未来的日期。"
     },

@@ -11,12 +11,13 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryError
+from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
+from sqlalchemy.exc import OperationalError
 
 from . import services, websocket
 from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
@@ -72,6 +73,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
             translation_domain=DOMAIN,
             translation_key="newer_database",
             translation_placeholders={"version": str(err.version), "latest": str(len(MIGRATIONS))},
+        ) from err
+    except OperationalError as err:
+        # As when Postgres starts after Home Assistant: Home Assistant tries again.
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="database_unavailable",
+            translation_placeholders={"error": str(err.orig).strip()},
         ) from err
     people = [
         Person.from_subentry(s)

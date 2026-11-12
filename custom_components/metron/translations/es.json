@@ -258,6 +258,9 @@
     "barcode_taken": {
       "message": "{name} ya tiene este código de barras."
     },
+    "database_unavailable": {
+      "message": "Metron aún no puede conectar con su base de datos, así que Home Assistant lo intentará de nuevo en breve. La base de datos dice: {error}"
+    },
     "future_day": {
       "message": "{day} está en el futuro."
     },

@@ -258,6 +258,9 @@
     "barcode_taken": {
       "message": "{name} already has this barcode."
     },
+    "database_unavailable": {
+      "message": "Metron can't reach its database yet, so Home Assistant will try again shortly. The database said: {error}"
+    },
     "future_day": {
       "message": "{day} is in the future."
     },
