@@ -131,6 +131,64 @@ def test_rejects_an_incomplete_new_food(home: Home, page: Page) -> None:
     expect(card.locator(".panel .error")).to_contain_text("Fill in the name")
 
 
+def test_quick_adds_macros_into_another_meal(home: Home, page: Page) -> None:
+    card = diary(home, page, "Debora")
+    meal(card, "lunch").locator('[data-action="add"]').click()
+    card.locator('[data-action="tab"][data-tab="quick"]').click()
+    fields = {"name": "Burrito e2e", "kcal": "640", "protein": "30", "carbs": "70", "fat": "22"}
+    for field, value in fields.items():
+        card.locator(f'.panel [data-field="{field}"]').fill(value)
+    card.locator('.panel [data-field="meal"]').select_option("dinner")
+    card.locator('[data-action="quick-add"]').click()
+    expect(meal(card, "dinner").locator(".row", has_text="Burrito e2e")).to_contain_text(
+        "640", timeout=TIMEOUT
+    )
+    expect(meal(card, "lunch").locator(".row", has_text="Burrito e2e")).to_have_count(0)
+    day = home.ws({"type": "metron/day", "person": person_id(home, "Debora"), "day": today()})
+    [burrito] = [e for e in day["entries"] if e["name"] == "Burrito e2e"]
+    assert (burrito["meal"], burrito["protein"], burrito["carbs"], burrito["fat"]) == (
+        "dinner",
+        30,
+        70,
+        22,
+    )
+
+
+def test_an_amount_must_be_above_0_to_add_or_save(home: Home, page: Page) -> None:
+    save_food(home, "Rice cakes e2e")
+    card = diary(home, page, "Matteo")
+    meal(card, "snacks").locator('[data-action="add"]').click()
+    card.locator('[data-action="query"]').fill("Rice cakes e2e")
+    card.locator('[data-action="choose"]', has_text="Rice cakes e2e").click()
+    grams = card.locator('.panel [data-field="grams"]')
+    add = card.locator('[data-action="add-entry"]')
+    for typed in ("", "0"):
+        grams.fill(typed)
+        expect(add).to_be_disabled()
+        expect(card.locator(".preview b").first).to_have_text("\u2013")
+    grams.fill("25")
+    expect(add).to_be_enabled()
+    expect(card.locator(".preview b").first).to_have_text("97")
+
+    # A quick add's amount is its kcal, which an edit changes, and which must be above 0 too.
+    card.locator('[data-action="close"]').first.click()
+    meal(card, "snacks").locator('[data-action="add"]').click()
+    card.locator('[data-action="tab"][data-tab="quick"]').click()
+    card.locator('.panel [data-field="name"]').fill("Vending machine e2e")
+    card.locator('.panel [data-field="kcal"]').fill("900")
+    card.locator('[data-action="quick-add"]').click()
+    row = meal(card, "snacks").locator(".row", has_text="Vending machine e2e")
+    expect(row).to_contain_text("900", timeout=TIMEOUT)
+    row.click()
+    kcal = card.locator('.panel [data-field="kcal"]')
+    kcal.fill("0")
+    card.locator('[data-action="save-edit"]').click()
+    expect(card.locator(".panel .error")).to_have_text("Enter an amount above 0.")
+    kcal.fill("450")
+    card.locator('[data-action="save-edit"]').click()
+    expect(row).to_contain_text("450", timeout=TIMEOUT)
+
+
 def test_copies_a_meal_from_yesterday_and_moves_between_days(home: Home, page: Page) -> None:
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
     home.ws(
