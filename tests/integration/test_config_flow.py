@@ -102,14 +102,28 @@ async def test_the_birth_date_is_typed_and_checked(
 
 
 async def test_re_adding_a_removed_person_brings_their_data_back(
-    hass: HomeAssistant, entry: MockConfigEntry
+    hass: HomeAssistant, entry: MockConfigEntry, ws
 ) -> None:
+    await ws("weight/set", person="debora", day="2026-11-09", kg=67.5)
+    await ws("entry/add", person="debora", day="2026-11-09", meal="lunch", name="Soup", kcal=300)
+    await ws("meal/add", name="Her tea", owner="debora", items=[{"name": "Tea", "kcal": 2}])
     debora = next(s for s in entry.subentries.values() if s.title == "Debora")
     assert hass.config_entries.async_remove_subentry(entry, debora.subentry_id)
     await hass.async_block_till_done()
+    assert hass.states.get("sensor.debora_weight") is None
+
     result = await _add(hass, entry, name="debora")
     assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
     assert _people(entry)["debora"]["key"] == "debora"
+    # The same sensors, with her data.
+    assert float(hass.states.get("sensor.debora_weight").state) == 67.5
+    assert float(hass.states.get("sensor.debora_calories_today").state) == 300
+    day = (await ws("day", person="debora", day="2026-11-09"))["result"]
+    assert [e["name"] for e in day["entries"]] == ["Soup"]
+    # Her meals became everyone's when she was removed, and stay so.
+    meals = (await ws("meals"))["result"]
+    assert [(m["name"], m["owner"]) for m in meals] == [("Her tea", None)]
 
 
 @pytest.mark.parametrize("state", ["unloaded", "failed"])
