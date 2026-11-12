@@ -486,7 +486,7 @@ async def test_a_barcode_taken_by_a_food_deleted_meanwhile(hass: HomeAssistant, 
     assert "translation_key" not in taken
 
 
-async def test_deleting_a_food_announces_its_meals_too(ws) -> None:
+async def test_deleting_a_food_says_which_meal_it_empties_then_deletes_it(ws) -> None:
     banana = await ok(ws, "food/add", **{**OATS, "name": "Banana"})
     item = [{"food_id": banana["id"], "grams": 118}]
     snack = await ok(ws, "meal/add", name="Banana snack", owner=None, items=item)

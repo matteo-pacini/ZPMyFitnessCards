@@ -4,6 +4,9 @@ from typing import Any
 
 import pytest
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.metron.goals import Goals
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
 
@@ -105,18 +108,19 @@ async def test_new_grams_scale_an_entry(ws) -> None:
     assert await error(ws, "entry/delete", entry_id=entry["id"]) == "not_found"
 
 
-async def test_copies_a_meal_to_another_day(ws) -> None:
-    for name in ("Eggs", "Toast"):
-        await ok(
-            ws,
-            "entry/add",
-            person="debora",
-            day="2026-11-08",
-            meal="breakfast",
-            name=name,
-            kcal=100,
-        )
-    await ok(ws, "entry/add", person="debora", day="2026-11-08", meal="lunch", name="X", kcal=1)
+async def test_copies_a_meal_to_another_day_and_meal_as_it_was(
+    hass: HomeAssistant, entry: MockConfigEntry, ws
+) -> None:
+    oats = await ok(ws, "food/add", **OATS)
+    day = {"person": "debora", "day": "2026-11-08"}
+    await ok(ws, "entry/add", **day, meal="breakfast", food_id=oats["id"], grams=60)
+    await ok(ws, "entry/add", **day, meal="breakfast", name="Coffee", kcal=2, protein=0.3)
+    await ok(ws, "entry/add", **day, meal="lunch", name="Soup", kcal=300)
+    db = entry.runtime_data.data.db
+    imported = {"day": "2026-11-08", "meal": "breakfast", "name": "Banana", "kcal": 105}
+    await hass.async_add_executor_job(
+        db.replace_entries, "debora", "myfitnesspal", "2026-11-08", "2026-11-08", [imported]
+    )
     copies = await ok(
         ws,
         "meal/copy",
@@ -124,10 +128,14 @@ async def test_copies_a_meal_to_another_day(ws) -> None:
         from_day="2026-11-08",
         from_meal="breakfast",
         to_day="2026-11-09",
-        to_meal="breakfast",
+        to_meal="dinner",
     )
-    assert [c["name"] for c in copies] == ["Eggs", "Toast"]
-    assert {c["day"] for c in copies} == {"2026-11-09"}
+    kept = ("food_id", "name", "grams", "kcal", "protein", "carbs", "fat")
+    originals = [e for e in db.day_entries("debora", "2026-11-08") if e["meal"] == "breakfast"]
+    assert [{k: c[k] for k in kept} for c in copies] == [{k: e[k] for k in kept} for e in originals]
+    assert {(c["day"], c["meal"]) for c in copies} == {("2026-11-09", "dinner")}
+    # A copy is the person's own, which importing from MyFitnessPal again leaves.
+    assert [e["source"] for e in db.day_entries("debora", "2026-11-09")] == [None, None, None]
 
 
 async def test_days_carry_goals_forward(ws) -> None:
@@ -144,6 +152,33 @@ async def test_days_carry_goals_forward(ws) -> None:
         await error(ws, "days", person="debora", start="2026-11-09", end="2026-11-08")
         == "invalid_range"
     )
+
+
+async def test_days_carry_goals_set_before_their_range(
+    hass: HomeAssistant, entry: MockConfigEntry, ws
+) -> None:
+    db = entry.runtime_data.data.db
+    for day, kcal in (("2026-11-01", 1800), ("2026-11-05", 1700), ("2026-11-08", 1600)):
+        goals = Goals(kcal=kcal, protein=100, carbs=200, fat=60)
+        await hass.async_add_executor_job(db.set_goal, "debora", day, goals)
+    await ok(ws, "weight/set", person="debora", day="2026-11-07", kg=69)
+    days = (await ok(ws, "days", person="debora", start="2026-11-06", end="2026-11-08"))["days"]
+    assert [d["goals"]["kcal"] for d in days] == [1700, 1700, 1600]
+    assert [d["weight_kg"] for d in days] == [None, 69, None]
+    # One day's goals and weigh-in, too.
+    day = await ok(ws, "day", person="debora", day="2026-11-07")
+    assert day["goals"] == {"kcal": 1700, "protein": 100, "carbs": 200, "fat": 60}
+    assert day["weight_kg"] == 69
+    assert (await ok(ws, "day", person="debora", day="2026-11-06"))["weight_kg"] is None
+
+
+async def test_days_cover_from_one_day_to_400(ws) -> None:
+    def days(start: str) -> Any:
+        return ws("days", person="debora", start=start, end="2026-11-09")
+
+    assert [d["day"] for d in (await days("2026-11-09"))["result"]["days"]] == ["2026-11-09"]
+    assert len((await days("2025-10-06"))["result"]["days"]) == 400
+    assert (await days("2025-10-05"))["error"]["code"] == "invalid_range"
 
 
 async def test_foods_search_recent_and_barcodes(ws) -> None:
@@ -204,6 +239,97 @@ async def test_subscribers_hear_about_changes(hass: HomeAssistant, ws) -> None:
     messages = [await client.receive_json(), await client.receive_json()]
     event = next(m for m in messages if m["type"] == "event")
     assert event["event"] == {"person": "debora", "days": ["2026-11-08"]}
+
+
+async def test_every_write_tells_subscribers_what_changed(ws) -> None:
+    client = ws.client
+    await client.send_json_auto_id({"type": "metron/subscribe"})
+    assert (await client.receive_json())["success"]
+    # A known change, made once a command has answered, closes what it caused.
+    closing = {"person": "matteo", "days": []}
+
+    async def until(done: Any) -> tuple[list[dict], list[dict]]:
+        replies, events = [], []
+        while not done(replies, events):
+            message = await client.receive_json()
+            if message["type"] == "result":
+                replies.append(message)
+            else:
+                events.append(message["event"])
+        return replies, events
+
+    async def announced(type_: str, **fields: Any) -> tuple[dict, list[dict]]:
+        """The command's reply, and the changes it announced."""
+        await client.send_json_auto_id({"type": f"metron/{type_}", **fields})
+        [reply], events = await until(lambda replies, _events: replies)
+        await client.send_json_auto_id(
+            {"type": "metron/weight/set", "person": "matteo", "day": "2026-01-01", "kg": 80}
+        )
+        _replies, later = await until(lambda replies, events: replies and closing in events)
+        later.remove(closing)
+        return reply, events + later
+
+    foods = [{"person": None, "days": []}]
+    reply, events = await announced("food/add", **OATS, barcode="5000")
+    oats = reply["result"]
+    assert events == foods
+    assert (await announced("food/update", food_id=oats["id"], kcal=380))[1] == foods
+    meal = (
+        await announced(
+            "meal/add", name="Oats", owner=None, items=[{"food_id": oats["id"], "grams": 40}]
+        )
+    )[0]["result"]
+    reply, events = await announced(
+        "meal/update", meal_id=meal["id"], version=meal["version"], name="Morning oats"
+    )
+    assert events == foods
+    changed = reply["result"]
+
+    # A refused write changes nothing, and says so to no one.
+    reply, events = await announced(
+        "meal/update", meal_id=meal["id"], version=meal["version"], name="Old"
+    )
+    assert (reply["error"]["code"], events) == ("meal_changed", [])
+    reply, events = await announced("food/add", **{**OATS, "name": "Other"}, barcode="5000")
+    assert (reply["error"]["code"], events) == ("barcode_taken", [])
+
+    # Entries name the days they changed: both, for one moved between days.
+    _reply, events = await announced(
+        "meal/log",
+        person="debora",
+        day="2026-11-08",
+        meal="breakfast",
+        meal_id=changed["id"],
+        version=changed["version"],
+        items=[changed["items"][0]["id"]],
+    )
+    assert events == [{"person": "debora", "days": ["2026-11-08"]}]
+    lunch = {"person": "debora", "meal": "lunch", "name": "Soup", "kcal": 300}
+    reply, events = await announced("entry/add", **lunch, day="2026-11-07")
+    assert events == [{"person": "debora", "days": ["2026-11-07"]}]
+    soup = reply["result"]
+    _reply, events = await announced("entry/update", entry_id=soup["id"], day="2026-11-05")
+    assert events == [{"person": "debora", "days": ["2026-11-05", "2026-11-07"]}]
+    _reply, events = await announced("entry/delete", entry_id=soup["id"])
+    assert events == [{"person": "debora", "days": ["2026-11-05"]}]
+    _reply, events = await announced(
+        "meal/copy",
+        person="debora",
+        from_day="2026-11-08",
+        from_meal="breakfast",
+        to_day="2026-11-09",
+        to_meal="dinner",
+    )
+    assert events == [{"person": "debora", "days": ["2026-11-09"]}]
+
+    # Weights name the person only.
+    weights = [{"person": "debora", "days": []}]
+    assert (await announced("weight/set", person="debora", day="2026-11-09", kg=69))[1] == weights
+    assert (await announced("weight/delete", person="debora", day="2026-11-09"))[1] == weights
+
+    # Deleting a food takes it out of its meals too: one change to foods and meals.
+    assert (await announced("food/delete", food_id=oats["id"]))[1] == foods
+    assert (await announced("meals"))[0]["result"] == []
 
 
 @pytest.mark.parametrize(
