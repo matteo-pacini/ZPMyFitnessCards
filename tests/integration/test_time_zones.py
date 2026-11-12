@@ -24,10 +24,12 @@ from pytest_homeassistant_custom_component.common import (
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
+from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.metron.const import SUBENTRY_PERSON
 
 from .conftest import mock_entry, person
+from .test_activity import GARMIN, KCAL, anna
 from .test_config_flow import _add, _fields
 from .test_import import _import
 from .test_services import act
@@ -171,3 +173,45 @@ async def test_history_is_imported_on_the_local_day_it_was_recorded(
         "2026-11-08": 1200,
         "2026-11-09": None,
     }
+
+
+async def test_e1_active_calories_count_from_local_midnight(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    entry_data: dict,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    # Noon in Los Angeles: still the 9th in UTC too, before UTC's midnight.
+    freezer.move_to("2026-11-09T20:00:00+00:00")
+    hass.states.async_set(GARMIN, "906", KCAL)
+    freezer.move_to(EVENING)
+    entry = mock_entry(anna(), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    client = await hass_ws_client(hass)
+
+    async def activity(day: str) -> dict | None:
+        await client.send_json_auto_id({"type": "metron/day", "person": "anna", "day": day})
+        return (await client.receive_json())["result"]["activity"]
+
+    assert (await activity("2026-11-09"))["measured"] == 906
+    sensor = hass.states.get("sensor.anna_activity")
+    assert sensor.attributes["last_reset"] == "2026-11-09T00:00:00-08:00"
+
+    # Reset at UTC's midnight, which was 16:00 the day before here.
+    hass.states.async_set(GARMIN, "1000", KCAL | {"last_reset": "2026-11-09T00:00:00+00:00"})
+    await hass.async_block_till_done()
+    assert (await activity("2026-11-09"))["measured"] == 906
+    hass.states.async_set(GARMIN, "1000", KCAL | {"last_reset": "2026-11-09T00:00:00-08:00"})
+    await hass.async_block_till_done()
+    assert (await activity("2026-11-09"))["measured"] == 1000
+
+    # Local midnight: yesterday keeps its figure, and today waits for one.
+    freezer.move_to("2026-11-10T08:00:01+00:00")
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    today = await activity("2026-11-10")
+    assert (today["measured"], today["status"]) == (None, "waiting")
+    past = await activity("2026-11-09")
+    assert (past["measured"], past["status"]) == (1000, None)

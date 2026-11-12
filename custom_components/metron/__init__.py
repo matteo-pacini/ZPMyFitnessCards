@@ -4,17 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.event import async_track_time_change
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
+from homeassistant.helpers.event import async_track_state_change_event, async_track_time_change
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 from sqlalchemy.exc import OperationalError
@@ -100,6 +101,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     # Home Assistant does not unload entries when it stops, so close then too.
     entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, close))
 
+    # Active calories sensors, read as they change, and once now, before the
+    # sensors' first figures.
+    sensors = {
+        p.key: p.active_calories_entity
+        for p in people
+        if p.active_calories_enabled and p.active_calories_entity
+    }
+
+    @callback
+    def reading(key: str, event: Event[EventStateChangedData]) -> None:
+        new, old = event.data["new_state"], event.data["old_state"]
+        hass.async_create_task(data.async_sensor_reading(data.people[key], new, old))
+
+    for key, sensor in sensors.items():
+        entry.async_on_unload(async_track_state_change_event(hass, sensor, partial(reading, key)))
+        state = hass.states.get(sensor)
+        await data.async_sensor_reading(data.people[key], state, state)
+
     for coordinator in coordinators.values():
         await coordinator.async_config_entry_first_refresh()
 
@@ -108,11 +127,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
         if person in coordinators:
             hass.async_create_task(coordinators[person].async_refresh())
 
+    async def new_day(coordinator: PersonCoordinator) -> None:
+        if sensor := sensors.get(coordinator.person.key):
+            state = hass.states.get(sensor)
+            await data.async_sensor_reading(coordinator.person, state, state)
+        await coordinator.async_refresh()
+
     @callback
     def midnight(_now: datetime) -> None:
         for coordinator in coordinators.values():
-            hass.async_create_task(coordinator.async_refresh())
+            hass.async_create_task(new_day(coordinator))
 
+    # A reload follows every change to a person, which can change what their
+    # day shows, such as whether it has activity, without a write.
+    for key in coordinators:
+        async_dispatcher_send(hass, SIGNAL_CHANGED, key, set())
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CHANGED, changed))
     entry.async_on_unload(async_track_time_change(hass, midnight, hour=0, minute=0, second=0))
 

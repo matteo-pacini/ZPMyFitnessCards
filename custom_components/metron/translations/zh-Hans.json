@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "活动"
+      },
       "breakfast_calories": {
         "name": "早餐热量"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "{person} 未允许活动热量。请在“设置 > 设备与服务 > Metron”中，在 {person} 的详细信息里勾选“允许活动热量”。"
+    },
+    "active_calories_out_of_range": {
+      "message": "请输入 0 到 10,000 千卡之间的活动热量。"
+    },
     "ambiguous_food": {
       "message": "有 {count} 种已保存的食物名为 {food}。请重命名，或改用条形码。"
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron 暂时无法连接其数据库，Home Assistant 稍后会重试。数据库返回：{error}"
+    },
+    "day_before_person": {
+      "message": "{day} 早于 {person} 被添加到 Metron 的日期。"
     },
     "future_day": {
       "message": "{day} 是未来的日期。"
@@ -415,6 +427,24 @@
         }
       },
       "name": "获取当天"
+    },
+    "log_active_calories": {
+      "description": "设置某人某一天的活动热量，替换已有的数值。与传感器一样，适用“计入比例”和“每日最多计入”。该人员必须已勾选“允许活动热量”。",
+      "fields": {
+        "day": {
+          "description": "留空则为今天。不允许未来的日期，也不允许添加该人员之前的日期。",
+          "name": "日期"
+        },
+        "device_id": {
+          "description": "该人员在 Metron 中对应的设备。",
+          "name": "人员"
+        },
+        "kcal": {
+          "description": "当天测得的活动热量，0 到 10,000。比之前更低的数值会替换它，作为更正。",
+          "name": "千卡"
+        }
+      },
+      "name": "记录活动热量"
     },
     "log_food": {
       "description": "在某人的饮食日记中记录食物：按名称或条形码选择已保存的食物并填写克数，或快速添加名称和千卡。",

@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Atividade"
+      },
       "breakfast_calories": {
         "name": "Calorias do café da manhã"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "As calorias ativas não estão permitidas para {person}. Marque “Permitir calorias ativas” nos dados de {person}, em Configurações, Dispositivos e serviços, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Informe calorias ativas entre 0 e 10.000 kcal."
+    },
     "ambiguous_food": {
       "message": "Há {count} alimentos salvos chamados {food}. Renomeie-os ou use um código de barras."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "O Metron ainda não consegue acessar o banco de dados, então o Home Assistant vai tentar de novo em breve. O banco de dados diz: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} é anterior à inclusão de {person} no Metron."
     },
     "future_day": {
       "message": "{day} está no futuro."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Obter dia"
+    },
+    "log_active_calories": {
+      "description": "Define as calorias ativas de uma pessoa em um dia, substituindo qualquer valor que já esteja lá. “Parte contada” e “Máximo contado por dia” se aplicam, como para um sensor. A pessoa precisa ter “Permitir calorias ativas” marcado.",
+      "fields": {
+        "day": {
+          "description": "Hoje, se ficar em branco. Dias futuros não são permitidos, nem dias anteriores à inclusão da pessoa.",
+          "name": "Dia"
+        },
+        "device_id": {
+          "description": "A pessoa, como o dispositivo dela no Metron.",
+          "name": "Pessoa"
+        },
+        "kcal": {
+          "description": "As calorias ativas medidas no dia, de 0 a 10.000. Um valor menor que o anterior o substitui, como correção.",
+          "name": "kcal"
+        }
+      },
+      "name": "Registrar calorias ativas"
     },
     "log_food": {
       "description": "Registra um alimento no diário de uma pessoa: um alimento salvo, pelo nome ou código de barras, com os gramas, ou uma adição rápida de um nome e kcal.",

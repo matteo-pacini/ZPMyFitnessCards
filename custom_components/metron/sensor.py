@@ -1,4 +1,4 @@
-"""Sensors for each person: today's food, goals and weight."""
+"""Sensors for each person: today's food, goals, weight and activity."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfMass
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -88,7 +89,17 @@ SENSORS: tuple[FitnessSensorDescription, ...] = (
         suggested_display_precision=0,
         value=lambda t, _c: round(t.goals.kcal - t.sums["calories_today"], 2),
     ),
-    _goal("calorie_goal", KCAL, "kcal"),
+    # The goal before activity, which the Activity sensor adds to, as the
+    # food diary splits it: the stored goal less what activity added, to the
+    # whole kcal.
+    FitnessSensorDescription(
+        key="calorie_goal",
+        translation_key="calorie_goal",
+        native_unit_of_measurement=KCAL,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value=lambda t, _c: t.goals.kcal - round(t.added),
+    ),
     _goal("protein_goal", GRAMS, "protein"),
     _goal("carbs_goal", GRAMS, "carbs"),
     _goal("fat_goal", GRAMS, "fat"),
@@ -117,22 +128,53 @@ SENSORS: tuple[FitnessSensorDescription, ...] = (
         native_unit_of_measurement=KCAL,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-        value=lambda t, _c: round(t.burn),
+        value=lambda t, _c: round(t.burn + t.added),
     ),
+)
+
+
+def _activity_attributes(t: Today, _c: PersonCoordinator) -> dict[str, Any]:
+    return {
+        key: t.activity[key] for key in ("measured", "counted", "share", "cap", "source", "status")
+    }
+
+
+# What activity added to today's goal, for people with active calories allowed.
+ACTIVITY = FitnessSensorDescription(
+    key="activity",
+    translation_key="activity",
+    native_unit_of_measurement=KCAL,
+    state_class=SensorStateClass.TOTAL,
+    suggested_display_precision=0,
+    value=lambda t, _c: round(t.added, 2),
+    attributes=_activity_attributes,
+    daily_total=True,
 )
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
-    """Add each person's sensors to their own device."""
+    """Add each person's sensors to their own device.
+
+    The Activity sensor is there only while the person's box is ticked.
+    """
+    registry = er.async_get(hass)
     for coordinator in entry.runtime_data.coordinators.values():
+        person = coordinator.person
         # Removed while setup ran: the reload their removal starts drops them.
-        if coordinator.person.subentry_id not in entry.subentries:
+        if person.subentry_id not in entry.subentries:
             continue
+        descriptions = SENSORS
+        if person.active_calories_enabled:
+            descriptions = (*SENSORS, ACTIVITY)
+        elif entity_id := registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{person.key}_{ACTIVITY.key}"
+        ):
+            registry.async_remove(entity_id)
         async_add_entities(
-            [FitnessSensor(coordinator, description) for description in SENSORS],
-            config_subentry_id=coordinator.person.subentry_id,
+            [FitnessSensor(coordinator, description) for description in descriptions],
+            config_subentry_id=person.subentry_id,
         )
 
 

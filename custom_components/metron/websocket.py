@@ -236,7 +236,9 @@ def ws_subscribe(
     """Send an event after every change: {person, days}.
 
     `person` is None for changes to saved foods. `days` lists the days whose
-    entries changed, empty for weights and foods.
+    entries changed, empty for weights, goals, activity and foods. Each
+    person gets one too whenever the integration sets up, as it does after
+    any change to a person.
     """
 
     @callback
@@ -252,7 +254,10 @@ def ws_subscribe(
 
 @_command({vol.Required("type"): f"{DOMAIN}/day", **PERSON, vol.Required("day"): _day})
 async def ws_day(data: FitnessData, person: Person, msg: dict) -> dict:
-    """A person's day: entries, goals and weight."""
+    """A person's day: entries, goals, weight and activity.
+
+    `goals` include what activity added. `activity` is FitnessData.async_activity's.
+    """
     day = msg["day"]
     entries = await data.async_read(data.db.day_entries, person.key, day)
     goals = await data.async_read(data.db.goal_on, person.key, day)
@@ -262,6 +267,7 @@ async def ws_day(data: FitnessData, person: Person, msg: dict) -> dict:
         "entries": entries,
         "goals": asdict(goals) if goals else None,
         "weight_kg": weight[0]["kg"] if weight else None,
+        "activity": await data.async_activity(person, day),
     }
 
 

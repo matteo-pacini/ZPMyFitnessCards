@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Activity"
+      },
       "breakfast_calories": {
         "name": "Breakfast calories"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Active calories are not allowed for {person}. Tick Allow active calories in {person}'s details, under Settings, Devices & services, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Give active calories from 0 to 10,000 kcal."
+    },
     "ambiguous_food": {
       "message": "{count} saved foods are called {food}. Rename them, or use a barcode."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron can't reach its database yet, so Home Assistant will try again shortly. The database said: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} is before {person} was added to Metron."
     },
     "future_day": {
       "message": "{day} is in the future."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Get day"
+    },
+    "log_active_calories": {
+      "description": "Sets a person's active calories for a day, replacing any figure already there. Share counted and Most counted a day apply, as for a sensor. The person must have Allow active calories ticked.",
+      "fields": {
+        "day": {
+          "description": "Today if left out. Future days are not allowed, nor days before the person was added.",
+          "name": "Day"
+        },
+        "device_id": {
+          "description": "The person, as their device in Metron.",
+          "name": "Person"
+        },
+        "kcal": {
+          "description": "The day's active calories as measured, from 0 to 10,000. A lower figure than before replaces it, as a correction.",
+          "name": "kcal"
+        }
+      },
+      "name": "Log active calories"
     },
     "log_food": {
       "description": "Logs food in a person's diary: a saved food, by its name or barcode, with its grams, or a quick add of a name and kcal.",

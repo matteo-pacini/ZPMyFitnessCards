@@ -42,6 +42,16 @@ FOOD_COLUMNS = [
     "saved_by",
 ]
 MEAL_COLUMNS = ["owner", "meal", "item", "food_id", "grams", *UNITS.values()]
+ACTIVITY_COLUMNS = [
+    "day",
+    "source",
+    "measured_kcal",
+    "counted_kcal",
+    "added_kcal",
+    "allowed_kcal",
+    "share_pct",
+    "cap_kcal",
+]
 
 # The owner column of meals everyone shares.
 EVERYONE = "Everyone"
@@ -62,11 +72,14 @@ def _csv(columns: list[str], rows: list[list[Any]]) -> bytes:
 
 
 def build_zip(db: Database, person: str) -> bytes:
-    """entries.csv, weights.csv, foods.csv and meals.csv for a person, zipped. Blocks.
+    """entries.csv, weights.csv, foods.csv, meals.csv and activity.csv for a person, zipped.
 
     meals.csv has everyone's meals and the person's own, an item a row. An
     item of a saved food gives the food and grams, as its values follow the
-    food; a fixed item gives its values.
+    food; a fixed item gives its values. activity.csv has a row for each day
+    with active calories: its source, a sensor's entity ID or "action", and
+    what was measured, what counted, what the activity level allowed for and
+    what was added to the goal, with the share and cap that day. Blocks.
     """
     data = db.export(person)
     people = data["people"]
@@ -107,12 +120,21 @@ def build_zip(db: Database, person: str) -> bytes:
         for m in data["meals"]
         for i in m["items"]
     ]
+    activity = [
+        [
+            a["day"],
+            a["source"],
+            *(_number(a[n]) for n in ("measured", "counted", "added", "allowed", "share", "cap")),
+        ]
+        for a in data["activity"]
+    ]
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("entries.csv", _csv(ENTRY_COLUMNS, entries))
         archive.writestr("weights.csv", _csv(WEIGHT_COLUMNS, weights))
         archive.writestr("foods.csv", _csv(FOOD_COLUMNS, foods))
         archive.writestr("meals.csv", _csv(MEAL_COLUMNS, meals))
+        archive.writestr("activity.csv", _csv(ACTIVITY_COLUMNS, activity))
     return buffer.getvalue()
 
 

@@ -5,8 +5,12 @@ from typing import Any
 import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
 from custom_components.metron.goals import Goals
+
+from .conftest import mock_entry
+from .test_activity import anna
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
 
@@ -394,3 +398,25 @@ async def test_answers_not_loaded_while_the_integration_is_unloaded(
     entry = hass.config_entries.async_entries("metron")[0]
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert await error(ws, "people") == "not_loaded"
+
+
+async def test_a_day_has_activity_with_today_s_status_only(
+    hass: HomeAssistant, entry_data: dict[str, Any], hass_ws_client: WebSocketGenerator
+) -> None:
+    entry = mock_entry(anna(active_calories_entity=None), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    data = entry.runtime_data.data
+    await data.async_log_activity(data.people["anna"], "2026-11-08", 906)
+    client = await hass_ws_client(hass)
+
+    async def activity(day: str) -> dict | None:
+        await client.send_json_auto_id({"type": "metron/day", "person": "anna", "day": day})
+        return (await client.receive_json())["result"]["activity"]
+
+    today = await activity("2026-11-09")
+    assert (today["source"], today["measured"], today["status"]) == ("action", None, "waiting")
+    past = await activity("2026-11-08")
+    assert (past["source"], past["measured"], past["status"]) == ("action", 906, None)
+    assert await activity("2026-11-07") is None

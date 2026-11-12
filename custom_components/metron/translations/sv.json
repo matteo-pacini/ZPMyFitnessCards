@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Aktivitet"
+      },
       "breakfast_calories": {
         "name": "Kalorier frukost"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Aktiva kalorier är inte tillåtna för {person}. Kryssa i ”Tillåt aktiva kalorier” i uppgifterna för {person} under Inställningar, Enheter och tjänster, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Ange aktiva kalorier från 0 till 10 000 kcal."
+    },
     "ambiguous_food": {
       "message": "{count} sparade livsmedel heter {food}. Byt namn på dem eller använd en streckkod."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron når inte sin databas ännu, så Home Assistant försöker igen snart. Databasen säger: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} är före dagen då {person} lades till i Metron."
     },
     "future_day": {
       "message": "{day} ligger i framtiden."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Hämta dag"
+    },
+    "log_active_calories": {
+      "description": "Anger en persons aktiva kalorier för en dag och ersätter ett värde som redan finns. Räknad andel och Högst per dag gäller, som för en sensor. Personen måste ha Tillåt aktiva kalorier ikryssat.",
+      "fields": {
+        "day": {
+          "description": "I dag om det lämnas tomt. Framtida dagar är inte tillåtna, och inte heller dagar innan personen lades till.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "Personen, som dess enhet i Metron.",
+          "name": "Person"
+        },
+        "kcal": {
+          "description": "Dagens uppmätta aktiva kalorier, från 0 till 10 000. Ett lägre värde än tidigare ersätter det, som en rättelse.",
+          "name": "kcal"
+        }
+      },
+      "name": "Logga aktiva kalorier"
     },
     "log_food": {
       "description": "Loggar mat i en persons dagbok: sparad mat, efter namn eller streckkod, med gram, eller en snabbinmatning av ett namn och kcal.",

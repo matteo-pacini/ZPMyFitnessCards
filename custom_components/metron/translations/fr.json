@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Activité"
+      },
       "breakfast_calories": {
         "name": "Calories du petit-déjeuner"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Les calories actives ne sont pas autorisées pour {person}. Cochez « Autoriser les calories actives » dans les détails de {person}, sous Paramètres, Appareils et services, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Indiquez des calories actives entre 0 et 10 000 kcal."
+    },
     "ambiguous_food": {
       "message": "{count} aliments enregistrés s’appellent {food}. Renommez-les ou utilisez un code-barres."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron ne parvient pas encore à joindre sa base de données, Home Assistant réessaiera donc sous peu. La base de données indique : {error}"
+    },
+    "day_before_person": {
+      "message": "{day} est antérieur à l’ajout de {person} à Metron."
     },
     "future_day": {
       "message": "{day} est dans le futur."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Obtenir la journée"
+    },
+    "log_active_calories": {
+      "description": "Définit les calories actives d’une personne pour un jour, en remplaçant tout chiffre déjà présent. « Part comptée » et « Maximum compté par jour » s’appliquent, comme pour un capteur. « Autoriser les calories actives » doit être coché pour la personne.",
+      "fields": {
+        "day": {
+          "description": "Aujourd’hui s’il est laissé vide. Les jours futurs ne sont pas autorisés, ni les jours antérieurs à l’ajout de la personne.",
+          "name": "Jour"
+        },
+        "device_id": {
+          "description": "La personne, sous la forme de son appareil dans Metron.",
+          "name": "Personne"
+        },
+        "kcal": {
+          "description": "Les calories actives mesurées du jour, de 0 à 10 000. Un chiffre plus bas qu’avant le remplace, comme correction.",
+          "name": "kcal"
+        }
+      },
+      "name": "Enregistrer les calories actives"
     },
     "log_food": {
       "description": "Enregistre un aliment dans le journal d’une personne : un aliment enregistré, par son nom ou son code-barres, avec ses grammes, ou un ajout rapide d’un nom et de kcal.",

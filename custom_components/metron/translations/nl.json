@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Activiteit"
+      },
       "breakfast_calories": {
         "name": "Calorieën ontbijt"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Actieve calorieën zijn niet toegestaan voor {person}. Vink ‘Actieve calorieën toestaan’ aan in de gegevens van {person}, via Instellingen, Apparaten en diensten, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Geef actieve calorieën van 0 tot 10.000 kcal."
+    },
     "ambiguous_food": {
       "message": "{count} opgeslagen voedingsmiddelen heten {food}. Geef ze een andere naam of gebruik een streepjescode."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron kan zijn database nog niet bereiken, dus Home Assistant probeert het zo opnieuw. De database meldt: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} ligt vóór de dag waarop {person} aan Metron is toegevoegd."
     },
     "future_day": {
       "message": "{day} ligt in de toekomst."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Dag ophalen"
+    },
+    "log_active_calories": {
+      "description": "Legt de actieve calorieën van een persoon voor een dag vast en vervangt een waarde die er al staat. ‘Getelde deel’ en ‘Maximaal per dag’ gelden, net als bij een sensor. Bij de persoon moet ‘Actieve calorieën toestaan’ aangevinkt zijn.",
+      "fields": {
+        "day": {
+          "description": "Vandaag als je het leeg laat. Dagen in de toekomst zijn niet toegestaan, en dagen van voordat de persoon is toegevoegd ook niet.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "De persoon: het apparaat van die persoon in Metron.",
+          "name": "Persoon"
+        },
+        "kcal": {
+          "description": "De gemeten actieve calorieën van de dag, van 0 tot 10.000. Een lagere waarde dan eerder vervangt die, als correctie.",
+          "name": "kcal"
+        }
+      },
+      "name": "Actieve calorieën vastleggen"
     },
     "log_food": {
       "description": "Legt voeding vast in het dagboek van een persoon: opgeslagen voeding, op naam of streepjescode, met het aantal gram, of snel een naam en kcal.",

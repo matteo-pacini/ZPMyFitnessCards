@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Aktywność"
+      },
       "breakfast_calories": {
         "name": "Kalorie śniadanie"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Aktywne kalorie nie są uwzględniane dla osoby {person}. Zaznacz „Uwzględniaj aktywne kalorie” w danych osoby {person} w Ustawienia, Urządzenia oraz usługi, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Podaj aktywne kalorie od 0 do 10 000 kcal."
+    },
     "ambiguous_food": {
       "message": "Liczba zapisanych produktów o nazwie {food}: {count}. Zmień ich nazwy albo użyj kodu kreskowego."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron nie może jeszcze połączyć się ze swoją bazą danych, więc Home Assistant wkrótce spróbuje ponownie. Baza danych zgłasza: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} to dzień sprzed dodania osoby {person} do Metron."
     },
     "future_day": {
       "message": "{day} jest w przyszłości."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Pobierz dzień"
+    },
+    "log_active_calories": {
+      "description": "Ustawia aktywne kalorie osoby w danym dniu i zastępuje wartość, która już tam jest. Liczona część i Maksimum dziennie działają tak jak dla czujnika. Osoba musi mieć zaznaczone „Uwzględniaj aktywne kalorie”.",
+      "fields": {
+        "day": {
+          "description": "Dzisiaj, jeśli puste. Przyszłe dni są niedozwolone, podobnie jak dni sprzed dodania osoby.",
+          "name": "Dzień"
+        },
+        "device_id": {
+          "description": "Osoba, jako jej urządzenie w Metron.",
+          "name": "Osoba"
+        },
+        "kcal": {
+          "description": "Zmierzone aktywne kalorie z danego dnia, od 0 do 10 000. Niższa wartość niż poprzednio zastępuje ją jako korekta.",
+          "name": "kcal"
+        }
+      },
+      "name": "Zapisz aktywne kalorie"
     },
     "log_food": {
       "description": "Zapisuje jedzenie w dzienniku osoby: zapisany produkt, po nazwie lub kodzie kreskowym, z gramami, albo szybkie dodanie nazwy i kcal.",

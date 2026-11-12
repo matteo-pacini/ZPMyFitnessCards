@@ -235,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Aktivität"
+      },
       "breakfast_calories": {
         "name": "Kalorien Frühstück"
       },
@@ -298,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Aktive Kalorien sind für {person} nicht erlaubt. Kreuze in den Angaben von {person} unter Einstellungen, Geräte & Dienste, Metron „Aktive Kalorien erlauben“ an."
+    },
+    "active_calories_out_of_range": {
+      "message": "Gib aktive Kalorien von 0 bis 10.000 kcal an."
+    },
     "ambiguous_food": {
       "message": "{count} gespeicherte Lebensmittel heißen {food}. Benenne sie um oder nimm einen Barcode."
     },
@@ -306,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron kann seine Datenbank noch nicht erreichen, daher versucht Home Assistant es gleich erneut. Die Datenbank meldet: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} liegt vor dem Tag, an dem {person} zu Metron hinzugefügt wurde."
     },
     "future_day": {
       "message": "{day} liegt in der Zukunft."
@@ -415,6 +427,24 @@
         }
       },
       "name": "Tag abrufen"
+    },
+    "log_active_calories": {
+      "description": "Setzt die aktiven Kalorien einer Person für einen Tag und ersetzt einen schon vorhandenen Wert. Gezählter Anteil und Tageslimit gelten wie bei einem Sensor. Bei der Person muss „Aktive Kalorien erlauben“ angekreuzt sein.",
+      "fields": {
+        "day": {
+          "description": "Heute, wenn leer gelassen. Künftige Tage sind nicht erlaubt, ebenso wenig Tage, bevor die Person hinzugefügt wurde.",
+          "name": "Tag"
+        },
+        "device_id": {
+          "description": "Die Person, als ihr Gerät in Metron.",
+          "name": "Person"
+        },
+        "kcal": {
+          "description": "Die gemessenen aktiven Kalorien des Tages, von 0 bis 10.000. Ein niedrigerer Wert als zuvor ersetzt ihn, als Korrektur.",
+          "name": "kcal"
+        }
+      },
+      "name": "Aktive Kalorien eintragen"
     },
     "log_food": {
       "description": "Trägt Essen ins Tagebuch einer Person ein: ein gespeichertes Lebensmittel, nach Name oder Barcode, mit seinen Gramm, oder schnell einen Namen und kcal.",

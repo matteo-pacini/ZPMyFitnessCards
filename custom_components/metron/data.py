@@ -9,18 +9,24 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
 from homeassistant.const import UnitOfMass
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util import dt as dt_util
 
+from . import activity as a
 from . import goals as g
 from .const import (
+    ACTIVE_CALORIES_DEFAULTS,
+    CONF_ACTIVE_CALORIES_CAP,
+    CONF_ACTIVE_CALORIES_ENABLED,
+    CONF_ACTIVE_CALORIES_ENTITY,
+    CONF_ACTIVE_CALORIES_SHARE,
     CONF_ACTIVITY,
     CONF_BIRTH_DATE,
     CONF_CALORIE_GOAL,
@@ -82,6 +88,10 @@ class Person:
     protein_pct: float
     carbs_pct: float
     fat_pct: float
+    active_calories_enabled: bool
+    active_calories_entity: str | None
+    active_calories_share: float
+    active_calories_cap: float
 
     @classmethod
     def from_subentry(cls, subentry: ConfigSubentry) -> Person:
@@ -103,6 +113,17 @@ class Person:
             protein_pct=d[CONF_PROTEIN_PCT],
             carbs_pct=d[CONF_CARBS_PCT],
             fat_pct=d[CONF_FAT_PCT],
+            active_calories_enabled=d.get(
+                CONF_ACTIVE_CALORIES_ENABLED,
+                ACTIVE_CALORIES_DEFAULTS[CONF_ACTIVE_CALORIES_ENABLED],
+            ),
+            active_calories_entity=d.get(CONF_ACTIVE_CALORIES_ENTITY),
+            active_calories_share=d.get(
+                CONF_ACTIVE_CALORIES_SHARE, ACTIVE_CALORIES_DEFAULTS[CONF_ACTIVE_CALORIES_SHARE]
+            ),
+            active_calories_cap=d.get(
+                CONF_ACTIVE_CALORIES_CAP, ACTIVE_CALORIES_DEFAULTS[CONF_ACTIVE_CALORIES_CAP]
+            ),
         )
 
     def as_json(self) -> dict[str, Any]:
@@ -217,24 +238,189 @@ class FitnessData:
         return person.start_weight_kg, None
 
     async def async_burn(self, person: Person, day: date) -> float:
-        """The person's estimated daily burn on `day`."""
+        """The person's estimated daily burn on `day`, before any activity."""
         weight, _ = await self.async_weight(person, day)
         age = g.age_on(person.birth_date, day)
         return g.daily_burn(person.sex, weight, person.height_cm, age, person.activity)
 
-    async def async_refresh_goals(self, person: Person) -> g.Goals:
-        """Work out today's goals and record them if they changed; return them."""
-        day = today()
+    async def _allowed(self, person: Person, day: date) -> float:
+        """The kcal of activity the person's activity level allows for on `day`."""
+        weight, _ = await self.async_weight(person, day)
+        age = g.age_on(person.birth_date, day)
+        resting = g.resting_burn(person.sex, weight, person.height_cm, age)
+        return g.activity_allowed(resting, person.activity)
+
+    async def _base(self, person: Person, day: date) -> float:
+        """The calorie goal on `day` before activity: the typed one, else the suggested one."""
         if person.calorie_goal is not None:
-            kcal = person.calorie_goal
-        else:
-            kcal = g.suggested_calories(await self.async_burn(person, day), person.pace)
+            return person.calorie_goal
+        return g.suggested_calories(await self.async_burn(person, day), person.pace)
+
+    @staticmethod
+    def _goals(person: Person, kcal: float) -> g.Goals:
+        """`kcal` to the whole kcal, split into grams of each macro to 0.1 g."""
         goals = g.macro_grams(round(kcal), person.protein_pct, person.carbs_pct, person.fat_pct)
-        goals = g.Goals(*(round(v, 1) for v in (goals.kcal, goals.protein, goals.carbs, goals.fat)))
-        current = await self._read(self.db.goal_on, person.key, day.isoformat())
-        if current != goals:
-            await self._write(self.db.set_goal, person.key, day.isoformat(), goals)
+        return g.Goals(*(round(v, 1) for v in (goals.kcal, goals.protein, goals.carbs, goals.fat)))
+
+    async def _activity_row(
+        self, person: Person, day: date, source: str, measured: float
+    ) -> dict[str, Any]:
+        """A day's activity row for `measured` kcal from `source`, under the person's settings."""
+        share, cap = person.active_calories_share, person.active_calories_cap
+        counted = g.activity_counted(measured, share, cap)
+        allowed = await self._allowed(person, day)
+        return {
+            "source": source,
+            "measured": measured,
+            "counted": counted,
+            "added": g.activity_added(counted, allowed),
+            "allowed": allowed,
+            "share": share,
+            "cap": cap,
+        }
+
+    async def _update_today(
+        self,
+        person: Person,
+        change: Callable[[tuple[str, float] | None], tuple[str, float] | None] | None = None,
+    ) -> tuple[g.Goals, bool]:
+        """Bring today's activity and goals up to date; return the goals and whether they changed.
+
+        Today's activity stays only while the box is ticked, and only if it
+        came from the action or from the sensor the person has now. `change`
+        is given what stays, as (source, measured kcal) or None, and returns
+        what to keep instead. The rest of the row follows the person's
+        settings and weight. The goals are the base plus what activity adds.
+        It reads and writes under the lock, so no write meanwhile is lost.
+        """
+        day = today()
+        key, iso = person.key, day.isoformat()
+        async with self._write_lock:
+            row = await self._read(self.db.activity, key, iso)
+            kept = None
+            if (
+                row is not None
+                and person.active_calories_enabled
+                and row["source"] in (a.ACTION, person.active_calories_entity)
+            ):
+                kept = row["source"], row["measured"]
+            if change is not None:
+                kept = change(kept)
+            new = None if kept is None else await self._activity_row(person, day, *kept)
+            added = new["added"] if new else 0
+            goals = self._goals(person, await self._base(person, day) + added)
+            current = await self._read(self.db.goal_on, key, iso)
+            changed = new != row or goals != current
+            if changed:
+                await self.hass.async_add_executor_job(
+                    self.db.set_day, key, iso, new, None if goals == current else goals
+                )
+        return goals, changed
+
+    async def async_refresh_goals(self, person: Person) -> g.Goals:
+        """Work out today's goals and record them if they changed; return them.
+
+        Today's activity follows the person's settings and weight first, as
+        it is dropped when the box is unticked or the sensor changes, and
+        what it adds depends on both. A change is announced.
+        """
+        goals, changed = await self._update_today(person)
+        if changed:
+            self._changed(person.key)
         return goals
+
+    # Activity
+
+    async def async_activity(self, person: Person, day: str) -> dict[str, Any] | None:
+        """A day's activity as metron/day gives it, or None if the day has none.
+
+        A past day has its stored row, with `status` None. Today has one
+        whenever the box is ticked, with its status: with nothing measured
+        yet, `measured` is None and nothing counts.
+        """
+        row = await self._read(self.db.activity, person.key, day)
+        the_day = date.fromisoformat(day)
+        if the_day != today():
+            return None if row is None else {**row, "status": None}
+        if not person.active_calories_enabled:
+            return None
+        sensor = person.active_calories_entity
+        held = row
+        if row is None:
+            row = {
+                "source": sensor or a.ACTION,
+                "measured": None,
+                "counted": 0.0,
+                "added": 0.0,
+                "allowed": await self._allowed(person, the_day),
+                "share": person.active_calories_share,
+                "cap": person.active_calories_cap,
+            }
+        state = self.hass.states.get(sensor) if sensor else None
+        return {**row, "status": a.status(sensor, state, held)}
+
+    async def async_sensor_reading(
+        self, person: Person, state: State | None, before: State | None
+    ) -> None:
+        """Count `state`, the person's sensor's, for today if it is a reading from today.
+
+        Today's measured only rises. Today's activity and goals are written
+        if they change, and announced if they or today's status changed
+        since `before`, the sensor's previous state.
+        """
+        sensor = person.active_calories_entity
+        kcal = None if state is None else a.kcal_of(state)
+        if kcal is not None:
+            yesterday = (today() - timedelta(days=1)).isoformat()
+            last = await self._read(self.db.activity, person.key, yesterday)
+            if not a.counts_today(state, kcal, last and last["measured"]):
+                kcal = None
+        changed = False
+        if kcal is not None:
+
+            def rise(kept: tuple[str, float] | None) -> tuple[str, float] | None:
+                return kept if kept is not None and kept[1] >= kcal else (sensor, kcal)
+
+            _goals, changed = await self._update_today(person, rise)
+        day = today().isoformat()
+        if not changed:
+            held = await self._read(self.db.activity, person.key, day)
+            changed = a.status(sensor, before, held) != a.status(sensor, state, held)
+        if changed:
+            self._changed(person.key)
+
+    async def async_log_activity(self, person: Person, day: str, kcal: float) -> None:
+        """Set a person's measured active calories on `day`, replacing any, as the action does.
+
+        Today's goals follow as for a reading. A past day's goal keeps its
+        base: it moves by the change in what activity adds, and the next day
+        first gets a goals row of its own, so the change stops there. A past
+        day with no goals in force is given none.
+        """
+        if day == today().isoformat():
+            _goals, changed = await self._update_today(person, lambda _kept: (a.ACTION, kcal))
+            if changed:
+                self._changed(person.key)
+            return
+        the_day = date.fromisoformat(day)
+        async with self._write_lock:
+            old = await self._read(self.db.activity, person.key, day)
+            new = await self._activity_row(person, the_day, a.ACTION, kcal)
+            if new == old:
+                return
+            old_added = old["added"] if old else 0.0
+            in_force = await self._read(self.db.goal_on, person.key, day)
+            goals = pin = None
+            if in_force is not None:
+                goals = self._goals(person, in_force.kcal - old_added + new["added"])
+                pin = (the_day + timedelta(days=1)).isoformat()
+            await self.hass.async_add_executor_job(
+                self.db.set_day, person.key, day, new, goals, pin
+            )
+        # As the Activity sensor reports it.
+        delta = round(new["added"], 2) - round(old_added, 2)
+        self._shift_history(person.key, day, {"activity": ("kcal", delta)})
+        self._changed(person.key)
 
     # Changes
 
@@ -248,9 +434,17 @@ class FitnessData:
     def _correct_history(
         self, person: str, day: str, before: dict[str, float], after: dict[str, float]
     ) -> None:
-        """Shift a past day's recorded totals, so long-term statistics match the diary.
+        """Shift a past day's recorded totals, so long-term statistics match the diary."""
+        deltas = {key: (unit, after[key] - before[key]) for key, (unit, _) in DAY_TOTALS.items()}
+        self._shift_history(person, day, deltas)
 
-        The sensors only ever show today. For a past day the recorder already
+    def _shift_history(
+        self, person: str, day: str, deltas: Mapping[str, tuple[str, float]]
+    ) -> None:
+        """Shift the recorded totals of a person's sensors on a past day, by sensor key.
+
+        `deltas` gives each sensor's unit and how much its total changed. The
+        sensors only ever show today. For a past day the recorder already
         holds hourly sums, so each changes by the difference from that day's
         last hour on, which moves that day's total and no other.
         """
@@ -262,8 +456,7 @@ class FitnessData:
         recorder = get_instance(self.hass)
         registry = er.async_get(self.hass)
         start = datetime.combine(the_day, time(23), tzinfo=dt_util.get_default_time_zone())
-        for key, (unit, _read) in DAY_TOTALS.items():
-            delta = after[key] - before[key]
+        for key, (unit, delta) in deltas.items():
             entity_id = registry.async_get_entity_id("sensor", DOMAIN, f"{person}_{key}")
             if entity_id and abs(delta) > 1e-9:
                 recorder.async_adjust_statistics(entity_id, start, delta, unit)
@@ -325,14 +518,14 @@ class FitnessData:
     async def async_set_weight(self, person: Person, day: str, kg: float) -> None:
         """Record a weight, then follow it with today's goals."""
         await self._write(self.db.set_weight, person.key, day, kg)
-        await self.async_refresh_goals(person)
+        await self._update_today(person)
         self._changed(person.key)
 
     async def async_add_weights(self, person: Person, weights: list[tuple[str, float]]) -> int:
         """Record weights for days that have none; return how many were added."""
         added = await self._write(self.db.add_weights, person.key, weights)
         if added:
-            await self.async_refresh_goals(person)
+            await self._update_today(person)
             self._changed(person.key)
         return added
 
@@ -369,7 +562,7 @@ class FitnessData:
     async def async_delete_weight(self, person: Person, day: str) -> None:
         """Delete a weight, then follow it with today's goals."""
         await self._write(self.db.delete_weight, person.key, day)
-        await self.async_refresh_goals(person)
+        await self._update_today(person)
         self._changed(person.key)
 
     # Foods
