@@ -374,17 +374,28 @@ const KCAL_PER_KG = 7700;
 
 const ageOn = (birth, day) => Number(day.slice(0, 4)) - Number(birth.slice(0, 4)) - (day.slice(5) < birth.slice(5) ? 1 : 0);
 
-function dailyBurn(sex, weightKg, heightCm, age, activity) {
-  const resting = 10 * weightKg + 6.25 * heightCm - 5 * age + (sex === "male" ? 5 : -161);
-  return resting * ACTIVITY[activity];
-}
+// Mifflin-St Jeor, for `person` at `weightKg` on `day`.
+const restingBurn = (person, weightKg, day) =>
+  10 * weightKg + 6.25 * person.height_cm - 5 * ageOn(person.birth_date, day) + (person.sex === "male" ? 5 : -161);
 
-// The day's goals, with the fields and rounding of data.py's async_refresh_goals.
-function goalsFor(person, weightKg, day) {
-  const burn = dailyBurn(person.sex, weightKg, person.height_cm, ageOn(person.birth_date, day), person.activity);
-  const kcal = pyRound(person.calorie_goal ?? burn + (PACES[person.pace] * KCAL_PER_KG) / 7);
+// The day's goals, with the fields and rounding of data.py's async_refresh_goals:
+// the goal without activity, plus the `added` kcal activity added that day.
+function goalsFor(person, weightKg, day, added = 0) {
+  const burn = restingBurn(person, weightKg, day) * ACTIVITY[person.activity];
+  const kcal = pyRound((person.calorie_goal ?? burn + (PACES[person.pace] * KCAL_PER_KG) / 7) + added);
   const grams = (pct, perGram) => pyRound((kcal * pct) / 100 / perGram, 1);
   return { kcal, protein: grams(person.protein_pct, 4), carbs: grams(person.carbs_pct, 4), fat: grams(person.fat_pct, 9) };
+}
+
+// What `measured` kcal of activity add to the goal of `person`, at
+// `weightKg` on `day`, by goals.py's activity_counted, activity_allowed and
+// activity_added: the share of it that counts, to the nearest 10 kcal as
+// Python's round(x, -1) has it and at most the cap; what the activity level
+// already allows for; and what goes beyond that.
+function activityFor(person, weightKg, day, { measured, share, cap }) {
+  const counted = Math.max(0, Math.min(cap, pyRound((measured * share) / 100 / 10) * 10));
+  const allowed = restingBurn(person, weightKg, day) * (ACTIVITY[person.activity] - 1.2);
+  return { counted, allowed, added: Math.max(0, counted - allowed) };
 }
 
 const bandLimits = (heightCm) => {
@@ -427,6 +438,10 @@ const PEOPLE = [
     protein_pct: 25,
     carbs_pct: 45,
     fat_pct: 30,
+    active_calories_enabled: false,
+    active_calories_entity: null,
+    active_calories_share: 75,
+    active_calories_cap: 1500,
   },
   {
     key: "7b5d3f1a9c8e4a2b6d0f8e6c4a2b0d9f",
@@ -445,7 +460,24 @@ const PEOPLE = [
     protein_pct: 20,
     carbs_pct: 50,
     fat_pct: 30,
+    active_calories_enabled: true,
+    active_calories_entity: "sensor.garmin_connect_active_calories",
+    active_calories_share: 75,
+    active_calories_cap: 1500,
   },
+];
+
+// The active calories Debora's watch measured, as [days before today, kcal];
+// an automation logged the day marked "action" instead, through the Log
+// active calories action. Between them the days add to her goal, stay within
+// her activity level, and pass the daily limit. Earlier days have none.
+const SAMPLE_ACTIVITY = [
+  [0, 880],
+  [1, 1240],
+  [2, 520],
+  [3, 2300],
+  [4, 700, "action"],
+  [5, 960],
 ];
 
 // tests/e2e/screenshots.py's FOODS: per 100 g, with the grams Debora ate
@@ -696,6 +728,15 @@ const personJSON = (p) => ({
   ...bandLimits(p.height_cm),
 });
 
+// metron/day's activity, from a day's stored row: with a status if the day
+// is `today`, else null. The demo's sensor is always there, with a reading
+// from today that counts, so today is capped, within the level or counting.
+function activityJSON({ source, measured, counted, added, allowed, share, cap }, today) {
+  let status = null;
+  if (today) status = (measured * share) / 100 > cap ? "capped" : counted <= allowed ? "level" : "counting";
+  return { source, measured, counted, added, allowed, share, cap, status };
+}
+
 const byDay = ([a], [b]) => (a < b ? -1 : a > b ? 1 : 0);
 
 // The integration's data and websocket commands, in memory, on sample data
@@ -789,6 +830,7 @@ class DemoStore {
     this._entries = new Map();
     this._weights = new Map(this._people.map((p) => [p.key, new Map()]));
     this._goals = new Map(this._people.map((p) => [p.key, new Map()]));
+    this._activity = new Map(this._people.map((p) => [p.key, new Map()]));
     this._meals = new Map();
     this._nextFood = 1;
     this._nextEntry = 1;
@@ -798,6 +840,10 @@ class DemoStore {
     this.seededOn = today;
     const [matteo, debora] = this._people.map((p) => p.key);
     const run = (message) => this._handle(message);
+    const { active_calories_entity: sensor, active_calories_share: share, active_calories_cap: cap } = this._people[1];
+    for (const [daysAgo, measured, source = sensor] of SAMPLE_ACTIVITY) {
+      this._activity.get(debora).set(addDays(today, -daysAgo), { source, measured, share, cap });
+    }
     const foods = [];
     // As tests/e2e/screenshots.py's add_sample_data adds it, through the
     // same commands, in the same order.
@@ -870,10 +916,14 @@ class DemoStore {
       .map(([day, w]) => ({ day, kg: w.kg }));
   }
 
-  // data.py's async_refresh_goals, for any day: record the day's goals if
-  // they differ from those in force.
+  // data.py's async_refresh_goals, for any day: work out what the day's
+  // activity adds, and record the day's goals if they differ from those in
+  // force.
   _refreshGoals(person, day = this.today) {
-    const goals = goalsFor(person, this._latestWeight(person.key, day) ?? person.start_weight_kg, day);
+    const weight = this._latestWeight(person.key, day) ?? person.start_weight_kg;
+    const activity = this._activity.get(person.key).get(day);
+    if (activity) Object.assign(activity, activityFor(person, weight, day, activity));
+    const goals = goalsFor(person, weight, day, activity?.added);
     const current = this._goalOn(person.key, day);
     if (!current || REQUIRED_NUTRIENTS.some((n) => current[n] !== goals[n])) this._goals.get(person.key).set(day, goals);
   }
@@ -964,11 +1014,13 @@ class DemoStore {
 
   _day(msg, person) {
     const weight = this._weights.get(person.key).get(msg.day);
+    const activity = this._activity.get(person.key).get(msg.day);
     return {
       day: msg.day,
       entries: this._entryRows(person.key, (e) => e.day === msg.day),
       goals: this._goalOn(person.key, msg.day),
       weight_kg: weight ? weight.kg : null,
+      activity: activity ? activityJSON(activity, msg.day === this.today) : null,
     };
   }
 
@@ -1216,6 +1268,17 @@ const personState = (p) => ({
   context: { id: "01JZ0000000000000000000000", parent_id: null, user_id: null },
 });
 
+// Debora's watch's active calories sensor, as Garmin Connect has it, with
+// what it measured today.
+const ACTIVITY_SENSOR_STATE = {
+  entity_id: PEOPLE[1].active_calories_entity,
+  state: String(SAMPLE_ACTIVITY[0][1]),
+  attributes: { state_class: "total_increasing", unit_of_measurement: "kcal", friendly_name: "Garmin Connect Active calories" },
+  last_changed: "2026-01-01T00:00:00+00:00",
+  last_updated: "2026-01-01T00:00:00+00:00",
+  context: { id: "01JZ0000000000000000000001", parent_id: null, user_id: null },
+};
+
 // The Home Assistant app's message bus, as the frontend sees it in
 // hass.auth.external, with only its barcode scanner, which reads DEMO_BARCODE.
 function demoExternal() {
@@ -1243,7 +1306,10 @@ function demoHass(store, { locale = "en", unitSystem = "metric" } = {}) {
     locale: { language: locale, number_format: "language", time_format: "language", date_format: "language", first_weekday: "language", time_zone: "local" },
     config: { location_name: "Home", time_zone: TIME_ZONE, country: "GB", currency: "GBP", unit_system: UNIT_SYSTEMS[unitSystem], components: ["metron", "person"] },
     user: DEMO_USER,
-    states: Object.fromEntries(PEOPLE.map((p) => [p.person_entity, personState(p)])),
+    states: {
+      ...Object.fromEntries(PEOPLE.map((p) => [p.person_entity, personState(p)])),
+      [ACTIVITY_SENSOR_STATE.entity_id]: ACTIVITY_SENSOR_STATE,
+    },
     auth: { external: demoExternal() },
     connection: { subscribeMessage: (callback, message) => store.subscribeMessage(callback, message) },
     callWS: (message) => store.call(message),
