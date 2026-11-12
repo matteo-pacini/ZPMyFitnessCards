@@ -1,6 +1,23 @@
-// Panel `p`'s note, warning and error, those it has.
-const panelMessagesHTML = (p) =>
-  ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
+// Panel `p`'s note, warning and error, those it has. With strings `t`, also
+// Try again after a lookup that could not reach Open Food Facts (p.retry),
+// and Choose it and Save anyway for a food saved already by name (p.taken).
+function panelMessagesHTML(p, t) {
+  const messages = ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
+  if (!t) return messages;
+  const retry = p.retry ? `<button class="text" data-action="retry-lookup">${esc(t.try_again)}</button>` : "";
+  const taken = p.taken
+    ? `<button class="text" data-action="choose-taken">${esc(t.choose_it)}</button><button class="text" data-action="save-anyway">${esc(t.save_anyway)}</button>`
+    : "";
+  return messages + (retry || taken ? `<div class="inline">${retry}${taken}</div>` : "");
+}
+
+// `html` with panel `p`'s messages above its last row of buttons, so that
+// they show beside what they are about; at its end if it has no buttons.
+function withMessages(html, p, t) {
+  const at = html.lastIndexOf('<div class="actions">');
+  const messages = panelMessagesHTML(p, t);
+  return at < 0 ? html + messages : html.slice(0, at) + messages + html.slice(at);
+}
 
 const cancelButtonHTML = (t) => `<button class="text" data-action="close">${esc(t.cancel)}</button>`;
 
@@ -8,7 +25,7 @@ const cancelButtonHTML = (t) => `<button class="text" data-action="close">${esc(
 // Errors show in the card's open panel, `_panel`, which it draws with
 // `_renderPanel`.
 class FoodCard extends FitnessCard {
-  static style = `
+  static style = `${SAVED_MEAL_STYLE}
     .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
     .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
     .barcodes { display: flex; gap: 12px; }
@@ -18,12 +35,45 @@ class FoodCard extends FitnessCard {
     .row small { color: var(--secondary-text-color); }
     .off { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
     .finder { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--divider-color); }
+    .inline { display: flex; flex-wrap: wrap; gap: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button, .chip { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .review { display: flex; flex-direction: column; gap: 8px; }
+    .reviewhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .reviewhead small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); }
+    .lookup { display: flex; align-items: center; gap: 10px; color: var(--secondary-text-color); }
+    .lookup .text { margin-left: auto; }
+    .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--divider-color); border-top-color: var(--primary-color);
+      animation: spin 0.8s linear infinite; flex: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
   `;
 
   _showError(err, key = "error_failed") {
     if (!this._panel) return;
     this._panel.error = fill(this._t[key], { message: err?.message ?? "" });
     this._renderPanel();
+    this._revealButtons();
+  }
+
+  // Scroll the open panel's last row of buttons into view, with the message
+  // above it.
+  _revealButtons() {
+    const rows = this._card?.querySelectorAll(".panel .actions");
+    rows?.[rows.length - 1]?.scrollIntoView?.({ block: "nearest" });
+  }
+
+  // Run `lookUp`, a lookup of barcode `code` for panel `p`. While it runs, the
+  // panel shows "Looking up" with Cancel (p.lookup). Resolves to its result,
+  // or null if Cancel, a newer lookup or the panel closing dropped it.
+  async _lookUpFor(p, code, lookUp) {
+    const lookup = { code };
+    Object.assign(p, { lookup, note: null, warning: null, error: null, retry: null, taken: null });
+    this._renderPanel();
+    const looked = await lookUp();
+    if (this._panel !== p || p.lookup !== lookup) return null;
+    p.lookup = null;
+    return looked;
   }
 
   get _scanner() {
@@ -44,7 +94,8 @@ class FoodCard extends FitnessCard {
   }
 
   // `food` filled from its barcode. Returns {food} and either a note, an
-  // error, or the saved food that already has the barcode.
+  // error, or the saved food that already has the barcode. `retry` is set
+  // when Open Food Facts could not be reached, so trying again may work.
   async _lookUp(food) {
     const t = this._t;
     const code = (food.barcode ?? "").trim();
@@ -56,7 +107,7 @@ class FoodCard extends FitnessCard {
       if (!found) return { food: { ...food, barcode: code }, error: fill(t.off_not_found, { code }) };
       return { food: mergeFood(food, found), note: t.off_filled };
     } catch (err) {
-      return { food, error: fill(t.off_failed, { message: err?.message ?? "" }) };
+      return { food, error: fill(t.off_failed, { message: err?.message ?? "" }), retry: true };
     }
   }
 
@@ -101,3 +152,20 @@ class FoodCard extends FitnessCard {
     }
   }
 }
+
+// Handlers every card with a food form shares, for its static `actions`.
+const FOOD_ACTIONS = {
+  "click:cancel-lookup"() {
+    this._panel.lookup = null;
+    this._renderPanel();
+  },
+  "click:retry-lookup"() {
+    this._lookUpBarcode(this._panel.retry);
+  },
+  // From a short check to the whole form.
+  "click:edit-values"() {
+    this._panel.review = false;
+    this._renderPanel();
+    this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
+  },
+};

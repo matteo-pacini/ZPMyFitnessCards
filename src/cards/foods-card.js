@@ -12,7 +12,10 @@ class FoodsCard extends FoodCard {
 
   async _load() {
     this._query ??= "";
-    this._foods = await this._call({ type: "fork_and_scale/food/search", query: this._query.trim(), limit: 100 });
+    [this._people, this._foods] = await Promise.all([
+      this._call({ type: "fork_and_scale/people" }),
+      this._call({ type: "fork_and_scale/food/search", query: this._query.trim(), limit: 100 }),
+    ]);
   }
 
   _changed(event) {
@@ -47,7 +50,7 @@ class FoodsCard extends FoodCard {
   _renderList() {
     const list = this._card?.querySelector(".list");
     if (!list) return;
-    list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t);
+    list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t, this._people);
     this._card.querySelector(".find").innerHTML = offLinkHTML(this._query, this._foods.length > 0, this._t);
   }
 
@@ -75,8 +78,10 @@ class FoodsCard extends FoodCard {
          ${cancelButtonHTML(t)}<button class="fill" data-action="save">${esc(t.save_food)}</button>`;
     const scan = Boolean(this._scanner);
     const finder = p.food.id ? "" : offFinderHTML(p.offQuery, t, scan);
-    panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${finder}${foodFormHTML(p.food, t, scan, Boolean(p.food.id))}
-      ${panelMessagesHTML(p)}<div class="actions">${buttons}</div>`;
+    const body = p.review ? reviewHTML(p.food, this._locale, t) : foodFormHTML(p.food, t, scan, Boolean(p.food.id));
+    const title = p.food.id ? `${esc(p.food.name)}${savedByPillHTML(p.food, this._people)}` : esc(t.tab_new);
+    panel.innerHTML = `<div class="title">${title}</div>${p.lookup ? lookingUpHTML(p.lookup.code, t) : ""}${finder}${body}
+      ${p.confirming ? deleteAlertHTML(p.meals, this._locale, t) : ""}${panelMessagesHTML(p, t)}<div class="actions">${buttons}</div>`;
     this._renderOff();
   }
 
@@ -87,13 +92,14 @@ class FoodsCard extends FoodCard {
     return this._panel;
   }
 
-  // Fill a new food's form from barcode `code`, typed or scanned, opening one
-  // if needed. Its search box empties: the barcode is in the form now.
+  // Fill a new food in from barcode `code`, typed or scanned, opening one if
+  // needed. Its search box empties: the barcode is in the food now.
   async _lookUpBarcode(code) {
     const p = this._newFoodPanel();
-    Object.assign(p, { offQuery: "", off: null, note: null, warning: null, error: null });
+    // A product only checked, not edited, gives way to the new one.
+    if (p.review) p.food = { portions: [] };
+    Object.assign(p, { offQuery: "", off: null, review: false });
     p.food.barcode = code;
-    this._renderPanel();
     await this._fillFromBarcode();
   }
 
@@ -103,31 +109,91 @@ class FoodsCard extends FoodCard {
     if (BARCODE.test(query)) return this._lookUpBarcode(query);
     const p = this._newFoodPanel();
     const off = { query, products: [], page: 0, more: false };
-    Object.assign(p, { offQuery: query, off, note: null, warning: null, error: null });
+    Object.assign(p, { offQuery: query, off, note: null, warning: null, error: null, retry: null, taken: null });
     this._renderPanel();
     await this._searchOff(off);
   }
 
-  // Fill the form from its barcode, or open the saved food that has it.
+  // Fill the food in from its barcode, or open the saved food that has it.
   async _fillFromBarcode() {
-    this._showLookedUp(await this._lookUp(this._panel.food), this._panel);
+    const panel = this._panel;
+    const code = (panel.food.barcode ?? "").trim();
+    const looked = await this._lookUpFor(panel, code, () => this._lookUp(panel.food));
+    if (looked) this._showLookedUp(looked, panel, code);
   }
 
-  // Open what _lookUp or _lookUpPicked found: the saved food that has the
-  // barcode, or `panel` with the food filled in.
-  _showLookedUp(looked, panel) {
+  // Open what _lookUp or _lookUpPicked found for barcode `code`: the saved
+  // food that has it, or `panel` with the food filled in, a new one as a
+  // short check when Open Food Facts gave all it needs.
+  _showLookedUp(looked, panel, code) {
     this._panel = looked.saved
       ? { food: looked.saved, note: looked.note }
-      : { ...panel, food: looked.food, note: looked.note ?? null, warning: looked.warning ?? null, error: looked.error ?? null };
+      : {
+          ...panel,
+          food: looked.food,
+          review: !panel.food.id && !looked.error && reviewable(looked.food),
+          note: looked.note ?? null,
+          warning: looked.warning ?? null,
+          error: looked.error ?? null,
+          retry: looked.retry ? code : null,
+        };
     this._renderPanel();
+    if (this._panel.error || this._panel.warning) this._revealButtons();
   }
 
-  // Keep what has been typed, and the food being edited, across a redraw.
+  // Keep what has been typed, and the food being edited, across a redraw. A
+  // short check has nothing typed.
   _keepForm() {
+    if (this._panel.review) return;
     this._panel.food = { ...readFoodForm(this._card).food, id: this._panel.food.id };
   }
 
+  // The food the panel shows: its short check, or what its form says, which
+  // may not be filled in right.
+  _readFood() {
+    const p = this._panel;
+    if (p.review) return { food: p.food, error: null };
+    const { food, error } = readFoodForm(this._card);
+    p.food = { ...food, id: p.food.id };
+    return { food, error };
+  }
+
+  // Save the new food `food`, saved by the person linked to whoever is
+  // logged in. A food saved already opens instead, with a warning, if it has
+  // the barcode; if it has the name, the warning asks what to do.
+  async _saveNew(food, anyway = false) {
+    const p = this._panel;
+    const t = this._t;
+    const person = findPerson(this._people, {}, this._hass);
+    try {
+      await this._call({ type: "fork_and_scale/food/add", ...food, ...(person && { person: person.id }), ...(anyway && { anyway }) });
+      if (this._panel !== p) return;
+      this._panel = null;
+      this._renderPanel();
+    } catch (err) {
+      if (this._panel !== p) return;
+      const taken = err?.translation_placeholders;
+      if (err?.code === "barcode_taken" && taken) {
+        const existing = await this._call({ type: "fork_and_scale/food/barcode", barcode: food.barcode }).catch(() => null);
+        if (existing && this._panel === p) {
+          this._panel = { food: existing, warning: takenText(err.code, taken, this._people, t) };
+          this._renderPanel();
+          this._revealButtons();
+          return;
+        }
+      }
+      if (err?.code === "name_taken" && taken) {
+        Object.assign(p, { taken, warning: takenText(err.code, taken, this._people, t), error: null });
+        this._renderPanel();
+        this._revealButtons();
+        return;
+      }
+      this._showError(err, barcodeError(err));
+    }
+  }
+
   static actions = {
+    ...FOOD_ACTIONS,
     "click:new"() {
       this._panel = { food: { portions: [] } };
       this._renderPanel();
@@ -169,9 +235,9 @@ class FoodsCard extends FoodCard {
     async "click:off-pick"(el) {
       const panel = this._panel;
       const product = panel.off.products.find((x) => x.code === el.dataset.code);
-      const looked = await this._lookUpPicked(product);
-      if (this._panel !== panel) return;
-      this._showLookedUp(looked, panel);
+      const looked = await this._lookUpFor(panel, product.code, () => this._lookUpPicked(product));
+      if (!looked) return;
+      this._showLookedUp(looked, panel, product.code);
       this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
     },
     "click:add-portion"() {
@@ -186,19 +252,48 @@ class FoodsCard extends FoodCard {
     },
     async "click:save"() {
       const id = this._panel.food.id;
-      const { food, error } = readFoodForm(this._card);
-      this._panel.food = { ...food, id };
+      const { food, error } = this._readFood();
       if (error) return this._showError(null, error);
-      const message = id ? { type: "fork_and_scale/food/update", food_id: id, ...food } : { type: "fork_and_scale/food/add", ...food };
-      const sent = await this._send(message, barcodeError);
+      if (!id) return this._saveNew(food);
+      const sent = await this._send({ type: "fork_and_scale/food/update", food_id: id, ...food }, barcodeError);
       if (sent.ok) {
         this._panel = null;
         this._renderPanel();
       }
     },
-    "click:delete"() {
-      this._panel.confirming = true;
-      this._renderPanel();
+    async "click:save-anyway"() {
+      const { food, error } = this._readFood();
+      if (error) return this._showError(null, error);
+      Object.assign(this._panel, { taken: null, warning: null });
+      await this._saveNew(food, true);
+    },
+    // Opens the food a name warning was about, instead of saving another.
+    async "click:choose-taken"() {
+      const p = this._panel;
+      const { food_id: id, name } = p.taken;
+      try {
+        const found = await this._call({ type: "fork_and_scale/food/search", query: name, limit: 100 });
+        const food = found.find((f) => String(f.id) === id);
+        if (this._panel !== p) return;
+        if (!food) return this._showError(null, "error_failed");
+        this._panel = { food: JSON.parse(JSON.stringify(food)) };
+        this._renderPanel();
+      } catch (err) {
+        this._showError(err);
+      }
+    },
+    // Asks first, naming the saved meals the food is in.
+    async "click:delete"() {
+      const p = this._panel;
+      try {
+        const meals = await this._call({ type: "fork_and_scale/food/meals", food_id: p.food.id });
+        if (this._panel !== p) return;
+        Object.assign(p, { confirming: true, meals });
+        this._renderPanel();
+        this._revealButtons();
+      } catch (err) {
+        this._showError(err);
+      }
     },
     async "click:lookup"() {
       this._keepForm();
@@ -225,13 +320,25 @@ class FoodsCard extends FoodCard {
   };
 }
 
-function foodsListHTML(foods, query, locale, t) {
+// What deleting a food would do to the saved meals it is in, `meals` from
+// fork_and_scale/food/meals: take it out of them, and delete those it empties.
+function deleteAlertHTML(meals, locale, t) {
+  if (!meals?.length) return "";
+  const names = (list) => listText(list.map((m) => m.name), locale);
+  const emptied = meals.filter((m) => m.emptied);
+  return `<div class="alert">${esc(fill(t.food_in_meals, { meals: names(meals) }))}${
+    emptied.length ? `<br><b>${esc(fill(t.meals_emptied, { meals: names(emptied) }))}</b>` : ""
+  }</div>`;
+}
+
+// Saved foods as rows, each with who saved it when that is known.
+function foodsListHTML(foods, query, locale, t, people = []) {
   if (!foods.length) {
     return `<div class="muted">${esc(query.trim() ? fill(t.no_results, { query: query.trim() }) : t.foods_empty)}</div>`;
   }
   return foods
     .map(
-      (f) => `<button class="row" data-action="edit" data-id="${f.id}"><span>${esc(f.name)}${f.barcode ? ` <small>${esc(f.barcode)}</small>` : ""}</span>
+      (f) => `<button class="row" data-action="edit" data-id="${f.id}"><span>${esc(f.name)}${savedByPillHTML(f, people)}${f.barcode ? ` <small>${esc(f.barcode)}</small>` : ""}</span>
         <small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, locale) }))}</small></button>`,
     )
     .join("");

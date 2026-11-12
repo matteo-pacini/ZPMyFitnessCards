@@ -22,6 +22,13 @@ customElements.whenDefined("home-assistant").then(() => {
       documentationURL: "https://github.com/matteo-pacini/fork-and-scale#saved-foods-card",
     },
     {
+      element: MealsCard,
+      type: "fork-and-scale-meals-card",
+      name: "Saved meals",
+      description: "The meals saved in Fork & Scale, everyone's and each person's",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#saved-meals-card",
+    },
+    {
       element: WeightCard,
       type: "fork-and-scale-weight-card",
       name: "Weight",

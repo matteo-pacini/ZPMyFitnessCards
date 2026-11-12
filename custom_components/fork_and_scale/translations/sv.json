@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Ja, ta bort allt"
           },
-          "description": "Tar bort all mat, alla vikter och mål som loggats för {name}. Det går inte att ångra. {name} finns kvar och börjar om från noll.",
+          "description": "Tar bort all mat, alla vikter och mål som loggats för {name}, och {name}s egna sparade måltider. Mat som {name} har sparat och som ingen annan har loggat och ingen måltid använder tas också bort; resten finns kvar för hushållet. Det går inte att ångra. {name} finns kvar och börjar om från noll.",
           "title": "Ta bort all data"
         },
         "import_history": {

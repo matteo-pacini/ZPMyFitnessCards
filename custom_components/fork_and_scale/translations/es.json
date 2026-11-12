@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Sí, eliminarlo todo"
           },
-          "description": "Elimina todos los alimentos, pesos y objetivos registrados para {name}. No se puede deshacer. {name} se mantiene y vuelve a empezar desde cero.",
+          "description": "Elimina todos los alimentos, pesos y objetivos registrados para {name}, y las comidas guardadas propias de {name}. Los alimentos que guardó {name} y que nadie más ha registrado ni usa ninguna comida también se eliminan; los demás se quedan para la casa. No se puede deshacer. {name} se mantiene y vuelve a empezar desde cero.",
           "title": "Eliminar todos los datos"
         },
         "import_history": {

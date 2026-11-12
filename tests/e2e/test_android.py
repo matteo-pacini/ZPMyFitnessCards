@@ -22,8 +22,9 @@ import pytest
 from playwright.sync_api import Browser, Locator, Page, expect
 from playwright.sync_api import Error as PlaywrightError
 
+from . import flows
 from . import screenshots as shots
-from .conftest import CONFIGURATION, Home, _free_port, _home
+from .conftest import CONFIGURATION, FakeSearch, Home, _free_port, _home
 from .screenshots import add_sample_data
 
 APK = os.environ.get("COMPANION_APK")
@@ -231,9 +232,9 @@ def device(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Device]:
 
 
 @pytest.fixture(scope="module")
-def app_home() -> Iterator[Home]:
+def app_home(search_server: FakeSearch) -> Iterator[Home]:
     """A brand-new Home Assistant the app logs in to without a password."""
-    yield from _home(None, APP_CONFIGURATION)
+    yield from _home(None, APP_CONFIGURATION, search_url=search_server.url)
 
 
 def _connect_app(phone: Device, home: Home) -> None:
@@ -463,3 +464,22 @@ def test_scans_a_barcode_with_the_app(app_home: Home, app: Page, device: Device)
         time.sleep(1)
     card.locator('.panel [data-field="grams"]').scroll_into_view_if_needed()
     device.screenshot("app-scanned")
+
+
+@pytest.fixture
+def app_screen(app_home: Home, app: Page, search: FakeSearch) -> Iterator[flows.Screen]:
+    """The app's WebView as a flow's Screen, with Open Food Facts faked."""
+    off = flows.OpenFoodFacts()
+    app.route("https://world.openfoodfacts.org/**", off.answer)
+    try:
+        yield flows.Screen(
+            app_home, app, "app", lambda card: _open(app_home, app, card), off, search
+        )
+    finally:
+        off.release()
+        app.unroute("https://world.openfoodfacts.org/**")
+
+
+@pytest.mark.parametrize("flow", flows.FLOWS, ids=flows.flow_id)
+def test_saved_meals_and_scanning_in_the_app(app_screen: flows.Screen, flow) -> None:
+    flow(app_screen)

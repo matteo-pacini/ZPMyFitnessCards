@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Ja, alles verwijderen"
           },
-          "description": "Verwijdert alle voeding, gewichten en doelen die voor {name} zijn vastgelegd. Dit kan niet ongedaan worden gemaakt. {name} blijft bestaan en begint opnieuw.",
+          "description": "Verwijdert alle voeding, gewichten en doelen die voor {name} zijn vastgelegd, en de eigen opgeslagen maaltijden van {name}. Voeding die {name} heeft opgeslagen en die verder niemand heeft vastgelegd en geen maaltijd gebruikt, wordt ook verwijderd; de rest blijft voor het huishouden. Dit kan niet ongedaan worden gemaakt. {name} blijft bestaan en begint opnieuw.",
           "title": "Alle gegevens verwijderen"
         },
         "import_history": {

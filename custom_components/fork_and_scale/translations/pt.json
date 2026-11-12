@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Sim, eliminar tudo"
           },
-          "description": "Elimina todos os alimentos, pesos e objetivos registados para {name}. Não é possível anular. {name} mantém-se e recomeça do zero.",
+          "description": "Elimina todos os alimentos, pesos e objetivos registados para {name}, e as refeições guardadas de {name}. Os alimentos guardados por {name} que mais ninguém registou e que nenhuma refeição usa também são eliminados; os outros ficam para a casa. Não é possível anular. {name} mantém-se e recomeça do zero.",
           "title": "Eliminar todos os dados"
         },
         "import_history": {

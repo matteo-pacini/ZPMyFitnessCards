@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Tak, usuń wszystko"
           },
-          "description": "Usuwa wszystkie posiłki, pomiary wagi i cele zapisane dla: {name}. Tego nie można cofnąć. {name} pozostaje i zaczyna od nowa.",
+          "description": "Usuwa wszystkie posiłki, pomiary wagi i cele zapisane dla: {name}, oraz własne zapisane posiłki tej osoby. Produkty zapisane przez osobę {name}, których nikt inny nie dodał i których nie używa żaden posiłek, też zostaną usunięte; pozostałe zostają dla domowników. Tego nie można cofnąć. {name} pozostaje i zaczyna od nowa.",
           "title": "Usuń wszystkie dane"
         },
         "import_history": {

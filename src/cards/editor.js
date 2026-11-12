@@ -59,6 +59,10 @@ function editedConfig(config, data) {
   return edited;
 }
 
+// Strings `t` with some keys standing for others, as a card's `editorStrings`
+// gives them: {key: the key whose string it shows instead}.
+const editorStrings = (t, swaps = {}) => ({ ...t, ...Object.fromEntries(Object.entries(swaps).map(([k, v]) => [k, t[v]])) });
+
 // Home Assistant's card editor contract: it sets `hass` and calls setConfig,
 // and listens for config-changed. `options` comes from getConfigElement.
 class CardEditor extends HTMLElement {
@@ -93,7 +97,7 @@ class CardEditor extends HTMLElement {
       this._form.addEventListener("value-changed", (e) => this._changed(e.detail.value));
       this.append(this._form);
     }
-    const t = translate(this._hass.locale?.language || "en");
+    const t = editorStrings(translate(this._hass.locale?.language || "en"), this.strings);
     const { schema, data } = editorForm(this.options, this._config, this._people ?? [], t);
     Object.assign(this._form, {
       hass: this._hass,

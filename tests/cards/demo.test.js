@@ -19,7 +19,7 @@ let demo;
 test.before(() => {
   const ctx = vm.createContext({ Intl, setTimeout, clearTimeout, Response, console });
   vm.runInContext(fs.readFileSync(DEMO, "utf8"), ctx, { filename: DEMO });
-  demo = vm.runInContext("({ DemoStore, demoHass, demoFetch, DEMO_BARCODE, DEMO_PRODUCTS })", ctx);
+  demo = vm.runInContext("({ DemoStore, demoHass, demoFetch, DEMO_BARCODE, DEMO_PRODUCTS, CARD_TYPES })", ctx);
 });
 
 // A hass on a fresh store, on TODAY.
@@ -44,6 +44,11 @@ test("the demo answers every command the cards send", async () => {
   const events = [];
   const stop = await hass.connection.subscribeMessage((e) => events.push(plain(e)), { type: "fork_and_scale/subscribe" });
   assert.equal(typeof stop, "function");
+});
+
+test("the demo mounts every card the cards register", () => {
+  const registered = [...fs.readFileSync(path.join(__dirname, "..", "..", "src", "cards", "register.js"), "utf8").matchAll(/type: "([a-z-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual([...demo.CARD_TYPES].sort(), registered.sort());
 });
 
 test("people have what the cards read, and the user is linked to Debora", async () => {
@@ -177,6 +182,74 @@ test("refused messages get the integration's errors", async () => {
   assert.equal((await error({ type: "fork_and_scale/food/add", name: "x", kcal: 1 })).message, "kcal, protein, carbs and fat are required");
   assert.equal((await error({ type: "fork_and_scale/entry/add", person: Debora, day: TODAY, meal: "lunch", food_id: 1 })).message, "grams is required with food_id");
   assert.equal((await error({ type: "fork_and_scale/openfoodfacts/search", query: "yogurt", language: "pt-BR" })).code, "invalid_format");
+});
+
+test("saved meals answer as the integration's do", async () => {
+  const hass = newHass();
+  const { Matteo: matteo, Debora: debora } = await people(hass);
+  const all = await call(hass, { type: "fork_and_scale/meals" });
+  assert.deepEqual(all.map((m) => [m.name, m.owner]), [["Chicken and rice", debora], ["Porridge with banana", null], ["Post-workout shake", matteo]]);
+  assert.deepEqual((await call(hass, { type: "fork_and_scale/meals", person: debora })).map((m) => m.name), ["Chicken and rice", "Porridge with banana"]);
+  const porridge = all[1];
+  assert.deepEqual(porridge.items.map((i) => [i.name, i.grams, Math.round(i.kcal)]), [["Porridge oats", 60, 233], ["Banana", 120, 107]]);
+  assert.equal(all[2].items[1].food_id, null);
+
+  // Names clash within what one person sees.
+  const coffee = [{ name: "Coffee", kcal: 20 }];
+  const clash = await call(hass, { type: "fork_and_scale/meal/add", name: "PORRIDGE with banana", owner: debora, items: coffee });
+  assert.equal(clash.error.code, "meal_exists");
+  assert.deepEqual(clash.error.translation_placeholders, { owner: "" });
+  const mine = await call(hass, { type: "fork_and_scale/meal/add", name: "Chicken and rice", owner: matteo, items: coffee });
+  assert.equal(mine.owner, matteo);
+  const theirs = await call(hass, { type: "fork_and_scale/meal/add", name: "chicken and rice", owner: null, items: coffee });
+  assert.deepEqual(theirs.error.translation_placeholders, { owner: debora });
+
+  // Logging takes the ticked items as they are, all or nothing.
+  const entries = await call(hass, {
+    type: "fork_and_scale/meal/log", person: debora, day: TODAY, meal: "snacks", meal_id: porridge.id, version: porridge.version, items: [porridge.items[1].id],
+  });
+  assert.deepEqual(entries.map((e) => [e.name, e.meal, e.grams]), [["Banana", "snacks", 120]]);
+  const renamed = await call(hass, { type: "fork_and_scale/meal/update", meal_id: porridge.id, version: porridge.version, name: "Porridge" });
+  assert.equal(renamed.version, porridge.version + 1);
+  for (const message of [
+    { type: "fork_and_scale/meal/log", person: debora, day: TODAY, meal: "lunch", meal_id: porridge.id, version: porridge.version, items: [porridge.items[0].id] },
+    { type: "fork_and_scale/meal/delete", meal_id: porridge.id, version: porridge.version },
+    { type: "fork_and_scale/meal/log", person: debora, day: TODAY, meal: "lunch", meal_id: mine.id, version: mine.version, items: [mine.items[0].id] },
+  ]) {
+    assert.equal((await call(hass, message)).error.code, "meal_changed");
+  }
+
+  // Deleting a food takes it out of its meals, and deletes those it empties.
+  const banana = porridge.items[1].food_id;
+  const using = await call(hass, { type: "fork_and_scale/food/meals", food_id: banana });
+  assert.deepEqual(using.map((m) => [m.name, m.emptied]), [["Porridge", false], ["Post-workout shake", false]]);
+  const single = await call(hass, { type: "fork_and_scale/meal/add", name: "Banana snack", owner: null, items: [{ food_id: banana, grams: 120 }] });
+  assert.deepEqual((await call(hass, { type: "fork_and_scale/food/meals", food_id: banana })).map((m) => m.emptied), [true, false, false]);
+  await call(hass, { type: "fork_and_scale/food/delete", food_id: banana });
+  const left = await call(hass, { type: "fork_and_scale/meals" });
+  assert.ok(!left.some((m) => m.id === single.id));
+  assert.deepEqual(left.find((m) => m.name === "Porridge").items.map((i) => i.name), ["Porridge oats"]);
+  assert.equal((await call(hass, { type: "fork_and_scale/meal/add", name: "x", owner: null, items: [{ food_id: banana, grams: 1 }] })).error.code, "not_found");
+  assert.equal((await call(hass, { type: "fork_and_scale/meal/add", name: "x", owner: "nobody", items: coffee })).error.code, "not_found");
+  assert.equal((await call(hass, { type: "fork_and_scale/meal/add", name: "x", owner: null, items: [] })).error.code, "invalid_format");
+  assert.equal((await call(hass, { type: "fork_and_scale/meal/add", name: "x", owner: null, items: [{ name: "No kcal" }] })).error.code, "invalid_format");
+});
+
+test("saving a food records who saved it, and warns about one saved already", async () => {
+  const hass = newHass();
+  const { Debora: debora } = await people(hass);
+  const oats = (await call(hass, { type: "fork_and_scale/food/search", query: "porridge oats" }))[0];
+  assert.equal(oats.saved_by, debora);
+  const food = { kcal: 1, protein: 1, carbs: 1, fat: 1 };
+  const named = await call(hass, { type: "fork_and_scale/food/add", name: "PORRIDGE OATS", ...food });
+  assert.equal(named.error.code, "name_taken");
+  assert.deepEqual(named.error.translation_placeholders, { food_id: String(oats.id), name: "Porridge oats", saved_by: debora });
+  const again = await call(hass, { type: "fork_and_scale/food/add", name: "Porridge oats", ...food, anyway: true });
+  assert.equal(again.saved_by, null);
+  const coded = await call(hass, { type: "fork_and_scale/food/add", name: "Coded", barcode: "5000", ...food, person: debora });
+  const taken = await call(hass, { type: "fork_and_scale/food/add", name: "Other", barcode: "5000", ...food });
+  assert.equal(taken.error.code, "barcode_taken");
+  assert.deepEqual(taken.error.translation_placeholders, { food_id: String(coded.id), name: "Coded", saved_by: debora });
 });
 
 test("Open Food Facts searches give ten products a page", async () => {

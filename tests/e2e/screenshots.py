@@ -32,6 +32,18 @@ FOODS = [
     ("Wholemeal bread", 247, 13, 41, 3.4, [("Slice", 36)], None, None),
 ]
 
+# Saved meals: a name, whose it is, and its items, each the index of a food
+# in FOODS and grams, or fixed values. design/demo-hass.js has the same.
+MEALS = [
+    ("Porridge with banana", None, [(0, 60), (2, 120)]),
+    ("Chicken and rice", "Debora", [(3, 150), (4, 180), (5, 120)]),
+    (
+        "Post-workout shake",
+        "Matteo",
+        [(2, 120), {"name": "Whey protein", "grams": 30, "kcal": 120, "protein": 24, "fat": 2}],
+    ),
+]
+
 
 @pytest.fixture(scope="module")
 def sample(home: Home) -> Home:
@@ -41,12 +53,12 @@ def sample(home: Home) -> Home:
 
 
 def add_sample_data(home: Home) -> None:
-    """Debora's day so far from saved foods, her last four weeks, and a year
-    of Matteo's weigh-ins."""
-    debora = next(
-        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Debora"
-    )
+    """Debora's day so far from foods she saved, saved meals, her last four
+    weeks, and a year of Matteo's weigh-ins."""
+    people = {p["name"]: p["id"] for p in home.ws({"type": "fork_and_scale/people"})}
+    debora = people["Debora"]
     today = datetime.now(ZoneInfo("Europe/London")).date().isoformat()
+    foods = []
     for name, kcal, protein, carbs, fat, portions, meal, grams in FOODS:
         food = home.ws(
             {
@@ -57,8 +69,10 @@ def add_sample_data(home: Home) -> None:
                 "carbs": carbs,
                 "fat": fat,
                 "portions": [{"name": n, "grams": g} for n, g in portions],
+                "person": debora,
             }
         )
+        foods.append(food)
         if meal:
             home.ws(
                 {
@@ -70,10 +84,20 @@ def add_sample_data(home: Home) -> None:
                     "grams": grams,
                 }
             )
+    for name, owner, items in MEALS:
+        home.ws(
+            {
+                "type": "fork_and_scale/meal/add",
+                "name": name,
+                "owner": owner and people[owner],
+                "items": [
+                    {"food_id": foods[i[0]]["id"], "grams": i[1]} if isinstance(i, tuple) else i
+                    for i in items
+                ],
+            }
+        )
     # A year of Matteo weighing in every few days, slowly losing weight.
-    matteo = next(
-        p["id"] for p in home.ws({"type": "fork_and_scale/people"}) if p["name"] == "Matteo"
-    )
+    matteo = people["Matteo"]
     first = date.fromisoformat(today) - timedelta(days=360)
     for n in range(0, 361, 4):
         wobble = ((n * 37) % 11 - 5) / 10
@@ -137,10 +161,11 @@ def shoot(
     *,
     dark=False,
     width=480,
+    height=1400,
     setup=None,
     scanner=False,
 ):
-    page = signed_in(home, browser, dark=dark, width=width)
+    page = signed_in(home, browser, dark=dark, width=width, height=height)
     if scanner:
         page.add_init_script(SCANNER)
     home.dashboard([card])
@@ -175,6 +200,7 @@ def shoot_editor(home: Home, browser: Browser, name: str) -> None:
 
 DIARY = {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora"}
 FOODS_CARD = {"type": "custom:fork-and-scale-foods-card"}
+MEALS_CARD = {"type": "custom:fork-and-scale-meals-card"}
 WEIGHT = {"type": "custom:fork-and-scale-weight-card", "person": "Matteo"}
 TRENDS = {"type": "custom:fork-and-scale-trends-card", "person": "Debora"}
 SUMMARY = {"type": "custom:fork-and-scale-summary-card", "person": "Debora"}
@@ -209,6 +235,26 @@ def look_up_barcode(card) -> None:
     card.locator('.panel [data-action="off-query"]').fill("5201054017111")
     card.locator('.panel [data-action="off-query"]').press("Enter")
     card.locator(".panel .note").wait_for()
+
+
+def open_meal(card) -> None:
+    """The meal editor, on a meal with a saved food and fixed values."""
+    card.locator(".mealrow", has_text="Post-workout shake").click()
+    card.locator('.panel [data-field="meal-name"]').wait_for()
+
+
+def choose_meal(card) -> None:
+    """Add food's Saved tab with a saved meal chosen, the banana unticked."""
+    card.locator('.meal[data-meal="snacks"] [data-action="add"]').click()
+    card.locator(".mealrow", has_text="Porridge with banana").click(timeout=10_000)
+    card.locator('.panel [data-action="tick"][data-index="1"]').click()
+
+
+def save_breakfast(card) -> None:
+    """Save as meal on breakfast, named, without the yogurt."""
+    card.locator('.meal[data-meal="breakfast"] [data-action="save-as-meal"]').click()
+    card.locator('.panel [data-field="meal-name"]').fill("Usual breakfast")
+    card.locator('.panel [data-action="tick"][data-index="1"]').click()
 
 
 def pick_range(value: str):
@@ -271,9 +317,17 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     shoot_editor(sample, browser, "card-editor")
     shoot(sample, browser, DIARY, "food-diary")
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
-    shoot(sample, browser, DIARY, "food-diary-add", setup=open_add, scanner=True)
-    shoot(sample, browser, DIARY, "food-search", setup=search_open_food_facts(search), scanner=True)
+    # A panel open makes the diary taller than the window, whose toolbar
+    # would then cover the card's top.
+    tall = {"height": 1900}
+    shoot(sample, browser, DIARY, "food-diary-add", setup=open_add, scanner=True, **tall)
+    find = search_open_food_facts(search)
+    shoot(sample, browser, DIARY, "food-search", setup=find, scanner=True, **tall)
+    shoot(sample, browser, DIARY, "food-diary-meal", setup=choose_meal, scanner=True, **tall)
+    shoot(sample, browser, DIARY, "food-diary-save-meal", setup=save_breakfast, **tall)
     shoot(sample, browser, FOODS_CARD, "saved-foods")
+    shoot(sample, browser, MEALS_CARD, "saved-meals")
+    shoot(sample, browser, MEALS_CARD, "meal-editor", setup=open_meal)
     shoot(sample, browser, FOODS_CARD, "barcode-lookup", setup=look_up_barcode, scanner=True)
     shoot(sample, browser, WEIGHT, "weight", setup=pick_range("365"))
     with sample.us_customary():
@@ -292,7 +346,11 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
             "food-diary-dark",
             "food-diary-add",
             "food-search",
+            "food-diary-meal",
+            "food-diary-save-meal",
             "saved-foods",
+            "saved-meals",
+            "meal-editor",
             "barcode-lookup",
             "weight",
             "weight-lb",

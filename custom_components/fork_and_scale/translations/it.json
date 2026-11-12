@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Sì, elimina tutto"
           },
-          "description": "Elimina tutti gli alimenti, i pesi e gli obiettivi registrati per {name}. Non si può annullare. {name} resta e ricomincia da zero.",
+          "description": "Elimina tutti gli alimenti, i pesi e gli obiettivi registrati per {name}, e i pasti salvati di {name}. Anche gli alimenti salvati da {name} che nessun altro ha registrato e che nessun pasto usa vengono eliminati; gli altri restano per la casa. Non si può annullare. {name} resta e ricomincia da zero.",
           "title": "Elimina tutti i dati"
         },
         "import_history": {

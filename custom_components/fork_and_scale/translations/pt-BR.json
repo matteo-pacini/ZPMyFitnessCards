@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Sim, excluir tudo"
           },
-          "description": "Exclui todos os alimentos, pesos e metas registrados para {name}. Não é possível desfazer. {name} continua e recomeça do zero.",
+          "description": "Exclui todos os alimentos, pesos e metas registrados para {name}, e as refeições salvas de {name}. Os alimentos salvos por {name} que mais ninguém registrou e que nenhuma refeição usa também são excluídos; os outros ficam para a casa. Não é possível desfazer. {name} continua e recomeça do zero.",
           "title": "Excluir todos os dados"
         },
         "import_history": {

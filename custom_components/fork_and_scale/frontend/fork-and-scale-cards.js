@@ -5,8 +5,11 @@
 // The Fork & Scale cards.
 //
 // custom:fork-and-scale-food-diary-card   one person's day, meal by meal: add, change,
-//                                         delete and copy food
-// custom:fork-and-scale-foods-card        the house's saved foods, per 100 g
+//                                         delete and copy food, add and save meals
+// custom:fork-and-scale-foods-card        the house's saved foods, per 100 g, and who
+//                                         saved each
+// custom:fork-and-scale-meals-card        the house's saved meals: everyone's, and each
+//                                         person's own
 // custom:fork-and-scale-weight-card       one person's weight: log it, and chart it with
 //                                         the BMI bands and their goal
 // custom:fork-and-scale-trends-card       one person's calories by day or week, by meal,
@@ -18,7 +21,7 @@
 // its fork_and_scale/subscribe events say something changed.
 //
 // Config, which each card's visual editor also sets (editor.js). For the cards
-// that show one person (all but saved foods):
+// that show one person (all but saved foods and saved meals):
 //   person  a person's name; defaults to the person linked to the logged-in user
 //   title   optional heading
 //   locale  optional language code; defaults to Home Assistant's language
@@ -27,6 +30,11 @@
 //   navigation_path  optional dashboard path to open when the card is tapped
 //
 // Saved foods config:
+//   title, locale  as above
+//
+// Saved meals config:
+//   person         a person's name: shows everyone's meals and theirs, and new
+//                  meals are theirs; without it, every meal shows
 //   title, locale  as above
 
 // src/cards/strings.js
@@ -91,7 +99,7 @@ STRINGS.en = {
   no_recent: "Nothing logged recently. Search your saved foods, or add a new one.",
   per_100g_value: "{kcal} kcal per 100 g",
   per_100g: "Per 100 g",
-  tab_search: "Saved foods",
+  tab_search: "Saved",
   tab_quick: "Quick add",
   tab_new: "New food",
   add_to_meal: "Add to {meal}",
@@ -174,10 +182,45 @@ STRINGS.en = {
   off_stale: "Filled in from an Open Food Facts search, whose values may be out of date. Check them against the label.",
   more: "More",
   try_again: "Try again",
+  search_saved: "Search saved foods and meals",
+  everyone: "Everyone",
+  title_meals: "Saved meals",
+  save_as_meal: "Save as meal",
+  save_meal_title: "Save {meal} as a meal",
+  save_meal: "Save meal",
+  share_everyone: "Share with everyone",
+  meal_for: "For",
+  add_meal: "Add meal",
+  search_meals: "Search saved meals",
+  meal_add_food: "Add a saved food",
+  meals_empty: "No saved meals yet. Save one from a meal in the food diary, or add one here.",
+  no_meals: "No saved meal matches “{query}”.",
+  all_meals: "All meals ({count})",
+  total: "Total",
+  foods_in_meal: "Foods",
+  meal_exists_everyone: "There is already a meal called “{name}” for everyone.",
+  meal_exists_person: "{person} already has a meal called “{name}”.",
+  meal_gone: "{name} was changed or deleted meanwhile, so nothing was added. Choose a meal again.",
+  meal_changed: "{name} was changed or deleted meanwhile. Open it again to see it as it is now.",
+  meal_entries_stay: "Entries already logged from it stay in the diary.",
+  error_meal_name: "Give the meal a name.",
+  error_meal_items: "Add at least one food, and give each one an amount above 0 and its kcal.",
+  edit_values: "Edit values",
+  looking_up: "Looking up {code}…",
+  already_saved_by: "{person} already saved this as {name}.",
+  already_saved_as: "Already saved as {name}.",
+  name_saved_by: "{name} is already saved by {person}.",
+  name_saved: "{name} is already saved.",
+  choose_it: "Choose it",
+  save_anyway: "Save anyway",
+  food_in_meals: "It is also in {meals}, and will be removed from them.",
+  meals_emptied: "{meals} will be deleted too, as nothing else is in it.",
   language_name: "English",
   editor_person: "Person",
   editor_person_linked: "The person linked to whoever is logged in",
   editor_person_helper: "Add people in Settings, Devices & services, Fork & Scale.",
+  editor_person_all: "All meals",
+  editor_meals_person_helper: "Shows everyone's meals and this person's own.",
   editor_title: "Title",
   editor_title_helper: "Leave empty for the card's own title.",
   editor_locale: "Language",
@@ -312,10 +355,45 @@ STRINGS.de = {
   off_stale: "Aus einer Suche bei Open Food Facts übernommen, deren Werte veraltet sein können. Prüfe sie anhand des Etiketts.",
   more: "Mehr",
   try_again: "Erneut versuchen",
+  search_saved: "Gespeicherte Lebensmittel und Mahlzeiten suchen",
+  everyone: "Alle",
+  title_meals: "Gespeicherte Mahlzeiten",
+  save_as_meal: "Als Mahlzeit speichern",
+  save_meal_title: "{meal} als Mahlzeit speichern",
+  save_meal: "Mahlzeit speichern",
+  share_everyone: "Mit allen teilen",
+  meal_for: "Für",
+  add_meal: "Mahlzeit hinzufügen",
+  search_meals: "Gespeicherte Mahlzeiten suchen",
+  meal_add_food: "Gespeichertes Lebensmittel hinzufügen",
+  meals_empty: "Noch keine gespeicherten Mahlzeiten. Speichere eine aus einer Mahlzeit im Ernährungstagebuch, oder füge hier eine hinzu.",
+  no_meals: "Keine gespeicherte Mahlzeit passt zu „{query}“.",
+  all_meals: "Alle Mahlzeiten ({count})",
+  total: "Summe",
+  foods_in_meal: "Lebensmittel",
+  meal_exists_everyone: "Es gibt schon eine Mahlzeit „{name}“ für alle.",
+  meal_exists_person: "{person} hat schon eine Mahlzeit „{name}“.",
+  meal_gone: "{name} wurde inzwischen geändert oder gelöscht, daher wurde nichts eingetragen. Wähle eine Mahlzeit erneut.",
+  meal_changed: "{name} wurde inzwischen geändert oder gelöscht. Öffne sie erneut, um sie so zu sehen, wie sie jetzt ist.",
+  meal_entries_stay: "Bereits daraus eingetragene Einträge bleiben im Tagebuch.",
+  error_meal_name: "Gib der Mahlzeit einen Namen.",
+  error_meal_items: "Füge mindestens ein Lebensmittel hinzu, jedes mit einer Menge über 0 und seinen kcal.",
+  edit_values: "Werte bearbeiten",
+  looking_up: "{code} wird gesucht…",
+  already_saved_by: "{person} hat dies schon als {name} gespeichert.",
+  already_saved_as: "Schon als {name} gespeichert.",
+  name_saved_by: "{name} ist schon von {person} gespeichert.",
+  name_saved: "{name} ist schon gespeichert.",
+  choose_it: "Dieses wählen",
+  save_anyway: "Trotzdem speichern",
+  food_in_meals: "Es ist auch in {meals} und wird daraus entfernt.",
+  meals_emptied: "{meals} wird ebenfalls gelöscht, da nichts anderes darin ist.",
   language_name: "Deutsch",
   editor_person: "Person",
   editor_person_linked: "Die Person, die mit dem angemeldeten Benutzer verknüpft ist",
   editor_person_helper: "Personen fügst du unter Einstellungen, Geräte & Dienste, Fork & Scale hinzu.",
+  editor_person_all: "Alle Mahlzeiten",
+  editor_meals_person_helper: "Zeigt die Mahlzeiten aller und die eigenen dieser Person.",
   editor_title: "Titel",
   editor_title_helper: "Leer lassen für den eigenen Titel der Karte.",
   editor_locale: "Sprache",
@@ -450,10 +528,45 @@ STRINGS.es = {
   off_stale: "Rellenado con una búsqueda de Open Food Facts, cuyos valores pueden estar desactualizados. Compruébalos con la etiqueta.",
   more: "Más",
   try_again: "Reintentar",
+  search_saved: "Buscar alimentos y comidas guardados",
+  everyone: "Todos",
+  title_meals: "Comidas guardadas",
+  save_as_meal: "Guardar como comida",
+  save_meal_title: "Guardar {meal} como comida",
+  save_meal: "Guardar comida",
+  share_everyone: "Compartir con todos",
+  meal_for: "Para",
+  add_meal: "Añadir comida",
+  search_meals: "Buscar comidas guardadas",
+  meal_add_food: "Añadir un alimento guardado",
+  meals_empty: "Aún no hay comidas guardadas. Guarda una desde una comida del diario, o añádela aquí.",
+  no_meals: "Ninguna comida guardada coincide con «{query}».",
+  all_meals: "Todas las comidas ({count})",
+  total: "Total",
+  foods_in_meal: "Alimentos",
+  meal_exists_everyone: "Ya hay una comida llamada «{name}» para todos.",
+  meal_exists_person: "{person} ya tiene una comida llamada «{name}».",
+  meal_gone: "{name} se cambió o se borró mientras tanto, así que no se añadió nada. Vuelve a elegir una comida.",
+  meal_changed: "{name} se cambió o se borró mientras tanto. Ábrela de nuevo para verla como está ahora.",
+  meal_entries_stay: "Las entradas ya registradas desde ella se quedan en el diario.",
+  error_meal_name: "Ponle un nombre a la comida.",
+  error_meal_items: "Añade al menos un alimento, cada uno con una cantidad mayor que 0 y sus kcal.",
+  edit_values: "Editar valores",
+  looking_up: "Buscando {code}…",
+  already_saved_by: "{person} ya lo guardó como {name}.",
+  already_saved_as: "Ya guardado como {name}.",
+  name_saved_by: "{person} ya guardó {name}.",
+  name_saved: "{name} ya está guardado.",
+  choose_it: "Elegirlo",
+  save_anyway: "Guardar de todos modos",
+  food_in_meals: "También está en {meals}, y se quitará de ahí.",
+  meals_emptied: "{meals} también se borrará, porque no tiene nada más.",
   language_name: "Español",
   editor_person: "Persona",
   editor_person_linked: "La persona vinculada a quien haya iniciado sesión",
   editor_person_helper: "Añade personas en Ajustes, Dispositivos y servicios, Fork & Scale.",
+  editor_person_all: "Todas las comidas",
+  editor_meals_person_helper: "Muestra las comidas de todos y las propias de esta persona.",
   editor_title: "Título",
   editor_title_helper: "Déjalo vacío para usar el título propio de la tarjeta.",
   editor_locale: "Idioma",
@@ -588,10 +701,45 @@ STRINGS.fr = {
   off_stale: "Rempli depuis une recherche Open Food Facts, dont les valeurs peuvent être périmées. Vérifiez-les sur l’étiquette.",
   more: "Plus",
   try_again: "Réessayer",
+  search_saved: "Rechercher dans les aliments et repas enregistrés",
+  everyone: "Tout le monde",
+  title_meals: "Repas enregistrés",
+  save_as_meal: "Enregistrer comme repas",
+  save_meal_title: "Enregistrer {meal} comme repas",
+  save_meal: "Enregistrer le repas",
+  share_everyone: "Partager avec tout le monde",
+  meal_for: "Pour",
+  add_meal: "Ajouter un repas",
+  search_meals: "Rechercher dans les repas enregistrés",
+  meal_add_food: "Ajouter un aliment enregistré",
+  meals_empty: "Aucun repas enregistré pour l’instant. Enregistrez-en un depuis un repas du journal, ou ajoutez-en un ici.",
+  no_meals: "Aucun repas enregistré ne correspond à « {query} ».",
+  all_meals: "Tous les repas ({count})",
+  total: "Total",
+  foods_in_meal: "Aliments",
+  meal_exists_everyone: "Il existe déjà un repas « {name} » pour tout le monde.",
+  meal_exists_person: "{person} a déjà un repas « {name} ».",
+  meal_gone: "{name} a été modifié ou supprimé entre-temps, donc rien n’a été ajouté. Choisissez à nouveau un repas.",
+  meal_changed: "{name} a été modifié ou supprimé entre-temps. Rouvrez-le pour le voir tel qu’il est maintenant.",
+  meal_entries_stay: "Les entrées déjà enregistrées à partir de lui restent dans le journal.",
+  error_meal_name: "Donnez un nom au repas.",
+  error_meal_items: "Ajoutez au moins un aliment, chacun avec une quantité supérieure à 0 et ses kcal.",
+  edit_values: "Modifier les valeurs",
+  looking_up: "Recherche de {code}…",
+  already_saved_by: "{person} l’a déjà enregistré comme {name}.",
+  already_saved_as: "Déjà enregistré comme {name}.",
+  name_saved_by: "{name} est déjà enregistré par {person}.",
+  name_saved: "{name} est déjà enregistré.",
+  choose_it: "Le choisir",
+  save_anyway: "Enregistrer quand même",
+  food_in_meals: "Il fait aussi partie de {meals}, et en sera retiré.",
+  meals_emptied: "{meals} sera aussi supprimé, car il ne contient rien d’autre.",
   language_name: "Français",
   editor_person: "Personne",
   editor_person_linked: "La personne liée à l’utilisateur connecté",
   editor_person_helper: "Ajoutez des personnes dans Paramètres, Appareils et services, Fork & Scale.",
+  editor_person_all: "Tous les repas",
+  editor_meals_person_helper: "Affiche les repas de tout le monde et ceux de cette personne.",
   editor_title: "Titre",
   editor_title_helper: "Laissez vide pour garder le titre de la carte.",
   editor_locale: "Langue",
@@ -726,10 +874,45 @@ STRINGS.it = {
   off_stale: "Compilato da una ricerca su Open Food Facts, i cui valori potrebbero non essere aggiornati. Controllali sull'etichetta.",
   more: "Altri",
   try_again: "Riprova",
+  search_saved: "Cerca tra alimenti e pasti salvati",
+  everyone: "Tutti",
+  title_meals: "Pasti salvati",
+  save_as_meal: "Salva come pasto",
+  save_meal_title: "Salva {meal} come pasto",
+  save_meal: "Salva pasto",
+  share_everyone: "Condividi con tutti",
+  meal_for: "Per",
+  add_meal: "Aggiungi pasto",
+  search_meals: "Cerca tra i pasti salvati",
+  meal_add_food: "Aggiungi un alimento salvato",
+  meals_empty: "Ancora nessun pasto salvato. Salvane uno da un pasto del diario, o aggiungilo qui.",
+  no_meals: "Nessun pasto salvato corrisponde a «{query}».",
+  all_meals: "Tutti i pasti ({count})",
+  total: "Totale",
+  foods_in_meal: "Alimenti",
+  meal_exists_everyone: "C'è già un pasto chiamato «{name}» per tutti.",
+  meal_exists_person: "{person} ha già un pasto chiamato «{name}».",
+  meal_gone: "{name} è stato modificato o eliminato nel frattempo, quindi non è stato aggiunto nulla. Scegli di nuovo un pasto.",
+  meal_changed: "{name} è stato modificato o eliminato nel frattempo. Riaprilo per vederlo com'è adesso.",
+  meal_entries_stay: "Le voci già registrate da questo pasto restano nel diario.",
+  error_meal_name: "Dai un nome al pasto.",
+  error_meal_items: "Aggiungi almeno un alimento, ciascuno con una quantità sopra 0 e le sue kcal.",
+  edit_values: "Modifica valori",
+  looking_up: "Ricerca di {code}…",
+  already_saved_by: "{person} l'ha già salvato come {name}.",
+  already_saved_as: "Già salvato come {name}.",
+  name_saved_by: "{name} è già stato salvato da {person}.",
+  name_saved: "{name} è già salvato.",
+  choose_it: "Sceglilo",
+  save_anyway: "Salva comunque",
+  food_in_meals: "È anche in {meals}, e verrà tolto da lì.",
+  meals_emptied: "Anche {meals} verrà eliminato, perché non contiene altro.",
   language_name: "Italiano",
   editor_person: "Persona",
   editor_person_linked: "La persona collegata a chi ha effettuato l'accesso",
   editor_person_helper: "Aggiungi le persone in Impostazioni, Dispositivi e servizi, Fork & Scale.",
+  editor_person_all: "Tutti i pasti",
+  editor_meals_person_helper: "Mostra i pasti di tutti e quelli di questa persona.",
   editor_title: "Titolo",
   editor_title_helper: "Lascia vuoto per il titolo predefinito della scheda.",
   editor_locale: "Lingua",
@@ -864,10 +1047,45 @@ STRINGS.nl = {
   off_stale: "Ingevuld vanuit een zoekopdracht op Open Food Facts, waarvan de waarden verouderd kunnen zijn. Controleer ze met het etiket.",
   more: "Meer",
   try_again: "Opnieuw proberen",
+  search_saved: "Zoek in opgeslagen voeding en maaltijden",
+  everyone: "Iedereen",
+  title_meals: "Opgeslagen maaltijden",
+  save_as_meal: "Opslaan als maaltijd",
+  save_meal_title: "{meal} opslaan als maaltijd",
+  save_meal: "Maaltijd opslaan",
+  share_everyone: "Delen met iedereen",
+  meal_for: "Voor",
+  add_meal: "Maaltijd toevoegen",
+  search_meals: "Zoek in opgeslagen maaltijden",
+  meal_add_food: "Opgeslagen voeding toevoegen",
+  meals_empty: "Nog geen opgeslagen maaltijden. Sla er een op vanuit een maaltijd in het voedingsdagboek, of voeg er hier een toe.",
+  no_meals: "Geen opgeslagen maaltijd past bij ‘{query}’.",
+  all_meals: "Alle maaltijden ({count})",
+  total: "Totaal",
+  foods_in_meal: "Voeding",
+  meal_exists_everyone: "Er is al een maaltijd ‘{name}’ voor iedereen.",
+  meal_exists_person: "{person} heeft al een maaltijd ‘{name}’.",
+  meal_gone: "{name} is intussen gewijzigd of verwijderd, dus er is niets toegevoegd. Kies opnieuw een maaltijd.",
+  meal_changed: "{name} is intussen gewijzigd of verwijderd. Open hem opnieuw om hem te zien zoals hij nu is.",
+  meal_entries_stay: "Wat er al uit is vastgelegd, blijft in het dagboek.",
+  error_meal_name: "Geef de maaltijd een naam.",
+  error_meal_items: "Voeg minstens één voedingsmiddel toe, elk met een hoeveelheid boven 0 en de kcal.",
+  edit_values: "Waarden bewerken",
+  looking_up: "{code} opzoeken…",
+  already_saved_by: "{person} heeft dit al opgeslagen als {name}.",
+  already_saved_as: "Al opgeslagen als {name}.",
+  name_saved_by: "{name} is al opgeslagen door {person}.",
+  name_saved: "{name} is al opgeslagen.",
+  choose_it: "Deze kiezen",
+  save_anyway: "Toch opslaan",
+  food_in_meals: "Het zit ook in {meals}, en wordt daaruit verwijderd.",
+  meals_emptied: "{meals} wordt ook verwijderd, omdat er niets anders in zit.",
   language_name: "Nederlands",
   editor_person: "Persoon",
   editor_person_linked: "De persoon die gekoppeld is aan wie er is ingelogd",
   editor_person_helper: "Voeg personen toe via Instellingen, Apparaten en diensten, Fork & Scale.",
+  editor_person_all: "Alle maaltijden",
+  editor_meals_person_helper: "Toont de maaltijden van iedereen en die van deze persoon zelf.",
   editor_title: "Titel",
   editor_title_helper: "Laat leeg voor de eigen titel van de kaart.",
   editor_locale: "Taal",
@@ -1002,10 +1220,45 @@ STRINGS.pl = {
   off_stale: "Uzupełniono z wyszukiwania w Open Food Facts, którego wartości mogą być nieaktualne. Sprawdź je na etykiecie.",
   more: "Więcej",
   try_again: "Spróbuj ponownie",
+  search_saved: "Szukaj w zapisanych produktach i posiłkach",
+  everyone: "Wszyscy",
+  title_meals: "Zapisane posiłki",
+  save_as_meal: "Zapisz jako posiłek",
+  save_meal_title: "Zapisz {meal} jako posiłek",
+  save_meal: "Zapisz posiłek",
+  share_everyone: "Udostępnij wszystkim",
+  meal_for: "Dla",
+  add_meal: "Dodaj posiłek",
+  search_meals: "Szukaj w zapisanych posiłkach",
+  meal_add_food: "Dodaj zapisany produkt",
+  meals_empty: "Nie ma jeszcze zapisanych posiłków. Zapisz posiłek z dziennika albo dodaj go tutaj.",
+  no_meals: "Żaden zapisany posiłek nie pasuje do „{query}”.",
+  all_meals: "Wszystkie posiłki ({count})",
+  total: "Razem",
+  foods_in_meal: "Produkty",
+  meal_exists_everyone: "Jest już posiłek „{name}” dla wszystkich.",
+  meal_exists_person: "{person} ma już posiłek „{name}”.",
+  meal_gone: "{name} zmieniono lub usunięto w międzyczasie, więc nic nie dodano. Wybierz posiłek ponownie.",
+  meal_changed: "{name} zmieniono lub usunięto w międzyczasie. Otwórz go ponownie, żeby zobaczyć, jak wygląda teraz.",
+  meal_entries_stay: "Wpisy już z niego dodane zostają w dzienniku.",
+  error_meal_name: "Nadaj posiłkowi nazwę.",
+  error_meal_items: "Dodaj co najmniej jeden produkt, każdy z ilością powyżej 0 i kcal.",
+  edit_values: "Edytuj wartości",
+  looking_up: "Wyszukiwanie {code}…",
+  already_saved_by: "Osoba {person} już to zapisała jako {name}.",
+  already_saved_as: "Zapisano już jako {name}.",
+  name_saved_by: "{name}: już zapisane przez osobę {person}.",
+  name_saved: "{name} jest już zapisane.",
+  choose_it: "Wybierz go",
+  save_anyway: "Zapisz mimo to",
+  food_in_meals: "Jest też w: {meals}, i zostanie stamtąd usunięty.",
+  meals_emptied: "{meals}: ten posiłek też zostanie usunięty, bo nie ma w nim nic więcej.",
   language_name: "Polski",
   editor_person: "Osoba",
   editor_person_linked: "Osoba powiązana z zalogowanym użytkownikiem",
   editor_person_helper: "Dodaj osoby w Ustawienia, Urządzenia oraz usługi, Fork & Scale.",
+  editor_person_all: "Wszystkie posiłki",
+  editor_meals_person_helper: "Pokazuje posiłki wszystkich i własne posiłki tej osoby.",
   editor_title: "Tytuł",
   editor_title_helper: "Zostaw puste, aby użyć własnego tytułu karty.",
   editor_locale: "Język",
@@ -1140,10 +1393,45 @@ STRINGS.pt = {
   off_stale: "Preenchido a partir de uma pesquisa no Open Food Facts, cujos valores podem estar desatualizados. Confirme-os no rótulo.",
   more: "Mais",
   try_again: "Tentar de novo",
+  search_saved: "Pesquisar alimentos e refeições guardados",
+  everyone: "Todos",
+  title_meals: "Refeições guardadas",
+  save_as_meal: "Guardar como refeição",
+  save_meal_title: "Guardar {meal} como refeição",
+  save_meal: "Guardar refeição",
+  share_everyone: "Partilhar com todos",
+  meal_for: "Para",
+  add_meal: "Adicionar refeição",
+  search_meals: "Pesquisar refeições guardadas",
+  meal_add_food: "Adicionar um alimento guardado",
+  meals_empty: "Ainda não há refeições guardadas. Guarde uma a partir de uma refeição do diário, ou adicione-a aqui.",
+  no_meals: "Nenhuma refeição guardada corresponde a «{query}».",
+  all_meals: "Todas as refeições ({count})",
+  total: "Total",
+  foods_in_meal: "Alimentos",
+  meal_exists_everyone: "Já há uma refeição chamada «{name}» para todos.",
+  meal_exists_person: "{person} já tem uma refeição chamada «{name}».",
+  meal_gone: "{name} foi alterada ou apagada entretanto, por isso nada foi adicionado. Escolha de novo uma refeição.",
+  meal_changed: "{name} foi alterada ou apagada entretanto. Abra-a de novo para a ver como está agora.",
+  meal_entries_stay: "Os registos já feitos a partir dela ficam no diário.",
+  error_meal_name: "Dê um nome à refeição.",
+  error_meal_items: "Adicione pelo menos um alimento, cada um com uma quantidade acima de 0 e as kcal.",
+  edit_values: "Editar valores",
+  looking_up: "A procurar {code}…",
+  already_saved_by: "{person} já guardou isto como {name}.",
+  already_saved_as: "Já guardado como {name}.",
+  name_saved_by: "{name} já foi guardado por {person}.",
+  name_saved: "{name} já está guardado.",
+  choose_it: "Escolher este",
+  save_anyway: "Guardar mesmo assim",
+  food_in_meals: "Também está em {meals}, e será retirado de lá.",
+  meals_emptied: "{meals} também será apagada, por não ter mais nada.",
   language_name: "Português",
   editor_person: "Pessoa",
   editor_person_linked: "A pessoa associada a quem tem sessão iniciada",
   editor_person_helper: "Adicione pessoas em Definições, Dispositivos e serviços, Fork & Scale.",
+  editor_person_all: "Todas as refeições",
+  editor_meals_person_helper: "Mostra as refeições de todos e as desta pessoa.",
   editor_title: "Título",
   editor_title_helper: "Deixe vazio para usar o título do próprio cartão.",
   editor_locale: "Idioma",
@@ -1210,6 +1498,29 @@ STRINGS["pt-BR"] = {
   editor_person_helper: "Adicione pessoas em Configurações, Dispositivos e serviços, Fork & Scale.",
   editor_title_helper: "Deixe vazio para usar o título do próprio card.",
   editor_navigation_path_helper: "O painel ou a página para abrir ao tocar no card.",
+  search_saved: "Pesquisar alimentos e refeições salvos",
+  title_meals: "Refeições salvas",
+  save_as_meal: "Salvar como refeição",
+  save_meal_title: "Salvar {meal} como refeição",
+  save_meal: "Salvar refeição",
+  share_everyone: "Compartilhar com todos",
+  search_meals: "Pesquisar refeições salvas",
+  meal_add_food: "Adicionar um alimento salvo",
+  meals_empty: "Ainda não há refeições salvas. Salve uma a partir de uma refeição do diário, ou adicione-a aqui.",
+  no_meals: "Nenhuma refeição salva corresponde a “{query}”.",
+  meal_exists_everyone: "Já existe uma refeição chamada “{name}” para todos.",
+  meal_exists_person: "{person} já tem uma refeição chamada “{name}”.",
+  meal_gone: "{name} foi alterada ou excluída nesse meio-tempo, então nada foi adicionado. Escolha uma refeição de novo.",
+  meal_changed: "{name} foi alterada ou excluída nesse meio-tempo. Abra-a de novo para ver como ela está agora.",
+  meal_entries_stay: "Os registros já feitos a partir dela ficam no diário.",
+  looking_up: "Procurando {code}…",
+  already_saved_by: "{person} já salvou isto como {name}.",
+  already_saved_as: "Já salvo como {name}.",
+  name_saved_by: "{name} já foi salvo por {person}.",
+  name_saved: "{name} já está salvo.",
+  save_anyway: "Salvar mesmo assim",
+  food_in_meals: "Também está em {meals}, e será removido de lá.",
+  meals_emptied: "{meals} também será excluída, por não ter mais nada.",
 };
 
 // src/cards/strings/sv.js
@@ -1338,10 +1649,45 @@ STRINGS.sv = {
   off_stale: "Ifyllt från en sökning på Open Food Facts, vars värden kan vara inaktuella. Kontrollera dem mot etiketten.",
   more: "Fler",
   try_again: "Försök igen",
+  search_saved: "Sök i sparad mat och sparade måltider",
+  everyone: "Alla",
+  title_meals: "Sparade måltider",
+  save_as_meal: "Spara som måltid",
+  save_meal_title: "Spara {meal} som måltid",
+  save_meal: "Spara måltid",
+  share_everyone: "Dela med alla",
+  meal_for: "För",
+  add_meal: "Lägg till måltid",
+  search_meals: "Sök i sparade måltider",
+  meal_add_food: "Lägg till sparad mat",
+  meals_empty: "Inga sparade måltider än. Spara en från en måltid i matdagboken, eller lägg till en här.",
+  no_meals: "Ingen sparad måltid matchar ”{query}”.",
+  all_meals: "Alla måltider ({count})",
+  total: "Totalt",
+  foods_in_meal: "Mat",
+  meal_exists_everyone: "Det finns redan en måltid som heter ”{name}” för alla.",
+  meal_exists_person: "{person} har redan en måltid som heter ”{name}”.",
+  meal_gone: "{name} ändrades eller togs bort under tiden, så inget lades till. Välj en måltid igen.",
+  meal_changed: "{name} ändrades eller togs bort under tiden. Öppna den igen för att se den som den är nu.",
+  meal_entries_stay: "Det som redan loggats från den stannar i dagboken.",
+  error_meal_name: "Ge måltiden ett namn.",
+  error_meal_items: "Lägg till minst en sorts mat, var och en med en mängd över 0 och dess kcal.",
+  edit_values: "Redigera värden",
+  looking_up: "Söker {code}…",
+  already_saved_by: "{person} har redan sparat detta som {name}.",
+  already_saved_as: "Redan sparad som {name}.",
+  name_saved_by: "{name} är redan sparad av {person}.",
+  name_saved: "{name} är redan sparad.",
+  choose_it: "Välj den",
+  save_anyway: "Spara ändå",
+  food_in_meals: "Den ingår också i {meals}, och tas bort därifrån.",
+  meals_emptied: "{meals} tas också bort, eftersom inget annat finns i den.",
   language_name: "Svenska",
   editor_person: "Person",
   editor_person_linked: "Personen som är kopplad till den som är inloggad",
   editor_person_helper: "Lägg till personer under Inställningar, Enheter och tjänster, Fork & Scale.",
+  editor_person_all: "Alla måltider",
+  editor_meals_person_helper: "Visar allas måltider och personens egna.",
   editor_title: "Rubrik",
   editor_title_helper: "Lämna tomt för kortets egen rubrik.",
   editor_locale: "Språk",
@@ -1476,10 +1822,45 @@ STRINGS["zh-Hans"] = {
   off_stale: "已根据 Open Food Facts 的搜索结果填写，数值可能已过时。请对照标签核对。",
   more: "更多",
   try_again: "重试",
+  search_saved: "搜索已保存的食物和餐",
+  everyone: "所有人",
+  title_meals: "已保存的餐",
+  save_as_meal: "保存为餐",
+  save_meal_title: "将{meal}保存为餐",
+  save_meal: "保存餐",
+  share_everyone: "与所有人共享",
+  meal_for: "归属",
+  add_meal: "添加餐",
+  search_meals: "搜索已保存的餐",
+  meal_add_food: "添加已保存的食物",
+  meals_empty: "还没有已保存的餐。可以从饮食日记中的某一餐保存，或在这里添加。",
+  no_meals: "没有与“{query}”匹配的已保存的餐。",
+  all_meals: "所有餐（{count}）",
+  total: "合计",
+  foods_in_meal: "食物",
+  meal_exists_everyone: "所有人已有名为“{name}”的餐。",
+  meal_exists_person: "{person} 已有名为“{name}”的餐。",
+  meal_gone: "{name} 在此期间已被修改或删除，因此没有添加任何内容。请重新选择一餐。",
+  meal_changed: "{name} 在此期间已被修改或删除。请重新打开以查看它现在的样子。",
+  meal_entries_stay: "已由它记录的条目会保留在日记中。",
+  error_meal_name: "请为这餐命名。",
+  error_meal_items: "请至少添加一种食物，每种的数量都要大于 0 并填写千卡。",
+  edit_values: "编辑数值",
+  looking_up: "正在查找 {code}…",
+  already_saved_by: "{person} 已将其保存为 {name}。",
+  already_saved_as: "已保存为 {name}。",
+  name_saved_by: "{name} 已由 {person} 保存。",
+  name_saved: "{name} 已保存。",
+  choose_it: "选择它",
+  save_anyway: "仍然保存",
+  food_in_meals: "它也在 {meals} 中，将从中移除。",
+  meals_emptied: "{meals} 也会被删除，因为其中没有其他内容。",
   language_name: "简体中文",
   editor_person: "人员",
   editor_person_linked: "与当前登录用户关联的人员",
   editor_person_helper: "请在“设置 > 设备与服务 > Fork & Scale”中添加人员。",
+  editor_person_all: "所有餐",
+  editor_meals_person_helper: "显示所有人的餐以及此人自己的餐。",
   editor_title: "标题",
   editor_title_helper: "留空则使用卡片自己的标题。",
   editor_locale: "语言",
@@ -1804,6 +2185,131 @@ function scannerFor(hass, win = window) {
 
 const barcodeError = (err) => (err?.code === "barcode_taken" ? "error_barcode_taken" : "error_failed");
 
+// src/cards/meals.js
+// Saved meals and who saved what, for the food diary, saved foods and saved
+// meals cards. A meal, from fork_and_scale/meals, is {id, owner, name,
+// version, items}: owner is a person's id, or null for everyone, and each
+// item is {id, food_id, name, grams, nutrients...}, its food's values now
+// for a saved food, else fixed values, from a quick add.
+
+// The styles of what follows. Every card with a food form has them.
+const SAVED_MEAL_STYLE = `
+  .pill { display: inline-block; font-size: var(--ha-font-size-xs, 0.75rem); font-weight: var(--ha-font-weight-medium, 500); line-height: 1.7;
+    padding: 0 7px; margin-left: 6px; border-radius: 9px; background: var(--secondary-background-color); color: var(--secondary-text-color);
+    vertical-align: 1px; white-space: nowrap; }
+  .pill.everyone { background: color-mix(in srgb, var(--primary-color) 14%, transparent); color: var(--primary-color); }
+  .mealrow > span:first-child { min-width: 0; }
+  .mealrow .foods-in { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .items { display: flex; flex-direction: column; }
+  label.item, label.check { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+    padding: 6px 4px; font-size: inherit; color: var(--primary-text-color); cursor: pointer; }
+  label.check { grid-template-columns: auto 1fr; }
+  .item input, .check input { width: 18px; height: 18px; padding: 0; margin: 0; accent-color: var(--primary-color); }
+  .item .amount { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); margin-left: 6px; }
+  .item:has(input:not(:checked)) > span { color: var(--secondary-text-color); }
+  .preview { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; gap: 4px;
+    background: var(--secondary-background-color); border-radius: 8px; padding: 8px 4px; }
+  .preview small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
+  .alert { border-left: 3px solid var(--warning-color); background: color-mix(in srgb, var(--warning-color) 14%, transparent);
+    padding: 8px 10px; border-radius: 6px; }
+`;
+
+// The name of the person with `id`, or null.
+const personName = (people, id) => people?.find((p) => p.id === id)?.name ?? null;
+
+// A meal's owner as a pill: Everyone, or the person's name.
+function ownerPillHTML(owner, people, t) {
+  if (owner == null) return `<span class="pill everyone">${esc(t.everyone)}</span>`;
+  const name = personName(people, owner);
+  return name ? `<span class="pill">${esc(name)}</span>` : "";
+}
+
+// Who saved a food, as a pill, when that is known.
+function savedByPillHTML(food, people) {
+  const name = personName(people, food.saved_by);
+  return name ? `<span class="pill">${esc(name)}</span>` : "";
+}
+
+// `names` as one phrase, joined as `locale` joins a list: "A, B and C".
+const listText = (names, locale) => new Intl.ListFormat(locale, { type: "conjunction" }).format(names);
+
+// Whether `name` contains `query`, ignoring case.
+const nameMatches = (name, query) => name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
+
+// A meal as a row: its name and owner, its foods, its kcal. Tapping it
+// runs `action` with the meal's id.
+function mealRowHTML(meal, people, locale, t, action, pressed = false) {
+  return `<button class="row mealrow" data-action="${action}" data-id="${meal.id}"${pressed ? ' aria-pressed="true"' : ""}>
+    <span><span class="mname">${esc(meal.name)}</span>${ownerPillHTML(meal.owner, people, t)}<small class="foods-in">${esc(meal.items.map((i) => i.name).join(", "))}</small></span>
+    <small class="num">${number(totals(meal.items).kcal, locale)} ${esc(t.kcal)}</small></button>`;
+}
+
+// What follows an item's or entry's name: its grams, and "Quick add" when it
+// has no saved food.
+function amountTagHTML(item, locale, t) {
+  const grams = item.grams != null ? `${number(item.grams, locale, 1)} g` : "";
+  const text = item.food_id == null ? [grams, t.tab_quick].filter(Boolean).join(" · ") : grams;
+  return text ? `<span class="amount num">${esc(text)}</span>` : "";
+}
+
+// Items or entries, each with a box to tick, its amount and its kcal.
+function tickListHTML(items, ticks, locale, t) {
+  return `<div class="items">${items
+    .map(
+      (item, i) => `<label class="item"><input type="checkbox" data-action="tick" data-index="${i}"${ticks[i] ? " checked" : ""}>
+      <span>${esc(item.name)}${amountTagHTML(item, locale, t)}</span><span class="num">${number(item.kcal ?? 0, locale)}</span></label>`,
+    )
+    .join("")}</div>`;
+}
+
+// The kcal, protein, carbs and fat of `items` together, for a .preview box.
+function totalsHTML(items, locale, t) {
+  const sums = totals(items);
+  return REQUIRED_NUTRIENTS.map(
+    (n) => `<div><b>${number(sums[n], locale, n === "kcal" ? 0 : 1)}</b><small>${esc(n === "kcal" ? t.kcal : `${t[n]} (g)`)}</small></div>`,
+  ).join("");
+}
+
+// The ticked ones of `items`.
+const ticked = (items, ticks) => items.filter((_, i) => ticks[i]);
+
+// The message for a meal/add or meal/update refused with meal_exists: whose
+// meal has `name` already.
+function mealExistsText(err, name, people, t) {
+  const owner = err?.translation_placeholders?.owner;
+  if (!owner) return fill(t.meal_exists_everyone, { name });
+  return fill(t.meal_exists_person, { person: personName(people, owner) ?? owner, name });
+}
+
+// The warning for a food that food/add found saved already: by barcode, or
+// by name. `taken` is the error's details: {food_id, name, saved_by}.
+function takenText(code, taken, people, t) {
+  const person = personName(people, taken.saved_by);
+  if (code === "barcode_taken") return person ? fill(t.already_saved_by, { person, name: taken.name }) : fill(t.already_saved_as, { name: taken.name });
+  return person ? fill(t.name_saved_by, { person, name: taken.name }) : fill(t.name_saved, { name: taken.name });
+}
+
+// A food's short check, after Open Food Facts filled it in: its name and
+// barcode, its kcal, protein, carbs and fat per 100 g, and its portions,
+// with Edit values to open the whole form.
+function reviewHTML(food, locale, t) {
+  const portions = (food.portions ?? []).map((q) => `<span class="chip">${esc(q.name)} · ${number(q.grams, locale, 1)} g</span>`).join("");
+  return `<div class="review">
+    <div class="reviewhead"><span><b>${esc(food.name)}</b>${food.barcode ? `<small class="num">${esc(food.barcode)}</small>` : ""}</span>
+      <button class="text" data-action="edit-values">${esc(t.edit_values)}</button></div>
+    <div class="sub">${esc(t.per_100g)}</div><div class="preview num">${totalsHTML([food], locale, t)}</div>
+    ${portions ? `<div class="chips">${portions}</div>` : ""}</div>`;
+}
+
+// Whether a food filled in from Open Food Facts can be saved from its short
+// check: it has a name, and its kcal, protein, carbs and fat.
+const reviewable = (food) => Boolean(food.name) && REQUIRED_NUTRIENTS.every((n) => food[n] != null && food[n] >= 0);
+
+// The line that shows while barcode `code` is being looked up, with Cancel.
+const lookingUpHTML = (code, t) =>
+  `<div class="lookup"><span class="spinner"></span><span>${esc(fill(t.looking_up, { code }))}</span><button class="text" data-action="cancel-lookup">${esc(t.cancel)}</button></div>`;
+
 // src/cards/fitness-card.js
 // Throws unless each of `keys` that `config` sets is text.
 function assertText(config, keys) {
@@ -1817,10 +2323,12 @@ class FitnessCard extends HTMLElement {
   // Handlers for events on elements with a data-action, as "kind:action".
   static actions = {};
 
-  // The visual editor, with a field for each of the card's static `options`.
+  // The visual editor, with a field for each of the card's static `options`,
+  // labelled with the strings its static `editorStrings` swaps in.
   static getConfigElement() {
     const editor = document.createElement(EDITOR);
     editor.options = this.options;
+    editor.strings = this.editorStrings;
     return editor;
   }
 
@@ -1917,9 +2425,26 @@ class FitnessCard extends HTMLElement {
 }
 
 // src/cards/food-card.js
-// Panel `p`'s note, warning and error, those it has.
-const panelMessagesHTML = (p) =>
-  ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
+// Panel `p`'s note, warning and error, those it has. With strings `t`, also
+// Try again after a lookup that could not reach Open Food Facts (p.retry),
+// and Choose it and Save anyway for a food saved already by name (p.taken).
+function panelMessagesHTML(p, t) {
+  const messages = ["note", "warning", "error"].map((kind) => (p[kind] ? `<div class="${kind}">${esc(p[kind])}</div>` : "")).join("");
+  if (!t) return messages;
+  const retry = p.retry ? `<button class="text" data-action="retry-lookup">${esc(t.try_again)}</button>` : "";
+  const taken = p.taken
+    ? `<button class="text" data-action="choose-taken">${esc(t.choose_it)}</button><button class="text" data-action="save-anyway">${esc(t.save_anyway)}</button>`
+    : "";
+  return messages + (retry || taken ? `<div class="inline">${retry}${taken}</div>` : "");
+}
+
+// `html` with panel `p`'s messages above its last row of buttons, so that
+// they show beside what they are about; at its end if it has no buttons.
+function withMessages(html, p, t) {
+  const at = html.lastIndexOf('<div class="actions">');
+  const messages = panelMessagesHTML(p, t);
+  return at < 0 ? html + messages : html.slice(0, at) + messages + html.slice(at);
+}
 
 const cancelButtonHTML = (t) => `<button class="text" data-action="close">${esc(t.cancel)}</button>`;
 
@@ -1927,7 +2452,7 @@ const cancelButtonHTML = (t) => `<button class="text" data-action="close">${esc(
 // Errors show in the card's open panel, `_panel`, which it draws with
 // `_renderPanel`.
 class FoodCard extends FitnessCard {
-  static style = `
+  static style = `${SAVED_MEAL_STYLE}
     .panel { border-top: 1px solid var(--divider-color); padding-top: 12px; display: flex; flex-direction: column; gap: 12px; }
     .portion { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-bottom: 6px; }
     .barcodes { display: flex; gap: 12px; }
@@ -1937,12 +2462,45 @@ class FoodCard extends FitnessCard {
     .row small { color: var(--secondary-text-color); }
     .off { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
     .finder { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--divider-color); }
+    .inline { display: flex; flex-wrap: wrap; gap: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button, .chip { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
+    .review { display: flex; flex-direction: column; gap: 8px; }
+    .reviewhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .reviewhead small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); }
+    .lookup { display: flex; align-items: center; gap: 10px; color: var(--secondary-text-color); }
+    .lookup .text { margin-left: auto; }
+    .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--divider-color); border-top-color: var(--primary-color);
+      animation: spin 0.8s linear infinite; flex: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
   `;
 
   _showError(err, key = "error_failed") {
     if (!this._panel) return;
     this._panel.error = fill(this._t[key], { message: err?.message ?? "" });
     this._renderPanel();
+    this._revealButtons();
+  }
+
+  // Scroll the open panel's last row of buttons into view, with the message
+  // above it.
+  _revealButtons() {
+    const rows = this._card?.querySelectorAll(".panel .actions");
+    rows?.[rows.length - 1]?.scrollIntoView?.({ block: "nearest" });
+  }
+
+  // Run `lookUp`, a lookup of barcode `code` for panel `p`. While it runs, the
+  // panel shows "Looking up" with Cancel (p.lookup). Resolves to its result,
+  // or null if Cancel, a newer lookup or the panel closing dropped it.
+  async _lookUpFor(p, code, lookUp) {
+    const lookup = { code };
+    Object.assign(p, { lookup, note: null, warning: null, error: null, retry: null, taken: null });
+    this._renderPanel();
+    const looked = await lookUp();
+    if (this._panel !== p || p.lookup !== lookup) return null;
+    p.lookup = null;
+    return looked;
   }
 
   get _scanner() {
@@ -1963,7 +2521,8 @@ class FoodCard extends FitnessCard {
   }
 
   // `food` filled from its barcode. Returns {food} and either a note, an
-  // error, or the saved food that already has the barcode.
+  // error, or the saved food that already has the barcode. `retry` is set
+  // when Open Food Facts could not be reached, so trying again may work.
   async _lookUp(food) {
     const t = this._t;
     const code = (food.barcode ?? "").trim();
@@ -1975,7 +2534,7 @@ class FoodCard extends FitnessCard {
       if (!found) return { food: { ...food, barcode: code }, error: fill(t.off_not_found, { code }) };
       return { food: mergeFood(food, found), note: t.off_filled };
     } catch (err) {
-      return { food, error: fill(t.off_failed, { message: err?.message ?? "" }) };
+      return { food, error: fill(t.off_failed, { message: err?.message ?? "" }), retry: true };
     }
   }
 
@@ -2020,6 +2579,23 @@ class FoodCard extends FitnessCard {
     }
   }
 }
+
+// Handlers every card with a food form shares, for its static `actions`.
+const FOOD_ACTIONS = {
+  "click:cancel-lookup"() {
+    this._panel.lookup = null;
+    this._renderPanel();
+  },
+  "click:retry-lookup"() {
+    this._lookUpBarcode(this._panel.retry);
+  },
+  // From a short check to the whole form.
+  "click:edit-values"() {
+    this._panel.review = false;
+    this._renderPanel();
+    this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
+  },
+};
 
 // src/cards/editor.js
 // The cards' visual editor, which FitnessCard.getConfigElement opens for each
@@ -2083,6 +2659,10 @@ function editedConfig(config, data) {
   return edited;
 }
 
+// Strings `t` with some keys standing for others, as a card's `editorStrings`
+// gives them: {key: the key whose string it shows instead}.
+const editorStrings = (t, swaps = {}) => ({ ...t, ...Object.fromEntries(Object.entries(swaps).map(([k, v]) => [k, t[v]])) });
+
 // Home Assistant's card editor contract: it sets `hass` and calls setConfig,
 // and listens for config-changed. `options` comes from getConfigElement.
 class CardEditor extends HTMLElement {
@@ -2117,7 +2697,7 @@ class CardEditor extends HTMLElement {
       this._form.addEventListener("value-changed", (e) => this._changed(e.detail.value));
       this.append(this._form);
     }
-    const t = translate(this._hass.locale?.language || "en");
+    const t = editorStrings(translate(this._hass.locale?.language || "en"), this.strings);
     const { schema, data } = editorForm(this.options, this._config, this._people ?? [], t);
     Object.assign(this._form, {
       hass: this._hass,
@@ -2154,8 +2734,8 @@ const rangeButtons = (ranges, selected, t) =>
 const ShowsPerson = (Base) =>
   class extends Base {
     async _load() {
-      const people = await this._call({ type: "fork_and_scale/people" });
-      this._person = findPerson(people, this._config, this._hass);
+      this._people = await this._call({ type: "fork_and_scale/people" });
+      this._person = findPerson(this._people, this._config, this._hass);
       this._data = this._person ? await this._fetch() : null;
     }
 
@@ -2239,23 +2819,20 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     .fat i { background: var(--deep-purple-color, var(--primary-color)); }
     .macro.over i { background: var(--error-color); }
     .meal { border-top: 1px solid var(--divider-color); padding-top: 10px; display: flex; flex-direction: column; gap: 2px; }
-    .mealhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: var(--ha-font-weight-medium, 500); }
+    .mealhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; font-weight: var(--ha-font-weight-medium, 500); }
+    /* When the title does not fit beside them, as in German, they keep to the right. */
+    .headactions { display: flex; gap: 4px; align-items: baseline; margin-left: auto; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 6px 4px; }
     .row .amount { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); margin-left: 6px; }
-    .mealactions { display: flex; gap: 12px; }
+    .mealactions { display: flex; flex-wrap: wrap; column-gap: 12px; }
     .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--divider-color); }
     .tabs button { padding: 8px 10px; border-radius: 6px 6px 0 0; color: var(--secondary-text-color); }
     .tabs button[aria-selected="true"] { color: var(--primary-color); box-shadow: inset 0 -2px 0 var(--primary-color); }
-    .searchrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
     .results { display: flex; flex-direction: column; }
     .results { max-height: 240px; overflow-y: auto; }
     .results .row[aria-pressed="true"] { background: var(--secondary-background-color); }
     .picked { display: flex; flex-direction: column; gap: 10px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chips button { border: 1px solid var(--divider-color); border-radius: 16px; padding: 4px 10px; font-size: var(--ha-font-size-s, 0.875rem); }
-    .preview { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; gap: 4px;
-      background: var(--secondary-background-color); border-radius: 8px; padding: 8px 4px; }
-    .preview small { display: block; color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
+    .allmeals { align-self: flex-start; }
   `;
 
   static options = ["person", "title", "locale"];
@@ -2290,7 +2867,10 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   _changed(event) {
     if (event.person === null) {
-      if (this._onSearchTab) this._search();
+      if (this._onSearchTab) {
+        this._panel.meals = undefined;
+        this._search();
+      }
     } else if (this._person && event.person === this._person.id) {
       this._refresh();
     }
@@ -2335,8 +2915,11 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     let html;
     if (p.kind === "edit") html = editPanelHTML(p, this._locale, t);
     else if (p.kind === "copy") html = copyPanelHTML(p, this._today, t);
-    else html = addPanelHTML(p, t, Boolean(this._scanner));
-    panel.innerHTML = html + panelMessagesHTML(p);
+    else if (p.kind === "save-meal") html = saveMealPanelHTML(p, this._locale, t);
+    else html = addPanelHTML(p, t, Boolean(this._scanner), this._locale);
+    // On the Saved tab, what was chosen has the button: _renderPicked puts
+    // the messages there.
+    panel.innerHTML = this._onSearchTab && (p.food || p.chosen) ? html : withMessages(html, p, t);
     if (this._onSearchTab) {
       this._renderResults();
       this._renderPicked();
@@ -2353,8 +2936,8 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     const box = this._card.querySelector(".results");
     const p = this._panel;
     if (!box || !p) return;
-    box.innerHTML = resultsHTML(p, this._locale, this._t);
-    this._card.querySelector(".find").innerHTML = p.results ? offLinkHTML(p.query, p.results.length > 0, this._t) : "";
+    box.innerHTML = resultsHTML(p, this._locale, this._t, this._people);
+    this._card.querySelector(".find").innerHTML = p.results && !p.chosen ? offLinkHTML(p.query, p.results.length > 0, this._t) : "";
   }
 
   // The New food tab's search of Open Food Facts, when it shows.
@@ -2367,7 +2950,9 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   _renderPicked() {
     const box = this._card.querySelector(".picked");
     if (!box) return;
-    box.innerHTML = pickedHTML(this._panel, this._locale, this._t);
+    const p = this._panel;
+    const html = p.chosen ? chosenMealHTML(p, this._locale, this._t, this._people) : pickedHTML(p, this._locale, this._t);
+    box.innerHTML = html && withMessages(html, p, this._t);
     this._renderPreview();
   }
 
@@ -2379,7 +2964,17 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     this._card.querySelector('[data-action="add-entry"]').disabled = !(p.grams > 0);
   }
 
+  // The totals of what is ticked, and whether the button that takes it can be
+  // pressed. Only these redraw, so the box just ticked keeps focus.
+  _renderTicked() {
+    const p = this._panel;
+    const items = p.kind === "save-meal" ? p.entries : p.chosen.items;
+    this._card.querySelector(".panel .preview").innerHTML = totalsHTML(ticked(items, p.ticks), this._locale, this._t);
+    this._card.querySelector('.panel [data-action="save-meal"], .panel [data-action="log-meal"]').disabled = !p.ticks.some(Boolean);
+  }
+
   _openPanel(panel) {
+    this._scanAbort?.abort();
     this._panel = panel;
     this._renderPanel();
     if (this._onSearchTab) this._search();
@@ -2388,6 +2983,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   }
 
   _closePanel() {
+    this._scanAbort?.abort();
     this._panel = null;
     this._renderPanel();
   }
@@ -2398,15 +2994,21 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     if (sent.ok) this._closePanel();
   }
 
+  // The Saved tab's saved foods for its query, or recent ones, and the meals
+  // the person can see, unless the panel has them.
   async _search() {
     const p = this._panel;
     const query = p.query.trim();
     try {
-      const results = query
-        ? await this._call({ type: "fork_and_scale/food/search", query })
-        : await this._call({ type: "fork_and_scale/food/recent", person: this._person.id });
+      const [results, meals] = await Promise.all([
+        query
+          ? this._call({ type: "fork_and_scale/food/search", query })
+          : this._call({ type: "fork_and_scale/food/recent", person: this._person.id }),
+        p.meals ?? this._call({ type: "fork_and_scale/meals", person: this._person.id }),
+      ]);
       if (this._panel === p && p.query.trim() === query) {
         p.results = results;
+        p.meals = meals;
         this._renderResults();
       }
     } catch (err) {
@@ -2418,15 +3020,30 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     return this._card.querySelector(`.panel [data-field="${key}"]`);
   }
 
-  // Fill the New food tab's form from barcode `code`, typed or scanned,
-  // switching to it. Its search box empties: the barcode is in the form now.
+  // Keep what was typed in the add panel's Quick add or New food tab, which a
+  // redraw for another tab, a scan or a lookup would lose.
+  _keepTyped() {
+    const p = this._panel;
+    if (p?.kind !== "add") return;
+    if (p.tab === "quick" && this._field("name")) {
+      p.quick = Object.fromEntries(["name", "kcal", ...MACROS, "meal"].map((k) => [k, this._field(k).value]));
+    }
+    if (p.tab === "new" && this._card.querySelector(".foodform")) p.newFood = readFoodForm(this._card).food;
+  }
+
+  // Look up barcode `code`, scanned or typed: choose the saved food that has
+  // it on the Saved tab, or fill in a new food from Open Food Facts on the New
+  // food tab. The New food search box empties: the barcode is in the food now.
+  // What was typed in the form stays; a product only checked, not edited,
+  // gives way to the new one.
   async _lookUpBarcode(code) {
     const p = this._panel;
-    if (p.tab === "new") p.newFood = readFoodForm(this._card).food;
-    Object.assign(p, { tab: "new", offQuery: "", off: null, note: null, warning: null, error: null });
-    p.newFood = { ...(p.newFood ?? { portions: [] }), barcode: code };
-    this._renderPanel();
-    await this._fillNewFood();
+    this._keepTyped();
+    const typed = p.review ? null : p.newFood;
+    Object.assign(p, { offQuery: "", off: null, review: false });
+    const food = { ...(typed ?? { portions: [] }), barcode: code };
+    const looked = await this._lookUpFor(p, code, () => this._lookUp(food));
+    if (looked) this._showLookedUp(p, looked, code);
   }
 
   // Find `query` on Open Food Facts from the New food tab, switching to it:
@@ -2434,29 +3051,93 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   async _findOnOff(query) {
     if (BARCODE.test(query)) return this._lookUpBarcode(query);
     const p = this._panel;
-    if (p.tab === "new") p.newFood = readFoodForm(this._card).food;
+    this._keepTyped();
     const off = { query, products: [], page: 0, more: false };
-    Object.assign(p, { tab: "new", offQuery: query, off, note: null, warning: null, error: null });
+    Object.assign(p, { tab: "new", offQuery: query, off, note: null, warning: null, error: null, retry: null, taken: null });
     this._renderPanel();
     await this._searchOff(off);
   }
 
-  // Fill the New food form from its barcode, or choose the saved food that has it.
-  async _fillNewFood() {
-    const p = this._panel;
-    this._showLookedUp(p, await this._lookUp(p.newFood));
-  }
-
-  // Show in panel `p` what _lookUp or _lookUpPicked found, if `p` is still open.
-  _showLookedUp(p, looked) {
-    if (this._panel !== p) return;
+  // Show in panel `p` what _lookUp or _lookUpPicked found for barcode
+  // `code`: the saved food that has it, chosen, or the new food, as a short
+  // check when Open Food Facts gave all it needs.
+  _showLookedUp(p, looked, code) {
     if (looked.saved) {
       showSavedFood(p, looked.saved);
       p.note = looked.note;
     } else {
-      Object.assign(p, { newFood: looked.food, note: looked.note ?? null, warning: looked.warning ?? null, error: looked.error ?? null });
+      Object.assign(p, {
+        tab: "new",
+        newFood: looked.food,
+        review: !looked.error && reviewable(looked.food),
+        note: looked.note ?? null,
+        warning: looked.warning ?? null,
+        error: looked.error ?? null,
+        retry: looked.retry ? code : null,
+      });
     }
     this._renderPanel();
+    if (p.error || p.warning) this._revealButtons();
+  }
+
+  _chooseMeal(meal) {
+    const p = this._panel;
+    Object.assign(p, { chosen: meal, ticks: meal.items.map(() => true), food: null, error: null, note: null, warning: null });
+    this._renderResults();
+    this._renderPicked();
+  }
+
+  _chooseFood(food) {
+    const p = this._panel;
+    p.chosen = null;
+    chooseFood(p, food);
+    this._renderResults();
+    this._renderPicked();
+    this._field("grams")?.focus?.();
+  }
+
+  // Save food `food` from the New food tab, saved by the diary's person, and
+  // choose it. A food saved already is chosen instead, with a warning, if it
+  // has the barcode; if it has the name, the warning asks what to do.
+  async _saveNewFood(p, food, anyway = false) {
+    const t = this._t;
+    try {
+      const message = { type: "fork_and_scale/food/add", ...food, person: this._person.id, ...(anyway && { anyway }) };
+      const saved = await this._call(message);
+      if (this._panel !== p) return;
+      showSavedFood(p, saved);
+      this._renderPanel();
+    } catch (err) {
+      if (this._panel !== p) return;
+      const taken = err?.translation_placeholders;
+      if (err?.code === "barcode_taken" && taken) {
+        const existing = await this._call({ type: "fork_and_scale/food/barcode", barcode: food.barcode }).catch(() => null);
+        if (existing && this._panel === p) {
+          showSavedFood(p, existing);
+          p.warning = takenText(err.code, taken, this._people, t);
+          this._renderPanel();
+          this._revealButtons();
+          return;
+        }
+      }
+      if (err?.code === "name_taken" && taken) {
+        Object.assign(p, { taken, warning: takenText(err.code, taken, this._people, t), error: null });
+        this._renderPanel();
+        this._revealButtons();
+        return;
+      }
+      this._showError(err, barcodeError(err));
+    }
+  }
+
+  // The new food the New food tab shows: its short check, or its form, which
+  // may not be filled in right.
+  _newFood() {
+    const p = this._panel;
+    if (p.review) return { food: p.newFood, error: null };
+    const read = readFoodForm(this._card);
+    p.newFood = read.food;
+    return read;
   }
 
   async _goTo(day) {
@@ -2469,6 +3150,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   }
 
   static actions = {
+    ...FOOD_ACTIONS,
     "click:prev"() {
       this._goTo(shiftDay(this._day, -1));
     },
@@ -2480,6 +3162,83 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     },
     "click:add"(el) {
       this._openPanel({ kind: "add", meal: el.dataset.meal, tab: "search", query: "" });
+    },
+    "click:save-as-meal"(el) {
+      const meal = el.dataset.meal;
+      const entries = this._data.entries.filter((e) => e.meal === meal);
+      this._openPanel({ kind: "save-meal", meal, entries, ticks: entries.map(() => true), name: "", share: false });
+    },
+    "input:meal-name"(el) {
+      this._panel.name = el.value;
+    },
+    "keydown:meal-name"(el, event) {
+      if (event.key === "Enter") this.constructor.actions["click:save-meal"].call(this);
+    },
+    "change:share"(el) {
+      this._panel.share = el.checked;
+    },
+    "change:tick"(el) {
+      this._panel.ticks[Number(el.dataset.index)] = el.checked;
+      this._renderTicked();
+    },
+    async "click:save-meal"() {
+      const p = this._panel;
+      const name = p.name.trim();
+      if (!p.ticks.some(Boolean)) return;
+      if (!name) return this._showError(null, "error_meal_name");
+      const items = ticked(p.entries, p.ticks).map((e) =>
+        e.food_id != null ? { food_id: e.food_id, grams: e.grams } : { name: e.name, grams: e.grams, ...Object.fromEntries(NUTRIENTS.map((n) => [n, e[n]])) },
+      );
+      try {
+        await this._call({ type: "fork_and_scale/meal/add", name, owner: p.share ? null : this._person.id, items });
+        if (this._panel === p) this._closePanel();
+      } catch (err) {
+        if (err?.code !== "meal_exists") return this._showError(err);
+        p.error = mealExistsText(err, name, this._people, this._t);
+        this._renderPanel();
+        this._revealButtons();
+      }
+    },
+    "click:choose-meal"(el) {
+      const p = this._panel;
+      // Tapping the chosen meal again goes back to the results. It may be
+      // gone from p.meals, if someone deleted it meanwhile.
+      if (p.chosen && String(p.chosen.id) === el.dataset.id) {
+        p.chosen = null;
+        this._renderResults();
+        this._renderPicked();
+        return;
+      }
+      const meal = p.meals?.find((m) => String(m.id) === el.dataset.id);
+      if (meal) this._chooseMeal(meal);
+    },
+    "click:all-meals"() {
+      this._panel.allMeals = true;
+      this._renderResults();
+    },
+    async "click:log-meal"() {
+      const p = this._panel;
+      const meal = p.chosen;
+      if (!p.ticks.some(Boolean)) return;
+      try {
+        await this._call({
+          type: "fork_and_scale/meal/log",
+          person: this._person.id,
+          day: this._day,
+          meal: p.meal,
+          meal_id: meal.id,
+          version: meal.version,
+          items: ticked(meal.items, p.ticks).map((i) => i.id),
+        });
+        if (this._panel === p) this._closePanel();
+      } catch (err) {
+        if (err?.code !== "meal_changed") return this._showError(err);
+        // Show the meals as they are now, to choose again.
+        Object.assign(p, { chosen: null, meals: undefined, error: fill(this._t.meal_gone, { name: meal.name }) });
+        this._renderPanel();
+        this._revealButtons();
+        await this._search();
+      }
     },
     "click:copy"(el) {
       this._openPanel({ kind: "copy", meal: el.dataset.meal, fromDay: shiftDay(this._day, -1), fromMeal: el.dataset.meal });
@@ -2493,17 +3252,36 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     },
     "click:tab"(el) {
       const p = this._panel;
-      p.tab = el.dataset.tab;
-      p.error = null;
-      p.note = null;
-      p.warning = null;
+      this._scanAbort?.abort();
+      this._keepTyped();
+      Object.assign(p, { tab: el.dataset.tab, error: null, note: null, warning: null, retry: null, taken: null });
       this._renderPanel();
       if (p.tab === "search") this._search();
     },
     "input:query"(el) {
-      this._panel.query = el.value;
+      const p = this._panel;
+      p.query = el.value;
+      if (p.chosen) {
+        p.chosen = null;
+        this._renderPicked();
+      }
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this._search(), SEARCH_DELAY_MS);
+    },
+    // With one saved meal or food matching, Enter chooses it.
+    async "keydown:query"(el, event) {
+      if (event.key !== "Enter") return;
+      const p = this._panel;
+      clearTimeout(this._searchTimer);
+      p.query = el.value;
+      await this._search();
+      const query = p.query.trim();
+      if (this._panel !== p || !query) return;
+      const meals = (p.meals ?? []).filter((m) => nameMatches(m.name, query));
+      const foods = p.results ?? [];
+      if (meals.length + foods.length !== 1) return;
+      if (meals.length) this._chooseMeal(meals[0]);
+      else this._chooseFood(foods[0]);
     },
     "click:off-find"(el) {
       this._findOnOff(el.dataset.query);
@@ -2521,15 +3299,14 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     async "click:off-pick"(el) {
       const p = this._panel;
       const product = p.off.products.find((x) => x.code === el.dataset.code);
-      this._showLookedUp(p, await this._lookUpPicked(product));
+      const looked = await this._lookUpFor(p, product.code, () => this._lookUpPicked(product));
+      if (!looked) return;
+      this._showLookedUp(p, looked, product.code);
       if (p.tab === "new") this._field("name")?.focus?.();
     },
     "click:choose"(el) {
       const p = this._panel;
-      chooseFood(p, p.results.find((f) => String(f.id) === el.dataset.id));
-      this._renderResults();
-      this._renderPicked();
-      this._field("grams")?.focus?.();
+      this._chooseFood(p.results.find((f) => String(f.id) === el.dataset.id));
     },
     "input:grams"(el) {
       this._panel.grams = numberValue(el);
@@ -2556,6 +3333,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       });
     },
     async "click:quick-add"() {
+      this._keepTyped();
       const name = this._field("name").value.trim();
       const kcal = numberValue(this._field("kcal"));
       if (!name || kcal == null || kcal < 0) return this._showError(null, "error_quick");
@@ -2582,38 +3360,46 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       p.newFood.portions.splice(Number(el.dataset.index), 1);
       this._renderPanel();
     },
-    async "click:off-scan"() {
-      const p = this._panel;
-      const code = await this._scan();
-      if (code && this._panel === p) await this._lookUpBarcode(code);
-    },
+    // The one Scan, in the add panel's head, on every tab.
     async "click:scan"() {
       const p = this._panel;
+      this._keepTyped();
       const code = await this._scan();
-      if (!code || this._panel !== p) return;
-      p.query = code;
-      p.results = undefined;
-      this._renderPanel();
-      await this._search();
-      // A saved food with this barcode is the one to log.
-      if (p.results?.length === 1 && p.results[0].barcode === code) {
-        chooseFood(p, p.results[0]);
-        this._renderPicked();
-      }
+      if (this._panel !== p) return;
+      // Cancelled, as with Back in the app's scanner: nothing changes.
+      if (!code) return this._card.querySelector('.panel [data-action="scan"]')?.focus?.();
+      await this._lookUpBarcode(code);
     },
     "click:stop-scan"() {
       this._scanAbort?.abort();
     },
     async "click:save-new-food"() {
       const p = this._panel;
-      const { food, error } = readFoodForm(this._card);
-      p.newFood = food;
+      const { food, error } = this._newFood();
       if (error) return this._showError(null, error);
-      const sent = await this._send({ type: "fork_and_scale/food/add", ...food }, barcodeError);
-      if (!sent.ok) return;
-      showSavedFood(p, sent.result);
-      p.newFood = null;
-      this._renderPanel();
+      await this._saveNewFood(p, food);
+    },
+    async "click:save-anyway"() {
+      const p = this._panel;
+      const { food, error } = this._newFood();
+      if (error) return this._showError(null, error);
+      Object.assign(p, { taken: null, warning: null });
+      await this._saveNewFood(p, food, true);
+    },
+    // The food a name warning was about, chosen instead of saving another.
+    async "click:choose-taken"() {
+      const p = this._panel;
+      const { food_id: id, name } = p.taken;
+      try {
+        const found = await this._call({ type: "fork_and_scale/food/search", query: name, limit: 100 });
+        const food = found.find((f) => String(f.id) === id);
+        if (this._panel !== p) return;
+        if (!food) return this._showError(null, "error_failed");
+        showSavedFood(p, food);
+        this._renderPanel();
+      } catch (err) {
+        this._showError(err);
+      }
     },
     async "click:save-edit"() {
       const p = this._panel;
@@ -2691,7 +3477,8 @@ function diarySummaryHTML(sums, goals, t, locale) {
       }).join("")}</div>`;
 }
 
-// One meal's `entries`, with buttons to add to it and copy into it.
+// One meal's `entries`, with buttons to add to it, copy into it, and save
+// it as a meal when it has any.
 function mealHTML(meal, entries, t, locale) {
   const rows = entries
     .map(
@@ -2706,18 +3493,30 @@ function mealHTML(meal, entries, t, locale) {
       <div class="mealactions">
         <button class="text" data-action="add" data-meal="${meal}">+ ${esc(t.add_food)}</button>
         <button class="text" data-action="copy" data-meal="${meal}">${esc(t.copy)}</button>
+        ${entries.length ? `<button class="text" data-action="save-as-meal" data-meal="${meal}">${esc(t.save_as_meal)}</button>` : ""}
       </div></div>`;
 }
 
-// The saved foods found for add panel `p`'s query, or its recent foods.
-function resultsHTML(p, locale, t) {
+// What the Saved tab of add panel `p` finds: the meals and saved foods
+// matching its query, or, before typing, the first three meals A to Z and
+// recent foods. Once a meal is chosen, only that meal.
+function resultsHTML(p, locale, t, people = []) {
+  if (p.chosen) return mealRowHTML(p.chosen, people, locale, t, "choose-meal", true);
   const query = p.query.trim();
+  const meals = (p.meals ?? []).filter((m) => nameMatches(m.name, query));
+  const shown = query || p.allMeals ? meals : meals.slice(0, 3);
+  const mealsHTML = shown.length
+    ? `<div class="sub">${esc(t.title_meals)}</div>${shown.map((m) => mealRowHTML(m, people, locale, t, "choose-meal")).join("")}` +
+      (shown.length < meals.length ? `<button class="text allmeals" data-action="all-meals">${esc(fill(t.all_meals, { count: meals.length }))}</button>` : "")
+    : "";
   const foods = p.results ?? [];
   if (!foods.length) {
+    if (query && meals.length) return mealsHTML;
     const empty = p.results === undefined ? t.loading : query ? fill(t.no_results, { query }) : t.no_recent;
-    return `<div class="muted">${esc(empty)}</div>`;
+    return `${mealsHTML}<div class="muted">${esc(empty)}</div>`;
   }
   return (
+    mealsHTML +
     `<div class="sub">${esc(query ? t.results : t.recent)}</div>` +
     foods
       .map(
@@ -2752,40 +3551,80 @@ function previewHTML(food, grams, locale, t) {
     .join("");
 }
 
+// The meal chosen on add panel `p`'s Saved tab: its items to tick, the meal
+// to add them to, and their totals.
+function chosenMealHTML(p, locale, t, people = []) {
+  const meal = p.chosen;
+  return `<div><b>${esc(meal.name)}</b>${ownerPillHTML(meal.owner, people, t)}</div>
+      ${tickListHTML(meal.items, p.ticks, locale, t)}
+      <div class="grid"><label>${esc(t.meal)}<select data-action="meal" data-field="meal">${optionList(MEALS, t, p.meal)}</select></label></div>
+      <div class="preview num">${totalsHTML(ticked(meal.items, p.ticks), locale, t)}</div>
+      <div class="actions"><button class="fill" data-action="log-meal"${p.ticks.some(Boolean) ? "" : " disabled"}>${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</button></div>`;
+}
+
+// Save as meal: a name, the meal's entries to tick, their totals, and
+// whether everyone shares it.
+function saveMealPanelHTML(p, locale, t) {
+  return `<div class="mealhead"><span>${esc(fill(t.save_meal_title, { meal: t[p.meal] }))}</span></div>
+    <label>${esc(t.name)}<input data-action="meal-name" data-field="meal-name" value="${esc(p.name)}" enterkeyhint="done"></label>
+    ${tickListHTML(p.entries, p.ticks, locale, t)}
+    <div class="preview num">${totalsHTML(ticked(p.entries, p.ticks), locale, t)}</div>
+    <label class="check"><input type="checkbox" data-action="share"${p.share ? " checked" : ""}><span>${esc(t.share_everyone)}</span></label>
+    <div class="actions">${cancelButtonHTML(t)}<button class="fill" data-action="save-meal"${p.ticks.some(Boolean) ? "" : " disabled"}>${esc(t.save_meal)}</button></div>`;
+}
+
 // Choose `food` in add panel `p`, at its first portion, else 100 g.
 function chooseFood(p, food) {
   p.food = food;
   p.grams = food.portions?.[0]?.grams ?? 100;
 }
 
-// Show a saved food chosen on add panel `p`'s search tab, as its only
-// result, with no note, warning or error.
+// Show a saved food chosen on add panel `p`'s Saved tab, as its only
+// result, with no note, warning or error, and no new food left to save.
 function showSavedFood(p, food) {
-  Object.assign(p, { tab: "search", query: food.name, results: [food], note: null, warning: null, error: null });
+  Object.assign(p, {
+    tab: "search",
+    query: food.name,
+    results: [food],
+    chosen: null,
+    newFood: null,
+    review: false,
+    note: null,
+    warning: null,
+    error: null,
+    retry: null,
+    taken: null,
+  });
   chooseFood(p, food);
 }
 
-function addPanelHTML(p, t, scan = false) {
+// The add panel: its head with Scan, where the device can scan, and Cancel;
+// the camera, when scanning in the browser; a lookup that is running; then
+// the Saved, Quick add and New food tabs.
+function addPanelHTML(p, t, scan = false, locale = "en") {
   const tabs = ["search", "quick", "new"]
     .map((tab) => `<button data-action="tab" data-tab="${tab}" role="tab" aria-selected="${p.tab === tab}">${esc(t[`tab_${tab}`])}</button>`)
     .join("");
   const cancel = cancelButtonHTML(t);
   let content;
   if (p.tab === "search") {
-    const scanButton = scan ? `<button class="text" data-action="scan">${esc(t.scan)}</button>` : "";
-    content = `<div class="searchrow"><input type="search" data-action="query" value="${esc(p.query)}" placeholder="${esc(t.search_placeholder)}" aria-label="${esc(t.search_placeholder)}">${scanButton}</div>
-      <div class="scanner" hidden></div><div class="results"></div><div class="find"></div><div class="picked"></div>`;
+    content = `<input type="search" data-action="query" value="${esc(p.query)}" placeholder="${esc(t.search_saved)}" aria-label="${esc(t.search_saved)}" enterkeyhint="search">
+      <div class="results"></div><div class="find"></div><div class="picked"></div>`;
   } else if (p.tab === "quick") {
-    const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" ${NUMBER_INPUT}></label>`;
-    content = `<div class="grid"><label>${esc(t.name)}<input data-field="name"></label>${n("kcal", t.kcal)}</div>
+    const typed = p.quick ?? {};
+    const n = (key, label) => `<label>${esc(label)}<input data-field="${key}" ${NUMBER_INPUT} value="${esc(typed[key] ?? "")}"></label>`;
+    content = `<div class="grid"><label>${esc(t.name)}<input data-field="name" value="${esc(typed.name ?? "")}"></label>${n("kcal", t.kcal)}</div>
       <div class="grid">${MACROS.map((m) => n(m, `${t[m]} (g, ${t.optional})`)).join("")}</div>
-      <label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, p.meal)}</select></label>
+      <label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, typed.meal ?? p.meal)}</select></label>
       <div class="actions">${cancel}<button class="fill" data-action="quick-add">${esc(t.add)}</button></div>`;
   } else {
-    content = `${offFinderHTML(p.offQuery, t, scan)}${foodFormHTML(p.newFood ?? {}, t, scan, false)}
+    const body = p.review ? reviewHTML(p.newFood, locale, t) : foodFormHTML(p.newFood ?? {}, t, false, false);
+    content = `${offFinderHTML(p.offQuery, t)}${body}
       <div class="actions">${cancel}<button class="fill" data-action="save-new-food">${esc(t.save_and_choose)}</button></div>`;
   }
-  return `<div class="mealhead"><span>${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</span>${cancel}</div>
+  const scanButton = scan ? `<button class="text" data-action="scan">${esc(t.scan)}</button>` : "";
+  return `<div class="mealhead"><span>${esc(fill(t.add_to_meal, { meal: t[p.meal] }))}</span><span class="headactions">${scanButton}${cancel}</span></div>
+    <div class="scanner" hidden></div>${p.lookup ? lookingUpHTML(p.lookup.code, t) : ""}
     <div class="tabs" role="tablist">${tabs}</div>${content}`;
 }
 
@@ -2831,7 +3670,10 @@ class FoodsCard extends FoodCard {
 
   async _load() {
     this._query ??= "";
-    this._foods = await this._call({ type: "fork_and_scale/food/search", query: this._query.trim(), limit: 100 });
+    [this._people, this._foods] = await Promise.all([
+      this._call({ type: "fork_and_scale/people" }),
+      this._call({ type: "fork_and_scale/food/search", query: this._query.trim(), limit: 100 }),
+    ]);
   }
 
   _changed(event) {
@@ -2866,7 +3708,7 @@ class FoodsCard extends FoodCard {
   _renderList() {
     const list = this._card?.querySelector(".list");
     if (!list) return;
-    list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t);
+    list.innerHTML = foodsListHTML(this._foods, this._query, this._locale, this._t, this._people);
     this._card.querySelector(".find").innerHTML = offLinkHTML(this._query, this._foods.length > 0, this._t);
   }
 
@@ -2894,8 +3736,10 @@ class FoodsCard extends FoodCard {
          ${cancelButtonHTML(t)}<button class="fill" data-action="save">${esc(t.save_food)}</button>`;
     const scan = Boolean(this._scanner);
     const finder = p.food.id ? "" : offFinderHTML(p.offQuery, t, scan);
-    panel.innerHTML = `<div class="title">${esc(p.food.id ? p.food.name : t.tab_new)}</div>${finder}${foodFormHTML(p.food, t, scan, Boolean(p.food.id))}
-      ${panelMessagesHTML(p)}<div class="actions">${buttons}</div>`;
+    const body = p.review ? reviewHTML(p.food, this._locale, t) : foodFormHTML(p.food, t, scan, Boolean(p.food.id));
+    const title = p.food.id ? `${esc(p.food.name)}${savedByPillHTML(p.food, this._people)}` : esc(t.tab_new);
+    panel.innerHTML = `<div class="title">${title}</div>${p.lookup ? lookingUpHTML(p.lookup.code, t) : ""}${finder}${body}
+      ${p.confirming ? deleteAlertHTML(p.meals, this._locale, t) : ""}${panelMessagesHTML(p, t)}<div class="actions">${buttons}</div>`;
     this._renderOff();
   }
 
@@ -2906,13 +3750,14 @@ class FoodsCard extends FoodCard {
     return this._panel;
   }
 
-  // Fill a new food's form from barcode `code`, typed or scanned, opening one
-  // if needed. Its search box empties: the barcode is in the form now.
+  // Fill a new food in from barcode `code`, typed or scanned, opening one if
+  // needed. Its search box empties: the barcode is in the food now.
   async _lookUpBarcode(code) {
     const p = this._newFoodPanel();
-    Object.assign(p, { offQuery: "", off: null, note: null, warning: null, error: null });
+    // A product only checked, not edited, gives way to the new one.
+    if (p.review) p.food = { portions: [] };
+    Object.assign(p, { offQuery: "", off: null, review: false });
     p.food.barcode = code;
-    this._renderPanel();
     await this._fillFromBarcode();
   }
 
@@ -2922,31 +3767,91 @@ class FoodsCard extends FoodCard {
     if (BARCODE.test(query)) return this._lookUpBarcode(query);
     const p = this._newFoodPanel();
     const off = { query, products: [], page: 0, more: false };
-    Object.assign(p, { offQuery: query, off, note: null, warning: null, error: null });
+    Object.assign(p, { offQuery: query, off, note: null, warning: null, error: null, retry: null, taken: null });
     this._renderPanel();
     await this._searchOff(off);
   }
 
-  // Fill the form from its barcode, or open the saved food that has it.
+  // Fill the food in from its barcode, or open the saved food that has it.
   async _fillFromBarcode() {
-    this._showLookedUp(await this._lookUp(this._panel.food), this._panel);
+    const panel = this._panel;
+    const code = (panel.food.barcode ?? "").trim();
+    const looked = await this._lookUpFor(panel, code, () => this._lookUp(panel.food));
+    if (looked) this._showLookedUp(looked, panel, code);
   }
 
-  // Open what _lookUp or _lookUpPicked found: the saved food that has the
-  // barcode, or `panel` with the food filled in.
-  _showLookedUp(looked, panel) {
+  // Open what _lookUp or _lookUpPicked found for barcode `code`: the saved
+  // food that has it, or `panel` with the food filled in, a new one as a
+  // short check when Open Food Facts gave all it needs.
+  _showLookedUp(looked, panel, code) {
     this._panel = looked.saved
       ? { food: looked.saved, note: looked.note }
-      : { ...panel, food: looked.food, note: looked.note ?? null, warning: looked.warning ?? null, error: looked.error ?? null };
+      : {
+          ...panel,
+          food: looked.food,
+          review: !panel.food.id && !looked.error && reviewable(looked.food),
+          note: looked.note ?? null,
+          warning: looked.warning ?? null,
+          error: looked.error ?? null,
+          retry: looked.retry ? code : null,
+        };
     this._renderPanel();
+    if (this._panel.error || this._panel.warning) this._revealButtons();
   }
 
-  // Keep what has been typed, and the food being edited, across a redraw.
+  // Keep what has been typed, and the food being edited, across a redraw. A
+  // short check has nothing typed.
   _keepForm() {
+    if (this._panel.review) return;
     this._panel.food = { ...readFoodForm(this._card).food, id: this._panel.food.id };
   }
 
+  // The food the panel shows: its short check, or what its form says, which
+  // may not be filled in right.
+  _readFood() {
+    const p = this._panel;
+    if (p.review) return { food: p.food, error: null };
+    const { food, error } = readFoodForm(this._card);
+    p.food = { ...food, id: p.food.id };
+    return { food, error };
+  }
+
+  // Save the new food `food`, saved by the person linked to whoever is
+  // logged in. A food saved already opens instead, with a warning, if it has
+  // the barcode; if it has the name, the warning asks what to do.
+  async _saveNew(food, anyway = false) {
+    const p = this._panel;
+    const t = this._t;
+    const person = findPerson(this._people, {}, this._hass);
+    try {
+      await this._call({ type: "fork_and_scale/food/add", ...food, ...(person && { person: person.id }), ...(anyway && { anyway }) });
+      if (this._panel !== p) return;
+      this._panel = null;
+      this._renderPanel();
+    } catch (err) {
+      if (this._panel !== p) return;
+      const taken = err?.translation_placeholders;
+      if (err?.code === "barcode_taken" && taken) {
+        const existing = await this._call({ type: "fork_and_scale/food/barcode", barcode: food.barcode }).catch(() => null);
+        if (existing && this._panel === p) {
+          this._panel = { food: existing, warning: takenText(err.code, taken, this._people, t) };
+          this._renderPanel();
+          this._revealButtons();
+          return;
+        }
+      }
+      if (err?.code === "name_taken" && taken) {
+        Object.assign(p, { taken, warning: takenText(err.code, taken, this._people, t), error: null });
+        this._renderPanel();
+        this._revealButtons();
+        return;
+      }
+      this._showError(err, barcodeError(err));
+    }
+  }
+
   static actions = {
+    ...FOOD_ACTIONS,
     "click:new"() {
       this._panel = { food: { portions: [] } };
       this._renderPanel();
@@ -2988,9 +3893,9 @@ class FoodsCard extends FoodCard {
     async "click:off-pick"(el) {
       const panel = this._panel;
       const product = panel.off.products.find((x) => x.code === el.dataset.code);
-      const looked = await this._lookUpPicked(product);
-      if (this._panel !== panel) return;
-      this._showLookedUp(looked, panel);
+      const looked = await this._lookUpFor(panel, product.code, () => this._lookUpPicked(product));
+      if (!looked) return;
+      this._showLookedUp(looked, panel, product.code);
       this._card.querySelector('.foodform [data-field="name"]')?.focus?.();
     },
     "click:add-portion"() {
@@ -3005,19 +3910,48 @@ class FoodsCard extends FoodCard {
     },
     async "click:save"() {
       const id = this._panel.food.id;
-      const { food, error } = readFoodForm(this._card);
-      this._panel.food = { ...food, id };
+      const { food, error } = this._readFood();
       if (error) return this._showError(null, error);
-      const message = id ? { type: "fork_and_scale/food/update", food_id: id, ...food } : { type: "fork_and_scale/food/add", ...food };
-      const sent = await this._send(message, barcodeError);
+      if (!id) return this._saveNew(food);
+      const sent = await this._send({ type: "fork_and_scale/food/update", food_id: id, ...food }, barcodeError);
       if (sent.ok) {
         this._panel = null;
         this._renderPanel();
       }
     },
-    "click:delete"() {
-      this._panel.confirming = true;
-      this._renderPanel();
+    async "click:save-anyway"() {
+      const { food, error } = this._readFood();
+      if (error) return this._showError(null, error);
+      Object.assign(this._panel, { taken: null, warning: null });
+      await this._saveNew(food, true);
+    },
+    // Opens the food a name warning was about, instead of saving another.
+    async "click:choose-taken"() {
+      const p = this._panel;
+      const { food_id: id, name } = p.taken;
+      try {
+        const found = await this._call({ type: "fork_and_scale/food/search", query: name, limit: 100 });
+        const food = found.find((f) => String(f.id) === id);
+        if (this._panel !== p) return;
+        if (!food) return this._showError(null, "error_failed");
+        this._panel = { food: JSON.parse(JSON.stringify(food)) };
+        this._renderPanel();
+      } catch (err) {
+        this._showError(err);
+      }
+    },
+    // Asks first, naming the saved meals the food is in.
+    async "click:delete"() {
+      const p = this._panel;
+      try {
+        const meals = await this._call({ type: "fork_and_scale/food/meals", food_id: p.food.id });
+        if (this._panel !== p) return;
+        Object.assign(p, { confirming: true, meals });
+        this._renderPanel();
+        this._revealButtons();
+      } catch (err) {
+        this._showError(err);
+      }
     },
     async "click:lookup"() {
       this._keepForm();
@@ -3044,16 +3978,360 @@ class FoodsCard extends FoodCard {
   };
 }
 
-function foodsListHTML(foods, query, locale, t) {
+// What deleting a food would do to the saved meals it is in, `meals` from
+// fork_and_scale/food/meals: take it out of them, and delete those it empties.
+function deleteAlertHTML(meals, locale, t) {
+  if (!meals?.length) return "";
+  const names = (list) => listText(list.map((m) => m.name), locale);
+  const emptied = meals.filter((m) => m.emptied);
+  return `<div class="alert">${esc(fill(t.food_in_meals, { meals: names(meals) }))}${
+    emptied.length ? `<br><b>${esc(fill(t.meals_emptied, { meals: names(emptied) }))}</b>` : ""
+  }</div>`;
+}
+
+// Saved foods as rows, each with who saved it when that is known.
+function foodsListHTML(foods, query, locale, t, people = []) {
   if (!foods.length) {
     return `<div class="muted">${esc(query.trim() ? fill(t.no_results, { query: query.trim() }) : t.foods_empty)}</div>`;
   }
   return foods
     .map(
-      (f) => `<button class="row" data-action="edit" data-id="${f.id}"><span>${esc(f.name)}${f.barcode ? ` <small>${esc(f.barcode)}</small>` : ""}</span>
+      (f) => `<button class="row" data-action="edit" data-id="${f.id}"><span>${esc(f.name)}${savedByPillHTML(f, people)}${f.barcode ? ` <small>${esc(f.barcode)}</small>` : ""}</span>
         <small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, locale) }))}</small></button>`,
     )
     .join("");
+}
+
+// src/cards/meals-card.js
+// The household's saved meals: find, add, change and delete them. With a
+// person in its config, it shows everyone's meals and that person's own;
+// without, every meal.
+class MealsCard extends FoodCard {
+  static style = `${super.style}
+    .list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; padding: 8px 4px; border-top: 1px solid var(--divider-color); border-radius: 0; }
+    .mealitems { display: flex; flex-direction: column; gap: 6px; }
+    .mealitem { display: grid; grid-template-columns: minmax(0, 1fr) 96px 3em auto; gap: 8px; align-items: center; }
+    .mealitem .qty { display: flex; align-items: center; gap: 4px; }
+    .mealitem .qty input { width: 100%; }
+    .mealitem .qty small, .mealitem .kcal { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); }
+    .mealitem .kcal { text-align: right; }
+    .fixeditem { display: flex; flex-direction: column; gap: 6px; padding: 6px 0;
+      border-top: 1px dashed var(--divider-color); border-bottom: 1px dashed var(--divider-color); }
+    .fixedtop { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+    .fixedtop .pill { margin-left: 0; }
+    .fixedvals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .fixedvals label { font-size: var(--ha-font-size-xs, 0.75rem); }
+    .addfood { display: flex; flex-direction: column; gap: 8px; }
+    .addfood .results { display: flex; flex-direction: column; max-height: 200px; overflow-y: auto; }
+    .addfood .row { border-top: 0; padding: 6px 4px; }
+  `;
+
+  static options = ["person", "title", "locale"];
+  // Without a person this card shows every meal, so its editor says so.
+  static editorStrings = { editor_person_linked: "editor_person_all", editor_person_helper: "editor_meals_person_helper" };
+
+  getCardSize() {
+    return 6;
+  }
+
+  async _load() {
+    this._query ??= "";
+    this._people = await this._call({ type: "fork_and_scale/people" });
+    this._person = this._config.person ? findPerson(this._people, this._config, this._hass) : null;
+    if (this._config.person && !this._person) {
+      this._meals = null;
+      return;
+    }
+    this._meals = await this._call({ type: "fork_and_scale/meals", ...(this._person && { person: this._person.id }) });
+  }
+
+  // Meals change with foods, whose names and values their items show.
+  _changed(event) {
+    if (event.person === null) this._refresh();
+  }
+
+  async _refresh() {
+    try {
+      await this._load();
+      this._renderList();
+    } catch {
+      this._start();
+    }
+  }
+
+  _render() {
+    if (!this._card) return;
+    const t = this._t;
+    const title = `<div class="title">${esc(this._config.title || t.title_meals)}</div>`;
+    if (!this._meals) {
+      let message = t.loading;
+      if (this._failure) message = fill(t.error_failed, { message: this._failure.message ?? "" });
+      else if (this._meals === null) message = fill(t.unknown_person, { name: this._config.person });
+      this._card.innerHTML = `${title}<div class="${message === t.loading ? "muted" : "error"}">${esc(message)}</div>`;
+      return;
+    }
+    this._card.innerHTML = `<div class="head">${title}<button class="fill" data-action="new">+ ${esc(t.add_meal)}</button></div>
+      <input type="search" data-action="query" value="${esc(this._query)}" placeholder="${esc(t.search_meals)}" aria-label="${esc(t.search_meals)}">
+      <div class="panel" hidden></div><div class="list"></div>`;
+    this._renderList();
+    this._renderPanel();
+  }
+
+  _renderList() {
+    const list = this._card?.querySelector(".list");
+    if (list && this._meals) list.innerHTML = mealsListHTML(this._meals, this._query, this._people, this._locale, this._t);
+  }
+
+  _renderPanel() {
+    const panel = this._card?.querySelector(".panel");
+    if (!panel) return;
+    const p = this._panel;
+    panel.hidden = !p;
+    panel.innerHTML = p ? mealEditorHTML(p, this._people, this._locale, this._t) : "";
+  }
+
+  // The totals, and each saved food's kcal, which follow the grams typed.
+  // Only these redraw, so the box being typed in keeps focus.
+  _renderTotals() {
+    const p = this._panel;
+    this._card.querySelector(".panel .preview").innerHTML = totalsHTML(p.items, this._locale, this._t);
+    this._card.querySelectorAll(".panel .mealitem .kcal").forEach((cell) => {
+      cell.textContent = number(p.items[Number(cell.dataset.index)].kcal ?? 0, this._locale);
+    });
+  }
+
+  _openEditor(meal) {
+    const owner = meal ? meal.owner : (this._person?.id ?? null);
+    this._panel = {
+      meal,
+      name: meal?.name ?? "",
+      owner,
+      items: (meal?.items ?? []).map(editableItem),
+      addQuery: "",
+      addResults: null,
+    };
+    this._renderPanel();
+    this._card.querySelector('.panel [data-field="meal-name"]')?.focus?.();
+  }
+
+  _closeEditor() {
+    this._panel = null;
+    this._renderPanel();
+  }
+
+  async _searchFoods() {
+    const p = this._panel;
+    const query = p.addQuery.trim();
+    if (!query) {
+      p.addResults = null;
+      this._renderAddResults();
+      return;
+    }
+    try {
+      const found = await this._call({ type: "fork_and_scale/food/search", query });
+      if (this._panel === p && p.addQuery.trim() === query) {
+        p.addResults = found;
+        this._renderAddResults();
+      }
+    } catch (err) {
+      this._showError(err);
+    }
+  }
+
+  _renderAddResults() {
+    const box = this._card.querySelector(".panel .addfood .results");
+    if (box) box.innerHTML = addFoodResultsHTML(this._panel, this._locale, this._t);
+  }
+
+  // Send `message`, which saves or deletes the open meal, then close the
+  // editor. A change someone else made first, or a name another meal has,
+  // is refused, and the editor says so.
+  async _write(message) {
+    const p = this._panel;
+    const t = this._t;
+    try {
+      await this._call(message);
+      if (this._panel === p) this._closeEditor();
+      await this._refresh();
+    } catch (err) {
+      if (this._panel !== p) return;
+      if (err?.code === "meal_exists") p.error = mealExistsText(err, p.name.trim(), this._people, t);
+      else if (err?.code === "meal_changed") p.error = fill(t.meal_changed, { name: p.meal.name });
+      else return this._showError(err);
+      p.confirming = false;
+      this._renderPanel();
+      this._revealButtons();
+    }
+  }
+
+  static actions = {
+    "click:new"() {
+      this._openEditor(null);
+    },
+    "click:edit-meal"(el) {
+      this._openEditor(this._meals.find((m) => String(m.id) === el.dataset.id));
+    },
+    "click:close"() {
+      this._closeEditor();
+    },
+    "input:query"(el) {
+      this._query = el.value;
+      this._renderList();
+    },
+    "input:meal-name"(el) {
+      this._panel.name = el.value;
+    },
+    "keydown:meal-name"(el, event) {
+      if (event.key === "Enter") this.constructor.actions["click:save-meal"].call(this);
+    },
+    "change:owner"(el) {
+      this._panel.owner = el.value || null;
+    },
+    "input:item-grams"(el) {
+      const item = this._panel.items[Number(el.dataset.index)];
+      setGrams(item, numberValue(el));
+      this._renderTotals();
+    },
+    "input:fixed"(el) {
+      const item = this._panel.items[Number(el.dataset.index)];
+      const key = el.dataset.key;
+      item[key] = key === "name" ? el.value : numberValue(el);
+      this._renderTotals();
+    },
+    "click:remove-item"(el) {
+      this._panel.items.splice(Number(el.dataset.index), 1);
+      this._renderPanel();
+    },
+    "input:add-food"(el) {
+      this._panel.addQuery = el.value;
+      clearTimeout(this._searchTimer);
+      this._searchTimer = setTimeout(() => this._searchFoods(), SEARCH_DELAY_MS);
+    },
+    "click:add-item"(el) {
+      const p = this._panel;
+      const food = p.addResults.find((f) => String(f.id) === el.dataset.id);
+      p.items.push(foodItem(food));
+      Object.assign(p, { addQuery: "", addResults: null });
+      this._renderPanel();
+      const fields = this._card.querySelectorAll('.panel [data-action="item-grams"]');
+      fields[fields.length - 1]?.focus?.();
+    },
+    async "click:save-meal"() {
+      const p = this._panel;
+      const name = p.name.trim();
+      if (!name) return this._showError(null, "error_meal_name");
+      const items = p.items.map(itemToSave);
+      if (!items.length || items.includes(null)) return this._showError(null, "error_meal_items");
+      const fields = { name, owner: p.owner, items };
+      await this._write(
+        p.meal
+          ? { type: "fork_and_scale/meal/update", meal_id: p.meal.id, version: p.meal.version, ...fields }
+          : { type: "fork_and_scale/meal/add", ...fields },
+      );
+    },
+    "click:delete-meal"() {
+      this._panel.confirming = true;
+      this._renderPanel();
+      this._revealButtons();
+    },
+    async "click:really-delete"() {
+      const meal = this._panel.meal;
+      await this._write({ type: "fork_and_scale/meal/delete", meal_id: meal.id, version: meal.version });
+    },
+  };
+}
+
+// An item of a meal as the editor keeps it: a saved food's keeps its values
+// per 100 g, so they can follow new grams.
+function editableItem(item) {
+  if (item.food_id == null) return { ...item };
+  const per100g = Object.fromEntries(NUTRIENTS.map((n) => [n, item[n] == null ? null : (item[n] * 100) / item.grams]));
+  return { ...item, per100g };
+}
+
+// A saved food as a new item, at its first portion, else 100 g.
+function foodItem(food) {
+  const per100g = Object.fromEntries(NUTRIENTS.map((n) => [n, food[n]]));
+  const item = { food_id: food.id, name: food.name, per100g };
+  setGrams(item, food.portions?.[0]?.grams ?? 100);
+  return item;
+}
+
+// Set a saved food's item to `grams`, and its values to match.
+function setGrams(item, grams) {
+  item.grams = grams;
+  for (const n of NUTRIENTS) item[n] = grams > 0 && item.per100g[n] != null ? (item.per100g[n] * grams) / 100 : null;
+}
+
+// An item as fork_and_scale/meal/add and meal/update take it, or null if it
+// is not filled in right: a saved food needs grams above 0, fixed values a
+// name and kcal.
+function itemToSave(item) {
+  if (item.food_id != null) return item.grams > 0 ? { food_id: item.food_id, grams: item.grams } : null;
+  if (!item.name?.trim() || item.kcal == null || item.kcal < 0) return null;
+  if (MACROS.some((m) => item[m] != null && item[m] < 0)) return null;
+  return { name: item.name.trim(), grams: item.grams ?? null, ...Object.fromEntries(NUTRIENTS.map((n) => [n, item[n] ?? null])) };
+}
+
+// Meals as rows, A to Z, those whose names contain `query`.
+function mealsListHTML(meals, query, people, locale, t) {
+  const text = query.trim();
+  const shown = meals.filter((m) => nameMatches(m.name, text)).sort((a, b) => a.name.localeCompare(b.name, locale));
+  if (!shown.length) return `<div class="muted">${esc(text ? fill(t.no_meals, { query: text }) : t.meals_empty)}</div>`;
+  return shown.map((m) => mealRowHTML(m, people, locale, t, "edit-meal")).join("");
+}
+
+// One item in the editor. A saved food's takes grams; fixed values, from a
+// quick add, take a name, kcal, protein, carbs and fat, tagged Quick add.
+function itemEditorHTML(item, i, locale, t) {
+  const remove = `<button class="text" data-action="remove-item" data-index="${i}">${esc(t.remove)}</button>`;
+  if (item.food_id != null) {
+    return `<div class="mealitem"><span>${esc(item.name)}</span>
+      <span class="qty"><input data-action="item-grams" data-index="${i}" ${NUMBER_INPUT} value="${item.grams ?? ""}" aria-label="${esc(t.grams)}"><small>g</small></span>
+      <span class="num kcal" data-index="${i}">${number(item.kcal ?? 0, locale)}</span>${remove}</div>`;
+  }
+  const value = (key) => {
+    const label = key === "kcal" ? t.kcal : `${t[key]} (g)`;
+    return `<label>${esc(label)}<input data-action="fixed" data-key="${key}" data-index="${i}" ${NUMBER_INPUT} value="${item[key] ?? ""}"></label>`;
+  };
+  return `<div class="fixeditem"><div class="fixedtop">
+      <input data-action="fixed" data-key="name" data-index="${i}" value="${esc(item.name ?? "")}" aria-label="${esc(t.name)}">
+      <span class="pill">${esc(t.tab_quick)}</span>${remove}</div>
+    <div class="fixedvals">${REQUIRED_NUTRIENTS.map(value).join("")}</div></div>`;
+}
+
+function addFoodResultsHTML(p, locale, t) {
+  if (!p.addResults) return "";
+  if (!p.addResults.length) return `<div class="muted">${esc(fill(t.no_results, { query: p.addQuery.trim() }))}</div>`;
+  return p.addResults
+    .map(
+      (f) => `<button class="row" data-action="add-item" data-id="${f.id}"><span>${esc(f.name)}</span>
+      <small class="num">${esc(fill(t.per_100g_value, { kcal: number(f.kcal, locale) }))}</small></button>`,
+    )
+    .join("");
+}
+
+// The editor of meal `p.meal`, or of a new one: its name and who it is for,
+// its items, a search to add saved foods, and its totals.
+function mealEditorHTML(p, people, locale, t) {
+  const owners = [["", t.everyone], ...people.map((person) => [person.id, person.name])];
+  const ownerSelect = owners.map(([v, label]) => `<option value="${esc(v)}"${(p.owner ?? "") === v ? " selected" : ""}>${esc(label)}</option>`).join("");
+  const buttons = p.confirming
+    ? `<span class="error">${esc(fill(t.really_delete, { name: p.meal.name }))}</span>
+       ${cancelButtonHTML(t)}<button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
+    : `${p.meal ? `<button class="text" data-action="delete-meal">${esc(t.delete)}</button>` : ""}
+       ${cancelButtonHTML(t)}<button class="fill" data-action="save-meal">${esc(t.save_meal)}</button>`;
+  return `<div class="title">${esc(p.meal ? p.meal.name : t.add_meal)}</div>
+    <div class="grid"><label>${esc(t.name)}<input data-action="meal-name" data-field="meal-name" value="${esc(p.name)}" enterkeyhint="done"></label>
+      <label>${esc(t.meal_for)}<select data-action="owner">${ownerSelect}</select></label></div>
+    <div class="sub">${esc(t.foods_in_meal)}</div>
+    <div class="mealitems">${p.items.map((item, i) => itemEditorHTML(item, i, locale, t)).join("") || `<div class="muted">–</div>`}</div>
+    <div class="addfood"><input type="search" data-action="add-food" value="${esc(p.addQuery)}" placeholder="${esc(t.meal_add_food)}" aria-label="${esc(t.meal_add_food)}">
+      <div class="results">${addFoodResultsHTML(p, locale, t)}</div></div>
+    <div class="sub">${esc(t.total)}</div><div class="preview num">${totalsHTML(p.items, locale, t)}</div>
+    ${p.confirming ? `<div class="note">${esc(t.meal_entries_stay)}</div>` : ""}${panelMessagesHTML(p, t)}
+    <div class="actions">${buttons}</div>`;
 }
 
 // src/cards/charts.js
@@ -3643,6 +4921,13 @@ customElements.whenDefined("home-assistant").then(() => {
       name: "Saved foods",
       description: "The foods saved in Fork & Scale, per 100 g",
       documentationURL: "https://github.com/matteo-pacini/fork-and-scale#saved-foods-card",
+    },
+    {
+      element: MealsCard,
+      type: "fork-and-scale-meals-card",
+      name: "Saved meals",
+      description: "The meals saved in Fork & Scale, everyone's and each person's",
+      documentationURL: "https://github.com/matteo-pacini/fork-and-scale#saved-meals-card",
     },
     {
       element: WeightCard,

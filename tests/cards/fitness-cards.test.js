@@ -118,7 +118,9 @@ test("the diary's summary takes the day's totals from its goal", () => {
 
 test("a meal lists its entries, or says nothing is logged", () => {
   const dinner = text(fn.mealHTML("dinner", [DAY.entries[1]], en(), "en-GB"));
-  assert.equal(dinner, "Dinner 900 kcal Pizza <large> 900 + Add food Copy");
+  assert.equal(dinner, "Dinner 900 kcal Pizza <large> 900 + Add food Copy Save as meal");
+  assert.match(fn.mealHTML("dinner", [DAY.entries[1]], en(), "en-GB"), /data-action="save-as-meal" data-meal="dinner"/);
+  // Only a meal with something in it can be saved.
   assert.equal(text(fn.mealHTML("lunch", [], en(), "en-GB")), "Lunch Nothing logged yet + Add food Copy");
   assert.match(fn.mealHTML("lunch", [], en(), "en-GB"), /data-action="copy" data-meal="lunch"/);
 });
@@ -178,7 +180,8 @@ test("a saved food shows chosen on the search tab, and clears the panel's note, 
   const p = { kind: "add", meal: "lunch", tab: "new", query: "", warning: "W", error: "E", note: "N" };
   fn.showSavedFood(p, food);
   assert.deepEqual(plain(p), {
-    kind: "add", meal: "lunch", tab: "search", query: "Oats", results: [food], food, grams: 40, note: null, warning: null, error: null,
+    kind: "add", meal: "lunch", tab: "search", query: "Oats", results: [food], food, grams: 40, chosen: null, newFood: null, review: false,
+    note: null, warning: null, error: null, retry: null, taken: null,
   });
 });
 
@@ -197,18 +200,49 @@ test("a panel's Cancel button closes it, in the card's language", () => {
 
 test("the add panel has a tab for each way to add food", () => {
   const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "quick", query: "" }, en());
-  assert.match(text(panel), /^Add to Lunch Cancel Saved foods Quick add New food Name kcal/);
+  assert.match(text(panel), /^Add to Lunch Cancel Saved Quick add New food Name kcal/);
   assert.match(panel, /aria-selected="true">Quick add/);
+});
+
+test("the add panel has one Scan, in its head, where the device can scan", () => {
+  for (const tab of ["search", "quick", "new"]) {
+    const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab, query: "" }, en(), true);
+    assert.match(panel, /<span class="headactions"><button class="text" data-action="scan">Scan<\/button><button class="text" data-action="close">/, tab);
+    assert.equal(panel.match(/data-action="(off-)?scan"/g).length, 1, tab);
+    assert.equal(panel.match(/class="scanner"/g).length, 1, tab);
+    assert.doesNotMatch(fn.addPanelHTML({ kind: "add", meal: "lunch", tab, query: "" }, en(), false), /data-action="scan"/, tab);
+  }
+});
+
+test("what was typed in Quick add shows again", () => {
+  const quick = { name: "Pizza <slice>", kcal: "300", protein: "", carbs: "40", fat: "12", meal: "dinner" };
+  const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "quick", query: "", quick }, en());
+  assert.match(panel, /data-field="name" value="Pizza &lt;slice&gt;"/);
+  assert.match(panel, /data-field="kcal" [^>]*value="300"/);
+  assert.match(panel, /data-field="carbs" [^>]*value="40"/);
+  assert.match(panel, /<option value="dinner" selected>/);
+});
+
+test("a lookup that is running shows, with Cancel", () => {
+  const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "", lookup: { code: "5201054025321" } }, en());
+  assert.match(text(panel), /Looking up 5201054025321… Cancel Saved/);
+  assert.match(panel, /data-action="cancel-lookup"/);
+});
+
+test("New food shows a product from Open Food Facts as a short check", () => {
+  const food = { name: "Skyr – Arla", barcode: "5701211074552", kcal: 63, protein: 11, carbs: 4, fat: 0.2, portions: [{ name: "Serving", grams: 150 }] };
+  const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "", newFood: food, review: true }, en(), false, "en-GB");
+  assert.doesNotMatch(panel, /class="foodform"/);
+  assert.match(text(panel), /Skyr – Arla 5701211074552 Edit values Per 100 g 63 kcal 11 Protein \(g\) 4 Carbs \(g\) 0.2 Fat \(g\) Serving · 150 g Cancel Save and choose/);
+  assert.match(fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "", newFood: food }, en()), /class="foodform"/);
 });
 
 test("New food starts with a search of Open Food Facts, and its form has no barcode buttons", () => {
   const panel = fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "", offQuery: "skyr" }, en(), true);
   assert.ok(panel.indexOf('data-action="off-query"') < panel.indexOf('class="foodform"'));
   assert.match(panel, /data-action="off-query" value="skyr"/);
-  assert.match(panel, /data-action="off-scan">Scan barcode/);
-  assert.doesNotMatch(panel, /data-action="(lookup|scan)"/);
-  assert.equal(panel.match(/class="scanner"/g).length, 1);
-  assert.doesNotMatch(fn.addPanelHTML({ kind: "add", meal: "lunch", tab: "new", query: "" }, en(), false), /off-scan/);
+  // Scan is in the panel's head instead.
+  assert.doesNotMatch(panel, /data-action="(lookup|off-scan)"/);
 });
 
 test("the food form shows a food's values and portions, escaped", () => {

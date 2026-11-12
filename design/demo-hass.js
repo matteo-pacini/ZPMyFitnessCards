@@ -92,7 +92,18 @@ function pyFloat(value) {
 class Invalid extends Error {}
 
 const wsError = (code, message) => ({ code, message });
+
+// An error whose details the cards read, which websocket.py sends in its
+// translation placeholders.
+const detailedError = (code, message, details) => ({
+  code,
+  message,
+  translation_key: code,
+  translation_placeholders: details,
+  translation_domain: "fork_and_scale",
+});
 const NOT_FOUND = wsError("not_found", "Not found");
+const MEAL_CHANGED = wsError("meal_changed", "The meal was changed or deleted meanwhile");
 
 // probatio's line for one error: what, where, and the value it got.
 function problem(message, path, value) {
@@ -170,6 +181,37 @@ const between = (check, min, max) => (value, store) => {
   return number;
 };
 
+const boolean = (value) => {
+  if (typeof value !== "boolean") throw new Invalid("expected bool");
+  return value;
+};
+
+// vol.All([int], vol.Length(min=1)).
+const idList = (value) => {
+  if (!Array.isArray(value)) throw new Invalid("expected a list");
+  if (!value.length) throw new Invalid("length of value must be at least 1");
+  return value.map(integer);
+};
+
+// websocket.py's MEAL_ITEMS: a saved food's id and grams, or fixed values
+// with a name and kcal; at least one.
+function mealItems(value, store, path, errors) {
+  if (!Array.isArray(value)) throw new Invalid("expected a list");
+  if (!value.length) throw new Invalid("length of value must be at least 1");
+  return value.map((item, i) => {
+    const where = `${path}[${i}]`;
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      errors.push(problem("expected a mapping", where, item));
+      return item;
+    }
+    const schema = "food_id" in item ? FOOD_ITEM : FIXED_ITEM;
+    const found = [];
+    const out = validate(schema, item, where, found, store);
+    if (found.length) errors.push(problem("not a valid value", where, item));
+    return out;
+  });
+}
+
 // vol.Coerce(float).
 const coerceFloat = (value) => {
   try {
@@ -226,6 +268,8 @@ function validate(schema, data, where, errors, store) {
 const PERSON = { person: required(text) };
 const NUTRIENT_FIELDS = Object.fromEntries(NUTRIENTS.map((n) => [n, optional(orNone(nonNegative))]));
 const FOOD_FIELDS = { barcode: optional(orNone(name)), portions: optional(portionList), ...NUTRIENT_FIELDS };
+const FOOD_ITEM = { food_id: required(integer), grams: required(positive) };
+const FIXED_ITEM = { name: required(name), grams: optional(orNone(positive)), ...NUTRIENT_FIELDS, kcal: required(nonNegative) };
 
 // Each command's schema, after its type, and the DemoStore method that runs it.
 const COMMANDS = {
@@ -270,7 +314,35 @@ const COMMANDS = {
   "fork_and_scale/food/search": [{ query: required(text), limit: optional(between(integer, 1, 100), 20) }, "_searchFoods"],
   "fork_and_scale/food/recent": [{ ...PERSON, limit: optional(between(integer, 1, 100), 10) }, "_recentFoods"],
   "fork_and_scale/food/barcode": [{ barcode: required(name) }, "_foodByBarcode"],
-  "fork_and_scale/food/add": [{ name: required(name), ...FOOD_FIELDS }, "_addFood"],
+  "fork_and_scale/food/add": [
+    { name: required(name), ...FOOD_FIELDS, person: optional(text), anyway: optional(boolean, false) },
+    "_addFood",
+  ],
+  "fork_and_scale/food/meals": [{ food_id: required(integer) }, "_foodMeals"],
+  "fork_and_scale/meals": [{ person: optional(text) }, "_listMeals"],
+  "fork_and_scale/meal/add": [{ name: required(name), owner: required(orNone(text)), items: required(mealItems) }, "_addMeal"],
+  "fork_and_scale/meal/update": [
+    {
+      meal_id: required(integer),
+      version: required(integer),
+      name: optional(name),
+      owner: optional(orNone(text)),
+      items: optional(mealItems),
+    },
+    "_updateMeal",
+  ],
+  "fork_and_scale/meal/delete": [{ meal_id: required(integer), version: required(integer) }, "_deleteMeal"],
+  "fork_and_scale/meal/log": [
+    {
+      ...PERSON,
+      day: required(isoDay),
+      meal: required(oneOf(MEALS)),
+      meal_id: required(integer),
+      version: required(integer),
+      items: required(idList),
+    },
+    "_logMeal",
+  ],
   "fork_and_scale/food/update": [{ food_id: required(integer), name: optional(name), ...FOOD_FIELDS }, "_updateFood"],
   "fork_and_scale/food/delete": [{ food_id: required(integer) }, "_deleteFood"],
   "fork_and_scale/openfoodfacts/search": [
@@ -389,6 +461,15 @@ const SAMPLE_FOODS = [
   ["Almonds", 579, 21, 22, 50, [["Handful", 25]], "snacks", 25],
   ["Salmon fillet", 208, 20, 0, 13, [], null, null],
   ["Wholemeal bread", 247, 13, 41, 3.4, [["Slice", 36]], null, null],
+];
+
+// Saved meals, as screenshots.py's add_sample_data saves them: a name, its
+// owner, and its items, each the index of a SAMPLE_FOODS food and grams, or
+// fixed values.
+const SAMPLE_MEALS = [
+  ["Porridge with banana", null, [[0, 60], [2, 120]]],
+  ["Chicken and rice", "debora", [[3, 150], [4, 180], [5, 120]]],
+  ["Post-workout shake", "matteo", [[2, 120], [{ name: "Whey protein", grams: 30, kcal: 120, protein: 24, fat: 2 }]]],
 ];
 
 // Open Food Facts
@@ -708,12 +789,16 @@ class DemoStore {
     this._entries = new Map();
     this._weights = new Map(this._people.map((p) => [p.key, new Map()]));
     this._goals = new Map(this._people.map((p) => [p.key, new Map()]));
+    this._meals = new Map();
     this._nextFood = 1;
     this._nextEntry = 1;
+    this._nextMeal = 1;
+    this._nextItem = 1;
     const today = this.today;
     this.seededOn = today;
     const [matteo, debora] = this._people.map((p) => p.key);
     const run = (message) => this._handle(message);
+    const foods = [];
     // As tests/e2e/screenshots.py's add_sample_data adds it, through the
     // same commands, in the same order.
     for (const [foodName, kcal, protein, carbs, fat, portions, meal, grams] of SAMPLE_FOODS) {
@@ -725,8 +810,14 @@ class DemoStore {
         carbs,
         fat,
         portions: portions.map(([n, g]) => ({ name: n, grams: g })),
+        person: debora,
       });
+      foods.push(food);
       if (meal) run({ type: "fork_and_scale/entry/add", person: debora, day: today, meal, food_id: food.id, grams });
+    }
+    for (const [mealName, owner, items] of SAMPLE_MEALS) {
+      const mealItems = items.map(([index, grams]) => (typeof index === "number" ? { food_id: foods[index].id, grams } : index));
+      run({ type: "fork_and_scale/meal/add", name: mealName, owner: owner === "matteo" ? matteo : owner === "debora" ? debora : null, items: mealItems });
     }
     const first = addDays(today, -360);
     for (let n = 0; n <= 360; n += 4) {
@@ -795,10 +886,66 @@ class DemoStore {
     return row;
   }
 
-  _foodRow(id, values, updatedAt) {
+  _foodRow(id, values, updatedAt, savedBy = null) {
     const row = { id };
     for (const key of ["name", "barcode", ...NUTRIENTS]) row[key] = values[key] ?? null;
-    return Object.assign(row, { portions: values.portions ?? [], updated_at: updatedAt });
+    return Object.assign(row, { portions: values.portions ?? [], updated_at: updatedAt, saved_by: savedBy });
+  }
+
+  // db.py's _meals: a meal with its items, a saved food's at its values now.
+  _mealJSON(meal) {
+    const items = meal.items.map((item) => {
+      if (item.food_id == null) return { ...item };
+      const food = this._foods.get(item.food_id);
+      const values = Object.fromEntries(NUTRIENTS.map((n) => [n, food[n] == null ? null : (food[n] * item.grams) / 100]));
+      return { id: item.id, food_id: item.food_id, grams: item.grams, name: food.name, ...values };
+    });
+    return { id: meal.id, owner: meal.owner || null, name: meal.name, version: meal.version, items };
+  }
+
+  // Meals `test` picks, A to Z as db.py orders them.
+  _mealRows(test) {
+    const order = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+    return [...this._meals.values()]
+      .filter(test)
+      .sort((a, b) => order(a.name.toLowerCase(), b.name.toLowerCase()) || a.id - b.id)
+      .map((m) => this._mealJSON(m));
+  }
+
+  // db.py's _clash: the owner of a meal called `name` that someone who sees
+  // `owner`'s meals sees, or null.
+  _clash(owner, name, exclude = null) {
+    const folded = name.toLowerCase();
+    const clashes = [...this._meals.values()].filter(
+      (m) => m.name.toLowerCase() === folded && m.id !== exclude && (owner === "" || m.owner === "" || m.owner === owner),
+    );
+    if (!clashes.length) return null;
+    return clashes.some((m) => m.owner === "") ? "" : clashes[0].owner;
+  }
+
+  _mealItems(items) {
+    return items.map((item) => {
+      if ("food_id" in item) {
+        if (!this._foods.has(item.food_id)) throw NOT_FOUND;
+        return { id: this._nextItem++, food_id: item.food_id, grams: item.grams };
+      }
+      const fixed = { id: this._nextItem++, food_id: null, name: item.name, grams: item.grams ?? null };
+      for (const n of NUTRIENTS) fixed[n] = item[n] ?? null;
+      return fixed;
+    });
+  }
+
+  // The stored owner for a message's `owner`, as websocket.py's _owner.
+  _owner(owner) {
+    if (owner === null) return "";
+    if (!this._people.some((p) => p.key === owner)) throw NOT_FOUND;
+    return owner;
+  }
+
+  _checkMeal(id, version) {
+    const meal = this._meals.get(id);
+    if (!meal || (version != null && meal.version !== version)) throw MEAL_CHANGED;
+    return meal;
   }
 
   _barcodeTaken(barcode, id) {
@@ -918,10 +1065,17 @@ class DemoStore {
     return [...this._foods.values()].find((f) => f.barcode === msg.barcode) ?? null;
   }
 
-  _addFood(msg) {
+  _addFood(msg, person) {
     if (REQUIRED_NUTRIENTS.some((n) => msg[n] == null)) throw wsError("invalid_format", "kcal, protein, carbs and fat are required");
-    if (this._barcodeTaken(msg.barcode ?? null)) throw wsError("barcode_taken", "Another food has this barcode");
-    const row = this._foodRow(this._nextFood++, msg, timestamp(this._now()));
+    const details = (f) => ({ food_id: String(f.id), name: f.name, saved_by: f.saved_by ?? "" });
+    if (!msg.barcode && !msg.anyway) {
+      const same = [...this._foods.values()].find((f) => f.name.toLowerCase() === msg.name.toLowerCase());
+      if (same) throw detailedError("name_taken", "A saved food has this name", details(same));
+    }
+    if (this._barcodeTaken(msg.barcode ?? null)) {
+      throw detailedError("barcode_taken", "Another food has this barcode", details(this._foodByBarcode(msg)));
+    }
+    const row = this._foodRow(this._nextFood++, msg, timestamp(this._now()), person?.key ?? null);
     this._foods.set(row.id, row);
     this._changed(null);
     return row;
@@ -948,13 +1102,79 @@ class DemoStore {
   }
 
   // Entries logged from the food keep their numbers and lose the link, as
-  // the database's ON DELETE SET NULL does. Announced even when not found.
+  // the database's ON DELETE SET NULL does. It leaves the meals it was in,
+  // deleting those it empties. Announced even when not found.
   _deleteFood(msg) {
     const deleted = this._foods.delete(msg.food_id);
     for (const e of this._entries.values()) if (e.food_id === msg.food_id) e.food_id = null;
+    if (deleted) {
+      for (const meal of [...this._meals.values()]) {
+        if (!meal.items.some((i) => i.food_id === msg.food_id)) continue;
+        meal.items = meal.items.filter((i) => i.food_id !== msg.food_id);
+        meal.version += 1;
+        if (!meal.items.length) this._meals.delete(meal.id);
+      }
+    }
     this._changed(null);
     if (!deleted) throw NOT_FOUND;
     return null;
+  }
+
+  _foodMeals(msg) {
+    return this._mealRows((m) => m.items.some((i) => i.food_id === msg.food_id)).map((m) => ({
+      id: m.id,
+      name: m.name,
+      owner: m.owner,
+      emptied: m.items.every((i) => i.food_id === msg.food_id),
+    }));
+  }
+
+  _listMeals(msg, person) {
+    return this._mealRows((m) => !person || m.owner === "" || m.owner === person.key);
+  }
+
+  _addMeal(msg) {
+    const owner = this._owner(msg.owner);
+    const clash = this._clash(owner, msg.name);
+    if (clash != null) throw detailedError("meal_exists", "A saved meal has this name", { owner: clash });
+    const meal = { id: this._nextMeal++, owner, name: msg.name, version: 1, items: this._mealItems(msg.items) };
+    this._meals.set(meal.id, meal);
+    this._changed(null);
+    return this._mealJSON(meal);
+  }
+
+  _updateMeal(msg) {
+    const owner = "owner" in msg ? this._owner(msg.owner) : undefined;
+    const meal = this._checkMeal(msg.meal_id, msg.version);
+    const changes = { name: msg.name ?? meal.name, owner: owner ?? meal.owner };
+    const clash = this._clash(changes.owner, changes.name, meal.id);
+    if (clash != null) throw detailedError("meal_exists", "A saved meal has this name", { owner: clash });
+    const items = msg.items ? this._mealItems(msg.items) : meal.items;
+    Object.assign(meal, changes, { items, version: meal.version + 1 });
+    this._changed(null);
+    return this._mealJSON(meal);
+  }
+
+  _deleteMeal(msg) {
+    this._checkMeal(msg.meal_id, msg.version);
+    this._meals.delete(msg.meal_id);
+    this._changed(null);
+    return null;
+  }
+
+  _logMeal(msg, person) {
+    const meal = this._checkMeal(msg.meal_id, msg.version);
+    if (meal.owner !== "" && meal.owner !== person.key) throw MEAL_CHANGED;
+    const wanted = new Set(msg.items);
+    const items = this._mealJSON(meal).items.filter((i) => wanted.has(i.id));
+    if (items.length !== wanted.size) throw MEAL_CHANGED;
+    const rows = items.map((i) => {
+      const entry = { day: msg.day, meal: msg.meal, food_id: i.food_id, name: i.name, grams: i.grams };
+      for (const n of NUTRIENTS) entry[n] = i[n];
+      return this._insertEntry(person.key, entry);
+    });
+    this._changed(person.key, [msg.day]);
+    return rows;
   }
 
   _searchOpenFoodFacts(msg) {
@@ -1035,6 +1255,7 @@ function demoHass(store, { locale = "en", unitSystem = "metric" } = {}) {
 const CARD_TYPES = [
   "fork-and-scale-food-diary-card",
   "fork-and-scale-foods-card",
+  "fork-and-scale-meals-card",
   "fork-and-scale-weight-card",
   "fork-and-scale-trends-card",
   "fork-and-scale-summary-card",

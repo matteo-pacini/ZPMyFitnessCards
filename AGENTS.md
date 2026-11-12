@@ -9,22 +9,23 @@ Fork & Scale is a Home Assistant custom integration, `fork_and_scale`, with dash
   - `goals.py`: calorie, macro and BMI maths, and conversions between kg and lb and between cm and feet and inches, with no Home Assistant code.
   - `coordinator.py` and `sensor.py`: each person's sensors, refreshed on every change and at midnight.
   - `websocket.py`: the commands the cards call.
-  - `services.py`: the actions, `log_weight`, `log_food` and `get_day`, which name a person by their device. `services.yaml` gives their fields and selectors, and `translations/` their names, descriptions and errors; `tests/integration/test_services.py` checks the three agree.
+  - `services.py`: the actions, `log_weight`, `log_food`, `log_meal` and `get_day`, which name a person by their device. `services.yaml` gives their fields and selectors, and `translations/` their names, descriptions and errors; `tests/integration/test_services.py` checks the three agree.
   - `config_flow.py`: the integration and its people, one config sub-entry each.
   - `backup.py`: pauses writes while Home Assistant backs up.
   - `history.py`: imports a person's weights and calorie totals from the recorder's statistics of older sensors.
   - `openfoodfacts.py`: searches Open Food Facts by name, for the cards' `fork_and_scale/openfoodfacts/search`, through its Search-a-licious service.
   - `myfitnesspal.py`: reads MyFitnessPal's Premium export (a ZIP or one of its CSVs) and its printable diary page saved as a complete web page into a `Diary`, with no Home Assistant code. `config_flow.py` uploads the file, asks for meals and the weight unit, and writes through `FitnessData.async_replace_entries`.
-  - `export.py`: a person's entries, weights and every saved food as a ZIP of CSVs, served by an admin-only view; "Export data" shows a signed link to it.
+  - `export.py`: a person's entries, weights, every saved food, and everyone's and their own saved meals as a ZIP of CSVs, served by an admin-only view; "Export data" shows a signed link to it.
 - `custom_components/fork_and_scale/frontend/fork-and-scale-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
-- `src/cards/`: the cards, as plain browser scripts with no imports and no npm dependencies. `scripts/build.js` puts them, in the order of its `SOURCES`, into one block of the bundle, where they share one scope. Each card has a file of its own: `food-diary-card.js`, `foods-card.js`, `weight-card.js`, `trends-card.js` and `summary-card.js`. The rest are shared:
+- `src/cards/`: the cards, as plain browser scripts with no imports and no npm dependencies. `scripts/build.js` puts them, in the order of its `SOURCES`, into one block of the bundle, where they share one scope. Each card has a file of its own: `food-diary-card.js`, `foods-card.js`, `meals-card.js`, `weight-card.js`, `trends-card.js` and `summary-card.js`. The rest are shared:
   - `header.js`: the comment that lists the cards and their config.
   - `strings.js`: `STRINGS` and `translate`.
   - `strings/`: a file per language, named for its tag, such as `en.js` or `pt-BR.js`, that puts that language's strings in `STRINGS`.
   - `helpers.js`: days, totals, `findPerson` and their kin, and the base style.
   - `food-form.js`: the food form, Open Food Facts and the scanner, for the food diary and saved foods cards.
+  - `meals.js`: saved meals and who saved what, for the food diary, saved foods and saved meals cards: owner and saved-by pills, meal rows, tick lists and their totals, the short check of a product from Open Food Facts, and the line a running lookup shows.
   - `fitness-card.js`: `FitnessCard`, the base of every card: config, language, loading and live updates.
-  - `food-card.js`: `FoodCard`, the base of the food diary and saved foods cards: barcode lookups and scans, Open Food Facts searches, and errors in the card's open panel.
+  - `food-card.js`: `FoodCard`, the base of the food diary, saved foods and saved meals cards: barcode lookups and scans, Open Food Facts searches, and messages above the buttons of the card's open panel.
   - `editor.js`: the visual editor every card opens, with a field for each option in the card's static `options`, drawn with the frontend's `ha-form`.
   - `charts.js` and `weights.js`: chart helpers, and weight units and BMI bands, for more than one card.
   - `person-card.js`: `ShowsPerson`, which loads the one person a card shows, for the food diary and `PersonCard`, and `PersonCard`, the base of the weight, trends and summary cards.
@@ -34,6 +35,7 @@ Fork & Scale is a Home Assistant custom integration, `fork_and_scale`, with dash
 - `tests/schemas.py`: databases at a given schema version, with sample data, and a trigger that makes a version bump fail, for the migration tests in `tests/integration/test_migrations.py` and `tests/e2e/test_migrations.py`.
 - `tests/integration/`: pytest with `pytest-homeassistant-custom-component`, in a test instance of Home Assistant.
 - `tests/cards/`: Node's built-in test runner. `harness.js` runs the cards' scripts, in the bundle's order, in one `vm` context with a stubbed DOM, for the pure functions and the markup they build. Interaction is tested end to end.
+- `tests/e2e/flows.py`: saved meals and one Scan as people use them, the draft's happy paths and edge cases H1 to H10 and E1 to E10, each on a `Screen` that taps, types and scans. `test_meals.py` runs them in a laptop's and a phone's browser, and `test_android.py` in the app. Each flow logs on a day of its own and names what it saves after its screen.
 - `tests/e2e/test_card_states.py`: cards mounted straight into the running Home Assistant page, with a connection that fails on purpose, for the loading, failure and retry paths a dashboard rarely shows.
 - `tests/e2e/`: pytest and Playwright against a brand-new Home Assistant, started from `.venv`, onboarded and set up by `conftest.py`. The whole suite runs twice, on SQLite and on Postgres. Chromium sees only the fonts in `nix/fonts.nix`, never the host's. Tests share one Home Assistant per database, so give the data each test adds unique names. That Home Assistant searches Open Food Facts on a fake Search-a-licious, which the `search` fixture tells what to find. `screenshots.py` takes the README images.
 - `images/`: the README screenshots, from `scripts/screenshots`.

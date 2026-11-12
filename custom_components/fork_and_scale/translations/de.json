@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Ja, alles löschen"
           },
-          "description": "Löscht alle für {name} erfassten Lebensmittel, Gewichte und Ziele. Das kann nicht rückgängig gemacht werden. {name} bleibt bestehen und beginnt wieder bei null.",
+          "description": "Löscht alle für {name} erfassten Lebensmittel, Gewichte und Ziele sowie die eigenen gespeicherten Mahlzeiten von {name}. Von {name} gespeicherte Lebensmittel, die sonst niemand erfasst hat und keine Mahlzeit nutzt, werden ebenfalls gelöscht; die anderen bleiben für den Haushalt. Das kann nicht rückgängig gemacht werden. {name} bleibt bestehen und beginnt wieder bei null.",
           "title": "Alle Daten löschen"
         },
         "import_history": {

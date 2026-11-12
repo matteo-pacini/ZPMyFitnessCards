@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Oui, tout supprimer"
           },
-          "description": "Supprime tous les aliments, poids et objectifs enregistrés pour {name}. Cette action est irréversible. {name} reste et repart de zéro.",
+          "description": "Supprime tous les aliments, poids et objectifs enregistrés pour {name}, ainsi que les repas enregistrés propres à {name}. Les aliments enregistrés par {name} que personne d’autre n’a saisis et qu’aucun repas n’utilise sont aussi supprimés ; les autres restent pour le foyer. Cette action est irréversible. {name} reste et repart de zéro.",
           "title": "Supprimer toutes les données"
         },
         "import_history": {

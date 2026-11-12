@@ -21,9 +21,9 @@ It is in early development. The integration, its sensors, all five cards and bar
 
 Each person has a name, sex, birth date, height, starting weight and date, goal weight, activity level and weekly pace. From these the integration works out a calorie goal with the Mifflin-St Jeor formula, and follows it as the weight changes. You can type your own calorie goal instead, and set the protein, carbs and fat split, which defaults to 20%, 50% and 30%.
 
-To change a person later, use **Change person**. Its **Delete all data** option erases their food, weights and goals.
+To change a person later, use **Change person**. Its **Delete all data** option erases their food, weights, goals and own saved meals, and the foods they saved that no one else has logged and no meal uses. Foods still in use stay, for the household.
 
-**Import history**, in the same menu, copies a person's past from sensors the recorder has kept: each day's average from a weight sensor, for days with no weight yet, and each day's total from a calories sensor, as one "Imported total" entry under Snacks. Running it again adds only what is missing. Removing a person keeps their data, and adding them back under the same name brings it back.
+**Import history**, in the same menu, copies a person's past from sensors the recorder has kept: each day's average from a weight sensor, for days with no weight yet, and each day's total from a calories sensor, as one "Imported total" entry under Snacks. Running it again adds only what is missing. Removing a person keeps their data, and adding them back under the same name brings it back. Their own saved meals become everyone's, renamed "Meal (Name)" if another meal has their name, and stay everyone's when they come back.
 
 The menu also imports a diary from MyFitnessPal and exports a person's data. See [Import and export](#import-and-export).
 
@@ -90,10 +90,11 @@ The daily totals keep long-term statistics, so a statistics graph with `stat_typ
 
 ## Actions
 
-Automations, scripts and Assist can log and read with three actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
+Automations, scripts and Assist can log and read with four actions. Each takes a person, chosen by their device, and a day, which is today if left out. Future days are refused.
 
 - `fork_and_scale.log_weight` records a weight, in lb with US customary units and in kg otherwise, or in the `unit` you give, `kg` or `lb`. It takes 20 to 400 kg, which is 44.1 to 881.8 lb. A day keeps one weight, so logging again replaces it.
 - `fork_and_scale.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
+- `fork_and_scale.log_meal` logs every food of a saved meal under a meal. Give the saved meal's name as `saved_meal`, in any case, and the `meal`. It logs everyone's meals and the person's own; another person's own meal is refused.
 - `fork_and_scale.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`.
 
 Choose the person in the action editor, which fills in their `device_id`. For example, to log each new reading from a smart scale:
@@ -142,7 +143,8 @@ A saved printable diary also holds your MyFitnessPal account's email address, lo
 
 - `entries.csv`: every entry, with its day, meal, name, grams, kcal and nutrients in g, the saved food it came from, `myfitnesspal` for imported entries, and when it was logged.
 - `weights.csv`: each day's weight in kg.
-- `foods.csv`: the saved foods, with their values per 100 g, barcodes and portions. This is the household's shared list, so it is the same for everyone.
+- `foods.csv`: the saved foods, with their values per 100 g, barcodes, portions and who saved them. This is the household's shared list, so it is the same for everyone.
+- `meals.csv`: everyone's saved meals and the person's own, an item a row. An item of a saved food gives the food and its grams, as its values follow the food. A fixed item, from a quick add, gives its values.
 
 The link works for five minutes, and only for administrators.
 
@@ -161,7 +163,7 @@ A new release may upgrade the database when Home Assistant starts. Each step of 
 
 To add a card, edit a dashboard, tap **Add card**, and search for the card on the **By card** tab. Its visual editor offers:
 
-- **Person**: anyone added to the integration, or the person linked to whoever is logged in.
+- **Person**: anyone added to the integration, or the person linked to whoever is logged in. On the saved meals card it shows everyone's meals and that person's own, and **All meals** shows every meal.
 - **Title**: in place of the card's own.
 - **Language**: one of the cards' languages, or Home Assistant's.
 - **Open on tap**, on the summary card only: a dashboard or page to open when the card is tapped.
@@ -176,12 +178,15 @@ One person's day, meal by meal: the calorie goal, what they have eaten and what 
 
 <img src="images/food-diary.png" alt="Food diary" width="400">
 
-- **Add food** under a meal opens three tabs. **Saved foods** searches only your saved foods, or lists the ones you logged recently; choose one, then type the grams or tap a portion. **Quick add** logs a name and calories without saving a food. **New food** finds a product on [Open Food Facts](#open-food-facts-search) by name or barcode, or takes the values from the label, then saves the food and logs it.
+- **Add food** under a meal opens three tabs, with [**Scan**](#barcodes) at the top where the device can scan. **Saved** finds your saved meals, then your saved foods. Before you type, it shows the first three meals and **All meals**, then the foods you logged recently. Choose a food, then type the grams or tap a portion. Choose a meal, untick what you did not have, and add the rest under any meal, all at once. **Quick add** logs a name and calories without saving a food. **New food** finds a product on [Open Food Facts](#open-food-facts-search) by name or barcode, or takes the values from the label, then saves the food and logs it. What you typed in Quick add and New food stays when you switch tabs or scan.
+- **Save as meal**, on a meal with entries, saves the ticked entries as a [saved meal](#saved-meals-card): the person's own, or the whole house's with **Share with everyone**. Entries from saved foods link to them, so the meal follows their values; quick adds keep theirs.
 - Tap an entry to change its grams or meal, or to delete it.
 - **Copy** fills a meal from any meal on another day.
 - The arrows and the calendar move between days. Future days are not allowed.
 
 <img src="images/food-diary-add.png" alt="Adding food" width="400">
+
+<img src="images/food-diary-meal.png" alt="Adding a saved meal, with the banana left out" width="400"> <img src="images/food-diary-save-meal.png" alt="Saving breakfast as a meal" width="400">
 
 It follows Home Assistant's theme, light or dark, and its language.
 
@@ -200,7 +205,7 @@ person: Debora
 
 ### Saved foods card
 
-The foods everyone in the house shares, with their values per 100 g. Search them, add new ones, and tap one to change or delete it. A food can have a barcode, the optional fibre, sugar, saturated fat and salt, and portions such as "Slice, 36 g", which the diary offers as shortcuts. Changing a food leaves entries already logged from it as they were.
+The foods everyone in the house shares, with their values per 100 g, and who saved each one when that is known. Search them, add new ones, and tap one to change or delete it. A food can have a barcode, the optional fibre, sugar, saturated fat and salt, and portions such as "Slice, 36 g", which the diary offers as shortcuts. Changing a food leaves entries already logged from it as they were, and changes the saved meals it is in. Deleting a food takes it out of those meals: the confirmation names them, and deletes a meal it would leave empty.
 
 <img src="images/saved-foods.png" alt="Saved foods" width="400">
 
@@ -213,15 +218,40 @@ type: custom:fork-and-scale-foods-card
 | `title` | Optional. Replaces "Saved foods". |
 | `locale` | Optional. As for the food diary card. |
 
+### Saved meals card
+
+The meals saved in the house. Each is everyone's, or one person's own, as its pill shows. Names are unique, ignoring case, within what one person sees: two people's own meals may share a name, but not with a meal everyone shares. Search them, add one with **+ Add meal**, and tap one to change or delete it.
+
+- A meal's items are saved foods with their grams, whose values follow the food, and fixed values from quick adds, tagged **Quick add**, with a name, kcal, protein, carbs and fat. **Add a saved food** searches your saved foods to add one.
+- **For** sets whose meal it is: everyone's, or one person's.
+- Deleting a meal leaves the entries already logged from it.
+- If someone changes or deletes a meal while you have it open, saving says so instead of overwriting their change.
+
+<img src="images/saved-meals.png" alt="Saved meals" width="400"> <img src="images/meal-editor.png" alt="Changing a saved meal" width="400">
+
+```yaml
+type: custom:fork-and-scale-meals-card
+person: Debora
+```
+
+| Option | Description |
+| --- | --- |
+| `person` | Optional. Shows everyone's meals and this person's own, and new meals are theirs. Without it, the card shows every meal. |
+| `title` | Optional. Replaces "Saved meals". |
+| `locale` | Optional. As for the food diary card. |
+
 ### Barcodes
 
 Both the saved foods card and the food diary's **Add food** panel know barcodes.
 
-- **A new food** (the diary's **New food** tab, or **+ Add food** in the saved foods card) has a **Search Open Food Facts** box. Type a barcode in it and press Enter, or tap **Scan barcode** under it: the barcode goes into the form, which fills in from Open Food Facts straight away.
-- **Saved foods** find a barcode too: type it in their search box, or tap **Scan** beside it in the diary, to find the saved food that has it. If none has it, **Look up … on Open Food Facts** opens a new food filled in from it.
+- **Scan**, at the top of the diary's **Add food** panel, works from any tab. A barcode a saved food has chooses that food; any other fills in a new food from Open Food Facts. In the saved foods card, **+ Add food** has **Scan barcode** under its search box.
+- **A new food's** **Search Open Food Facts** box takes a barcode too: type it and press Enter.
+- **Saved foods** find a barcode as well: type it in their search box. If none has it, **Look up … on Open Food Facts** opens a new food filled in from it.
 - **A saved food** you are changing has **Look up barcode** and **Scan** under its Barcode field.
-- **Scanning** needs a device that can. In the Home Assistant app (Android 2024.6.1 or later, iOS 2024.5 or later) it opens the app's own scanner. In a browser that has a barcode reader built in, such as Chrome on Android, it opens the camera in the card. Elsewhere there is no Scan button, and typing still works.
-- **Open Food Facts** fills in the name, the values per 100 g and a serving size from the barcode, straight from your browser. Check them against the label before saving. A barcode that a saved food already has opens that food instead.
+- **Scanning** needs a device that can. In the Home Assistant app (Android 2024.6.1 or later, iOS 2024.5 or later) it opens the app's own scanner. In a browser that has a barcode reader built in, such as Chrome on Android, it opens the camera in the card. Elsewhere there is no Scan button, and typing still works. Nothing opens the camera until you tap Scan.
+- **Open Food Facts** gives the name, the values per 100 g and a serving size from the barcode, straight from your browser. While it looks, the panel says so, with **Cancel**. If it cannot be reached, **Try again** asks again. A barcode it does not know opens the form, to fill in from the label.
+- **A short check** shows what Open Food Facts gave: the name, barcode, kcal, protein, carbs and fat per 100 g, and portions. Check them against the label; **Edit values** opens the whole form.
+- **A food saved already** is not saved twice. One with the same barcode is chosen instead, with a note of who saved it. One with the same name and no barcode brings a warning, with **Choose it** and **Save anyway**.
 
 <img src="images/barcode-lookup.png" alt="A food filled in from its barcode" width="400">
 
@@ -235,7 +265,7 @@ A new food's **Search Open Food Facts** box, in the diary's **New food** tab and
 - Searching your saved foods shows only saved foods. Under them, the same **Search Open Food Facts for "…"** takes what you typed to a new food and searches it there.
 - It shows ten products at a time, and **More** shows the next ten. Each row has the name, brand, pack size and kcal per 100 g. Names are in the card's language when the product has one, else in English.
 - It only finds products that give kcal, protein, carbs and fat per 100 g.
-- Tap a product to fill in the form, as from its barcode; the products stay listed, so you can pick another. If the barcode lookup fails, the values come from the search instead, with a warning. The search can be months behind Open Food Facts, and has no serving sizes.
+- Tap a product to check it, as from its barcode; the products stay listed, so you can pick another. If the barcode lookup fails, the values come from the search instead, with a warning. The search can be months behind Open Food Facts, and has no serving sizes.
 - Nothing is saved until you tap **Save and choose** in the diary, or **Save food** in the saved foods card.
 
 <img src="images/food-search.png" alt="Searching Open Food Facts from the food diary's New food tab" width="400">

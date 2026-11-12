@@ -109,7 +109,7 @@
           "data": {
             "confirm": "Yes, delete it all"
           },
-          "description": "Deletes every food entry, weight and goal logged for {name}. This cannot be undone. {name} stays, starting again from nothing.",
+          "description": "Deletes every food entry, weight and goal logged for {name}, and {name}'s own saved meals. Foods {name} saved that no one else has logged and no meal uses are deleted too; the others stay for the household. This cannot be undone. {name} stays, starting again from nothing.",
           "title": "Delete all data"
         },
         "import_history": {

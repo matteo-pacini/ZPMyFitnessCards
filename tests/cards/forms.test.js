@@ -124,13 +124,14 @@ test("dates show the year only when asked", () => {
   assert.equal(fn.shortDate("2026-11-09", "en-GB", true), "9 Nov 26");
 });
 
-const ELEMENTS = ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-weight-card", "fork-and-scale-trends-card", "fork-and-scale-summary-card"];
+const ELEMENTS = ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-meals-card", "fork-and-scale-weight-card", "fork-and-scale-trends-card", "fork-and-scale-summary-card"];
 
 test("every card opens the visual editor on its options, which have labels, and has a stub config", () => {
   const options = Object.fromEntries(ELEMENTS.map((name) => [name, plain(ctx.customElements.defined[name].options)]));
   assert.deepEqual(options, {
     "fork-and-scale-food-diary-card": ["person", "title", "locale"],
     "fork-and-scale-foods-card": ["title", "locale"],
+    "fork-and-scale-meals-card": ["person", "title", "locale"],
     "fork-and-scale-weight-card": ["person", "title", "locale"],
     "fork-and-scale-trends-card": ["person", "title", "locale"],
     "fork-and-scale-summary-card": ["person", "title", "locale", "navigation_path"],

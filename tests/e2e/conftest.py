@@ -473,9 +473,13 @@ def page(home: Home, browser: Browser) -> Iterator[Page]:
     yield from logged_in_page(home, browser)
 
 
-def logged_in_page(home: Home, browser: Browser) -> Iterator[Page]:
-    """A browser tab on `home`, logged in as the owner, closed when the generator ends."""
-    context = browser.new_context(viewport={"width": 1280, "height": 900})
+def logged_in_page(home: Home, browser: Browser, **options: Any) -> Iterator[Page]:
+    """A browser tab on `home`, logged in as the owner, closed when the generator ends.
+
+    `options` are the browser context's, such as a phone's size and touch;
+    the window is a laptop's unless they say otherwise.
+    """
+    context = browser.new_context(**{"viewport": {"width": 1280, "height": 900}, **options})
     stored = {
         **home.tokens,
         "hassUrl": home.url,
