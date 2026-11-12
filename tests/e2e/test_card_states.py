@@ -179,24 +179,63 @@ def test_weight_card_shows_save_and_delete_errors(home: Home, page: Page) -> Non
 
 
 def test_removed_cards_stop_listening(home: Home, page: Page) -> None:
+    matteo = next(p["id"] for p in home.ws({"type": "metron/people"}) if p["name"] == "Matteo")
+    today = page.evaluate(
+        "() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())"
+    )
     open_home(home, page)
     card = mount(page, "metron-food-diary-card", {"person": "Matteo"})
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
-    # Listen only from here: Home Assistant's own frontend can reject a
-    # promise or two while it boots.
-    errors: list[str] = []
-    page.on("pageerror", lambda err: errors.append(str(err)))
+    # The commands the card sends from here on.
     page.evaluate(
         """() => {
           const el = document.getElementById("mounted");
-          el.remove();
-          const detail = { person: "x", day: "2026-01-01" };
-          window.dispatchEvent(new CustomEvent("metron-open-day", { detail }));
+          const callWS = el._hass.callWS;
+          window.sent = [];
+          el._hass = { ...el._hass, callWS: (m) => (window.sent.push(m.type), callWS(m)) };
         }"""
     )
-    expect(page.locator("#mounted")).to_have_count(0)
-    page.wait_for_timeout(300)
+
+    def change() -> None:
+        home.ws(
+            {
+                "type": "metron/weight/set",
+                "person": matteo,
+                "day": today,
+                "kg": 81 + len(page.evaluate("window.sent")) / 10,
+            }
+        )
+
+    # While on the page, a change to Matteo, or a day opened for him, makes it fetch.
+    change()
+    page.wait_for_function("window.sent.includes('metron/day')", timeout=TIMEOUT)
+    page.evaluate(
+        """person => {
+          window.sent = [];
+          const detail = { person, day: "2026-01-01" };
+          window.dispatchEvent(new CustomEvent("metron-open-day", { detail }));
+        }""",
+        matteo,
+    )
+    page.wait_for_function("window.sent.includes('metron/day')", timeout=TIMEOUT)
+
+    # Removed, it hears neither, and fails on nothing.
+    errors: list[str] = []
+    page.on("pageerror", lambda err: errors.append(str(err)))
+    page.evaluate(
+        """person => {
+          document.getElementById("mounted").remove();
+          window.sent = [];
+          const detail = { person, day: "2026-01-02" };
+          window.dispatchEvent(new CustomEvent("metron-open-day", { detail }));
+        }""",
+        matteo,
+    )
+    change()
+    page.wait_for_timeout(1000)
+    assert page.evaluate("window.sent") == []
     assert errors == []
+    home.ws({"type": "metron/weight/delete", "person": matteo, "day": today})
 
 
 def test_the_summary_card_gives_its_hass_back(home: Home, page: Page) -> None:
