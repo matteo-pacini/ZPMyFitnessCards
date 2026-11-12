@@ -1115,13 +1115,18 @@ class Database:
 
     def goal_on(self, person: str, day: str) -> Goals | None:
         """The goals in force on `day`: the last ones set on or before it."""
+        found = self.goal_in_force(person, day)
+        return found and found[1]
+
+    def goal_in_force(self, person: str, day: str) -> tuple[str, Goals] | None:
+        """The day the goals in force on `day` were set, and those goals; or None."""
         row = self._one(
-            select(GOALS.c.kcal, GOALS.c.protein, GOALS.c.carbs, GOALS.c.fat)
+            select(GOALS.c.day, GOALS.c.kcal, GOALS.c.protein, GOALS.c.carbs, GOALS.c.fat)
             .where(GOALS.c.person == person, GOALS.c.day <= day)
             .order_by(GOALS.c.day.desc())
             .limit(1)
         )
-        return Goals(**row) if row else None
+        return (row.pop("day"), Goals(**row)) if row else None
 
     def goal_changes(self, person: str, end: str) -> list[tuple[str, Goals]]:
         """Each day up to `end` on which a person's goals were set, oldest first."""

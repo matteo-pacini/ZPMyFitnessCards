@@ -476,6 +476,41 @@ async def test_h6_a_past_day_s_figure_changes_that_day_s_goal_and_no_other(
     assert await anna_s_day(hass) == today
 
 
+@pytest.mark.parametrize("before", [906, None], ids=["with activity", "without"])
+async def test_h6_a_past_day_with_goals_carried_from_an_earlier_day_keeps_its_base(
+    hass: HomeAssistant,
+    entry_data: dict[str, Any],
+    freezer: FrozenDateTimeFactory,
+    before: float | None,
+) -> None:
+    freezer.move_to("2026-11-07T12:00:00+00:00")
+    entry = mock_entry(anna(active_calories_entity=None), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    if before is not None:
+        await log_active(hass, before)
+    seventh = (await anna_s_day(hass))["goals"]["kcal"]
+    # Home Assistant is off for all of the 8th, which gets no goals of its own:
+    # the 7th's, with any activity, are in force on it.
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    freezer.move_to("2026-11-09T12:00:00+00:00")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    data = entry.runtime_data.data
+    set_on = [d for d, _ in await data.async_read(data.db.goal_changes, "anna", "2026-11-09")]
+    assert "2026-11-08" not in set_on
+    assert (await anna_s_day(hass, "2026-11-08"))["goals"]["kcal"] == seventh
+
+    await log_active(hass, 500, day="2026-11-08")
+    day = await anna_s_day(hass, "2026-11-08")
+    # Her base, 1,368, and what 500 adds.
+    assert day["goals"]["kcal"] == 1504
+    assert day["goals"]["kcal"] - round(day["activity"]["added"]) == BASE
+    assert (await anna_s_day(hass, "2026-11-07"))["goals"]["kcal"] == seventh
+    assert (await anna_s_day(hass))["goals"]["kcal"] == BASE
+
+
 @pytest.mark.usefixtures("anna_entry")
 async def test_a_past_day_with_no_goals_gets_its_activity_and_still_no_goals(
     hass: HomeAssistant,

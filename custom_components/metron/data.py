@@ -393,9 +393,10 @@ class FitnessData:
         """Set a person's measured active calories on `day`, replacing any, as the action does.
 
         Today's goals follow as for a reading. A past day's goal keeps its
-        base: it moves by the change in what activity adds, and the next day
-        first gets a goals row of its own, so the change stops there. A past
-        day with no goals in force is given none.
+        base, the goals in force less what activity added on the day they
+        were set, which may be an earlier day's. The next day first gets a
+        goals row of its own, so the change stops there. A past day with no
+        goals in force is given none.
         """
         if day == today().isoformat():
             _goals, changed = await self._update_today(person, lambda _kept: (a.ACTION, kcal))
@@ -409,10 +410,13 @@ class FitnessData:
             if new == old:
                 return
             old_added = old["added"] if old else 0.0
-            in_force = await self._read(self.db.goal_on, person.key, day)
+            in_force = await self._read(self.db.goal_in_force, person.key, day)
             goals = pin = None
             if in_force is not None:
-                goals = self._goals(person, in_force.kcal - old_added + new["added"])
+                set_on, kept = in_force
+                carried = await self._read(self.db.activity, person.key, set_on)
+                base = kept.kcal - (carried["added"] if carried else 0.0)
+                goals = self._goals(person, base + new["added"])
                 pin = (the_day + timedelta(days=1)).isoformat()
             await self.hass.async_add_executor_job(
                 self.db.set_day, person.key, day, new, goals, pin
