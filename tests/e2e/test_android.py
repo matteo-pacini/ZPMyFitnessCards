@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import io
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -30,6 +31,7 @@ from . import flows
 from . import screenshots as shots
 from .conftest import CONFIGURATION, FakeSearch, Home, _free_port, _home
 from .screenshots import add_sample_data
+from .test_person_form import fill_person, remove_person, saved_person
 
 APK = os.environ.get("COMPANION_APK")
 APP = "io.homeassistant.companion.android"
@@ -537,6 +539,37 @@ def test_the_diary_s_calendar_shows_and_opens_android_s_date_picker(
     device.set_date()
     expect(pick).to_have_value(first.isoformat(), timeout=30_000)
     expect(card.locator(".nav .label")).not_to_have_text("Today")
+
+
+def test_the_birth_date_is_picked_from_android_s_list_of_years(
+    app_home: Home, app: Page, device: Device
+) -> None:
+    name = "Bea app e2e"
+    port = app_home.url.rsplit(":", 1)[1]
+    app.goto(f"http://10.0.2.2:{port}/config/integrations/integration/metron")
+    app.get_by_role("button", name="Add person").dispatch_event("click")
+    expect(app.get_by_role("spinbutton", name="Height*")).to_be_visible(timeout=60_000)
+    fill_person(app, name)
+    birth_date = app.locator('input[type="date"]')
+    expect(birth_date).to_have_value("")
+    try:
+        left, top, right, bottom = device.on_screen(app, birth_date)
+        device.adb("shell", "input", "tap", str((left + right) // 2), str((top + bottom) // 2))
+        # Android's date picker opens on today. Its year opens a list of years.
+        device.tap(str(datetime.now(ZoneInfo("Europe/London")).year), exact=True)
+        for _ in range(15):
+            if any(label == "1996" for label, _ in device.nodes()):
+                break
+            device.adb("shell", "input", "swipe", "540", "1000", "540", "1600", "300")
+        device.tap("1996", exact=True)
+        device.screenshot("app-birth-date")
+        device.set_date()
+        expect(birth_date).to_have_value(re.compile(r"^1996-"), timeout=30_000)
+
+        app.get_by_role("button", name="Submit").dispatch_event("click")
+        assert saved_person(app_home, name)["birth_date"].startswith("1996-")
+    finally:
+        remove_person(app_home, name)
 
 
 @pytest.fixture

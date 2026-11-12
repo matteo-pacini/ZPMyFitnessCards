@@ -32,6 +32,8 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
     TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 from sqlalchemy import text
 from sqlalchemy.exc import ArgumentError, SQLAlchemyError
@@ -80,6 +82,9 @@ from .schema import vol
 
 # Defaults for a new person: MyFitnessPal's default macro split.
 DEFAULTS = {CONF_PROTEIN_PCT: 20, CONF_CARBS_PCT: 50, CONF_FAT_PCT: 30}
+
+# The most years ago a birth date can be: an older one is a mistyped year.
+OLDEST = 120
 
 CONFIRM = "confirm"
 CONF_WEIGHT_SENSOR = "weight_sensor"
@@ -151,7 +156,11 @@ def person_schema(pounds: bool, pace: str | None = None) -> vol.Schema:
             vol.Required(CONF_NAME): TextSelector(),
             vol.Optional(CONF_PERSON_ENTITY): EntitySelector(EntitySelectorConfig(domain="person")),
             vol.Required(CONF_SEX): _choice(list(SEXES), CONF_SEX),
-            vol.Required(CONF_BIRTH_DATE): DateSelector(),
+            # A field the date can be typed into, whose phone pickers have a list
+            # of years: Home Assistant's date picker only steps a month at a time.
+            vol.Required(CONF_BIRTH_DATE): TextSelector(
+                TextSelectorConfig(type=TextSelectorType.DATE)
+            ),
             **height,
             vol.Required(start): weight,
             vol.Required(CONF_START_DATE): DateSelector(),
@@ -217,8 +226,15 @@ def validate_person(values: dict[str, Any], other_names: set[str]) -> dict[str, 
         errors[CONF_NAME] = "name_empty"
     elif name.casefold() in other_names:
         errors[CONF_NAME] = "name_taken"
-    if date.fromisoformat(values[CONF_BIRTH_DATE]) >= today():
-        errors[CONF_BIRTH_DATE] = "birth_date_future"
+    try:
+        born = date.fromisoformat(values[CONF_BIRTH_DATE])
+    except ValueError:
+        errors[CONF_BIRTH_DATE] = "birth_date_invalid"
+    else:
+        if born >= today():
+            errors[CONF_BIRTH_DATE] = "birth_date_future"
+        elif born.year < today().year - OLDEST:
+            errors[CONF_BIRTH_DATE] = "birth_date_too_early"
     if date.fromisoformat(values[CONF_START_DATE]) > today():
         errors[CONF_START_DATE] = "start_date_future"
     if not MIN_CM <= values[CONF_HEIGHT] <= MAX_CM:

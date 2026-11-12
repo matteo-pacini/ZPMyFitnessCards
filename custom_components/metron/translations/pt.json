@@ -50,6 +50,8 @@
         "bad_line": "Não foi possível ler a linha {line} de {file}.",
         "bad_row": "Não foi possível ler a linha {row} de {day}.",
         "birth_date_future": "A data de nascimento tem de ser no passado.",
+        "birth_date_invalid": "Introduza a data de nascimento como dia, mês e ano.",
+        "birth_date_too_early": "A data de nascimento tem de estar nos últimos 120 anos.",
         "database_unavailable": "Não foi possível ler a base de dados para encontrar os dados anteriores desta pessoa. Tente novamente quando o Metron estiver carregado.",
         "date_not_english": "As datas do diário não estão em inglês. Mude o MyFitnessPal para inglês e volte a guardar a página.",
         "height_out_of_range": "Introduza uma altura entre 3 ft 4 in e 8 ft 2 in.",

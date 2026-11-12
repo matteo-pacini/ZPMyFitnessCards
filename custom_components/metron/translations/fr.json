@@ -50,6 +50,8 @@
         "bad_line": "La ligne {line} de {file} est illisible.",
         "bad_row": "La ligne {row} du {day} est illisible.",
         "birth_date_future": "La date de naissance doit être dans le passé.",
+        "birth_date_invalid": "Saisissez la date de naissance avec le jour, le mois et l’année.",
+        "birth_date_too_early": "La date de naissance doit se situer dans les 120 dernières années.",
         "database_unavailable": "Impossible de lire la base de données pour retrouver les données antérieures de cette personne. Réessayez une fois Metron chargé.",
         "date_not_english": "Les dates du journal ne sont pas en anglais. Passez MyFitnessPal en anglais, puis enregistrez de nouveau la page.",
         "height_out_of_range": "Saisissez une taille entre 3 ft 4 in et 8 ft 2 in.",

@@ -7,12 +7,11 @@ checks where the README's buttons lead.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator
 from contextlib import ExitStack
 
 import pytest
-from playwright.sync_api import Browser, Locator, Page, expect
+from playwright.sync_api import Browser, Page, expect
 
 from custom_components.metron.db import key_for_name
 
@@ -20,6 +19,7 @@ from ..conftest import new_database
 from ..integration.test_readme import buttons
 from .conftest import CONFIGURATION, FakeSearch, Home, _home, logged_in_page
 from .test_cards import TIMEOUT
+from .test_person_form import enter_date, type_number
 from .test_units import person
 
 # Home Assistant's "my" integration answers the links my.home-assistant.io
@@ -42,29 +42,8 @@ def new_home(request: pytest.FixtureRequest, search_server: FakeSearch) -> Itera
 
 @pytest.fixture
 def new_page(new_home: Home, browser: Browser) -> Iterator[Page]:
-    """A browser tab on `new_home`, logged in as the owner."""
-    yield from logged_in_page(new_home, browser)
-
-
-def type_number(dialog: Locator, name: str, value: str) -> None:
-    # Key by key: Home Assistant's number fields ignore a value set in one go.
-    field = dialog.get_by_role("spinbutton", name=name)
-    field.click()
-    field.press("Control+a")
-    field.press_sequentially(value)
-    field.press("Tab")
-
-
-def pick_birth_date(page: Page, dialog: Locator, years_ago: int) -> None:
-    """Choose the 15th of this month, `years_ago` years back, in the date picker."""
-    dialog.get_by_role("textbox", name="Birth date*").click()
-    picker = page.locator("ha-dialog-date-picker")
-    picker.get_by_role("button", pressed=True).focus()
-    for _ in range(years_ago):
-        page.keyboard.press("Shift+PageUp")
-    # Day buttons are named in the browser's locale: "15 November" or "November 15".
-    picker.get_by_role("button", name=re.compile(r"(^|\D)15(\D|$)")).click()
-    picker.get_by_role("button", name="OK").click()
+    """A browser tab on `new_home`, logged in as the owner, in a British browser."""
+    yield from logged_in_page(new_home, browser, locale="en-GB")
 
 
 def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
@@ -93,7 +72,7 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
     page.get_by_role("button", name="Add person").click()
     dialog.get_by_role("textbox", name="Name*").fill("Nora")
     # The form takes only a birth date in the past, so this must work for it to save.
-    pick_birth_date(page, dialog, years_ago=36)
+    enter_date(page, dialog.locator('input[type="date"]'), "1990-03-15")
     type_number(dialog, "Height*", "168")
     type_number(dialog, "Starting weight*", "72")
     type_number(dialog, "Goal weight*", "65")

@@ -76,6 +76,31 @@ async def test_rejects_bad_details(hass: HomeAssistant, entry: MockConfigEntry) 
     assert result["errors"] == {"name": "name_empty"}
 
 
+async def test_the_birth_date_is_typed_and_checked(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, SUBENTRY_PERSON), context={"source": SOURCE_USER}
+    )
+    # A field the date can be typed into, which starts empty, not on today.
+    config, suggested = _fields(result)["birth_date"]
+    assert config["type"] == "date"
+    assert suggested is None
+    for typed, error in (
+        ("", "birth_date_invalid"),
+        ("15/03/1996", "birth_date_invalid"),
+        ("1996-02-30", "birth_date_invalid"),
+        ("1905-12-31", "birth_date_too_early"),
+        ("2026-11-09", "birth_date_future"),
+    ):
+        result = await _add(hass, entry, name="Nora", birth_date=typed)
+        assert result["errors"] == {"birth_date": error}, typed
+    # The oldest a birth date can be: 120 years before this year began.
+    result = await _add(hass, entry, name="Nora", birth_date="1906-01-01")
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert _people(entry)["Nora"]["birth_date"] == "1906-01-01"
+
+
 async def test_re_adding_a_removed_person_brings_their_data_back(
     hass: HomeAssistant, entry: MockConfigEntry
 ) -> None:

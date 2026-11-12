@@ -50,6 +50,8 @@
         "bad_line": "无法读取 {file} 的第 {line} 行。",
         "bad_row": "无法读取 {day} 的第 {row} 行。",
         "birth_date_future": "出生日期必须早于今天。",
+        "birth_date_invalid": "请按日、月、年输入出生日期。",
+        "birth_date_too_early": "出生日期必须在最近 120 年内。",
         "database_unavailable": "无法读取数据库以查找此人之前的数据。请在 Metron 加载后重试。",
         "date_not_english": "日记中的日期不是英文。请将 MyFitnessPal 切换为英文，然后重新保存页面。",
         "height_out_of_range": "请输入 3 ft 4 in 到 8 ft 2 in 之间的身高。",
