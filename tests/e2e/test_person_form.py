@@ -29,8 +29,10 @@ def device_page(device: str, home: Home, browser: Browser) -> Iterator[Page]:
 
 def type_number(form: Page | Locator, name: str, value: str) -> None:
     # Key by key: Home Assistant's number fields ignore a value set in one go.
+    # Focused, not clicked: in the app, the soft keyboard can move the field
+    # while a click aims at it.
     field = form.get_by_role("spinbutton", name=name)
-    field.click()
+    field.focus()
     field.press("Control+a")
     field.press_sequentially(value)
     field.press("Tab")
