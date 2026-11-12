@@ -127,6 +127,9 @@ async def async_setup_entry(
 ) -> None:
     """Add each person's sensors to their own device."""
     for coordinator in entry.runtime_data.coordinators.values():
+        # Removed while setup ran: the reload their removal starts drops them.
+        if coordinator.person.subentry_id not in entry.subentries:
+            continue
         async_add_entities(
             [FitnessSensor(coordinator, description) for description in SENSORS],
             config_subentry_id=coordinator.person.subentry_id,

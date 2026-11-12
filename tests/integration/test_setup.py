@@ -5,6 +5,7 @@ from pathlib import Path
 from types import MappingProxyType
 from unittest.mock import patch
 
+import pytest
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -117,3 +118,26 @@ async def test_a_person_added_while_setting_up_is_loaded_once_setup_ends(
         await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
     assert set(entry.runtime_data.coordinators) == {"debora", "nora"}
+
+
+async def test_a_person_removed_while_setting_up_is_dropped_once_setup_ends(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    entry = mock_entry(person(), person("Nora"))
+    entry.add_to_hass(hass)
+    first_refresh = PersonCoordinator.async_config_entry_first_refresh
+
+    async def remove_nora_meanwhile(coordinator: PersonCoordinator) -> None:
+        # After setup has read its people, as when someone removes a person
+        # right after adding them, while the entry reloads with them.
+        if "sub_nora" in entry.subentries:
+            hass.config_entries.async_remove_subentry(entry, "sub_nora")
+        await first_refresh(coordinator)
+
+    with patch.object(PersonCoordinator, "async_config_entry_first_refresh", remove_nora_meanwhile):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert set(entry.runtime_data.coordinators) == {"debora"}
+    assert hass.states.get("sensor.nora_weight") is None
+    assert not [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
