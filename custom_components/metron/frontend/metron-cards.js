@@ -4560,6 +4560,8 @@ class WeightCard extends PersonCard {
     .log { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
     .recent { display: flex; flex-direction: column; }
     .recent .item { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--divider-color); }
+    /* A target a finger can hit: the × alone is narrower than WCAG's 24 px. */
+    .recent [data-action="delete-weight"] { min-width: 32px; min-height: 32px; }
   `;
 
   getCardSize() {

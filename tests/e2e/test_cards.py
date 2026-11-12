@@ -351,7 +351,12 @@ def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page,
     card.locator('[data-action="log"]').click()
     expect(card.locator(".error")).to_contain_text("from 20 to 400 kg")
 
-    item.locator('[data-action="delete-weight"]').click()
+    # A finger can hit the delete button without hitting its neighbours: at
+    # least 24 by 24 px, as WCAG asks of a target.
+    delete = item.locator('[data-action="delete-weight"]')
+    box = delete.bounding_box()
+    assert box["width"] >= 24 and box["height"] >= 24, box
+    delete.click()
     expect(card.locator(".recent .item", has_text="69.3 kg")).to_have_count(0, timeout=TIMEOUT)
 
 
