@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict
-from datetime import date
 from functools import partial
 from typing import Any
 
@@ -213,14 +212,17 @@ async def _log_meal(hass: HomeAssistant, call: ServiceCall) -> None:
 async def _log_active_calories(hass: HomeAssistant, call: ServiceCall) -> None:
     """Set a person's measured active calories for a day, replacing any figure there.
 
-    Only for a person with active calories allowed, on or after their start
-    date. The rules for which of a sensor's readings count don't apply: the
-    caller says which day the figure is for.
+    Only for a person with active calories allowed, and from the day the
+    person was added: the first day Metron worked out their goals, or today
+    if it hasn't yet. The diary shows no activity on a day without goals.
+    The rules for which of a sensor's readings count don't apply: the caller
+    says which day the figure is for.
     """
     data, person, day = _target(hass, call)
     if not person.active_calories_enabled:
         raise _error("active_calories_disabled", person=person.name)
-    if date.fromisoformat(day) < person.start_date:
+    added = await data.async_read(data.db.first_goal_day, person.key)
+    if day < (added or today().isoformat()):
         raise _error("day_before_person", day=day, person=person.name)
     kcal = call.data["kcal"]
     # Not a range in the schema: its error would not be translated. NaN fails too.

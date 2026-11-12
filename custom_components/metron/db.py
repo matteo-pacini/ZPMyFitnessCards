@@ -1128,6 +1128,12 @@ class Database:
         )
         return (row.pop("day"), Goals(**row)) if row else None
 
+    def first_goal_day(self, person: str) -> str | None:
+        """The first day a person's goals were set, or None if they never were."""
+        with self._db.connect() as conn:
+            query = select(func.min(GOALS.c.day)).where(GOALS.c.person == person)
+            return conn.execute(query).scalar()
+
     def goal_changes(self, person: str, end: str) -> list[tuple[str, Goals]]:
         """Each day up to `end` on which a person's goals were set, oldest first."""
         rows = self._all(

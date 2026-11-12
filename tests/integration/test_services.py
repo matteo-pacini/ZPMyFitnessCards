@@ -380,11 +380,30 @@ async def test_get_day_refuses_a_future_day(hass: HomeAssistant) -> None:
 
 
 @pytest.fixture
-async def anna_entry(hass: HomeAssistant, entry_data: dict[str, Any]) -> MockConfigEntry:
-    """Anna, with active calories allowed and no sensor, and Debora, without them."""
-    entry = mock_entry(anna(active_calories_entity=None), person(), data=entry_data)
+async def anna_entry(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
+) -> MockConfigEntry:
+    """Anna, with active calories allowed and no sensor, and Debora, without them.
+
+    Added yesterday, so the action takes yesterday too.
+    """
+    people = (anna(active_calories_entity=None), person())
+    return await added_on(hass, freezer, "2026-11-08", mock_entry(*people, data=entry_data))
+
+
+async def added_on(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, day: str, entry: MockConfigEntry
+) -> MockConfigEntry:
+    """Set `entry` up at noon on `day`, when Metron first works out its people's goals.
+
+    Then it is noon on 9 November again, the tests' today, after midnight passed.
+    """
+    freezer.move_to(f"{day}T12:00:00+00:00")
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    freezer.move_to("2026-11-09T12:00:00+00:00")
+    async_fire_time_changed(hass)
     await hass.async_block_till_done()
     return entry
 
@@ -446,14 +465,8 @@ async def test_h6_a_past_day_s_figure_changes_that_day_s_goal_and_no_other(
     freezer: FrozenDateTimeFactory,
     own_row: bool,
 ) -> None:
-    freezer.move_to("2026-11-08T12:00:00+00:00")
     entry = mock_entry(anna(active_calories_entity=None), data=entry_data)
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-    freezer.move_to("2026-11-09T12:00:00+00:00")
-    async_fire_time_changed(hass)
-    await hass.async_block_till_done()
+    await added_on(hass, freezer, "2026-11-08", entry)
     if own_row:
         await act(hass, "log_weight", weight=69, device_id=device(hass, "anna"))
     data = entry.runtime_data.data
@@ -509,18 +522,6 @@ async def test_h6_a_past_day_with_goals_carried_from_an_earlier_day_keeps_its_ba
     assert day["goals"]["kcal"] - round(day["activity"]["added"]) == BASE
     assert (await anna_s_day(hass, "2026-11-07"))["goals"]["kcal"] == seventh
     assert (await anna_s_day(hass))["goals"]["kcal"] == BASE
-
-
-@pytest.mark.usefixtures("anna_entry")
-async def test_a_past_day_with_no_goals_gets_its_activity_and_still_no_goals(
-    hass: HomeAssistant,
-) -> None:
-    # Anna started on the 1st, before Metron first worked out her goals.
-    await log_active(hass, 906, day="2026-11-05")
-    day = await anna_s_day(hass, "2026-11-05")
-    assert day["activity"] == logged(906, 680, 435.83, None)
-    assert day["goals"] is None
-    assert (await anna_s_day(hass, "2026-11-06"))["goals"] is None
 
 
 async def test_a_past_day_s_figure_corrects_the_activity_sensor_s_statistics(
@@ -595,6 +596,34 @@ async def test_the_action_trusts_its_caller_on_which_day_a_figure_is_for(
     assert (await anna_s_day(hass))["activity"]["measured"] == 906
 
 
+async def test_the_action_takes_days_from_metron_s_first_goals_for_the_person(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
+) -> None:
+    # She started a week ago; Metron first worked out her goals 3 days ago.
+    started = anna(active_calories_entity=None, start_date="2026-11-02")
+    entry = await added_on(hass, freezer, "2026-11-06", mock_entry(started, data=entry_data))
+
+    # The diary would show no goal on that day, and so no activity either.
+    err = await refused(
+        hass, "log_active_calories", kcal=300, day="2026-11-04", device_id=device(hass, "anna")
+    )
+    assert err.translation_key == "day_before_person"
+    assert str(err) == "2026-11-04 is before Anna was added to Metron"
+    assert (await anna_s_day(hass, "2026-11-04"))["activity"] is None
+    await log_active(hass, 300, day="2026-11-06")
+    assert (await anna_s_day(hass, "2026-11-06"))["activity"]["measured"] == 300
+
+    # With no goals worked out yet, only today.
+    data = entry.runtime_data.data
+    await data.async_read(data.db.delete_person, "anna")
+    err = await refused(
+        hass, "log_active_calories", kcal=300, day="2026-11-08", device_id=device(hass, "anna")
+    )
+    assert err.translation_key == "day_before_person"
+    await log_active(hass, 300)
+    assert (await anna_s_day(hass))["activity"]["measured"] == 300
+
+
 @pytest.mark.usefixtures("anna_entry")
 async def test_e12_the_action_is_refused_while_the_box_is_unticked(hass: HomeAssistant) -> None:
     err = await refused(hass, "log_active_calories", kcal=300)
@@ -637,7 +666,7 @@ async def test_the_action_explains_what_is_wrong(
 
 
 @pytest.mark.usefixtures("anna_entry")
-@pytest.mark.parametrize(("kcal", "day"), [(0, "2026-11-01"), (10000, "2026-11-09")])
+@pytest.mark.parametrize(("kcal", "day"), [(0, "2026-11-08"), (10000, "2026-11-09")])
 async def test_the_action_takes_0_to_10000_kcal_from_the_day_the_person_was_added(
     hass: HomeAssistant, kcal: float, day: str
 ) -> None:

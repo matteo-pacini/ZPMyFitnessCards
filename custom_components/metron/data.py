@@ -392,11 +392,11 @@ class FitnessData:
     async def async_log_activity(self, person: Person, day: str, kcal: float) -> None:
         """Set a person's measured active calories on `day`, replacing any, as the action does.
 
-        Today's goals follow as for a reading. A past day's goal keeps its
-        base, the goals in force less what activity added on the day they
-        were set, which may be an earlier day's. The next day first gets a
-        goals row of its own, so the change stops there. A past day with no
-        goals in force is given none.
+        Today's goals follow as for a reading. A past day must have goals in
+        force: it is on or after the first day the person's goals were set.
+        Its goal keeps its base, the goals in force less what activity added
+        on the day they were set, which may be an earlier day's. The next day
+        first gets a goals row of its own, so the change stops there.
         """
         if day == today().isoformat():
             _goals, changed = await self._update_today(person, lambda _kept: (a.ACTION, kcal))
@@ -410,14 +410,11 @@ class FitnessData:
             if new == old:
                 return
             old_added = old["added"] if old else 0.0
-            in_force = await self._read(self.db.goal_in_force, person.key, day)
-            goals = pin = None
-            if in_force is not None:
-                set_on, kept = in_force
-                carried = await self._read(self.db.activity, person.key, set_on)
-                base = kept.kcal - (carried["added"] if carried else 0.0)
-                goals = self._goals(person, base + new["added"])
-                pin = (the_day + timedelta(days=1)).isoformat()
+            set_on, kept = await self._read(self.db.goal_in_force, person.key, day)
+            carried = await self._read(self.db.activity, person.key, set_on)
+            base = kept.kcal - (carried["added"] if carried else 0.0)
+            goals = self._goals(person, base + new["added"])
+            pin = (the_day + timedelta(days=1)).isoformat()
             await self.hass.async_add_executor_job(
                 self.db.set_day, person.key, day, new, goals, pin
             )

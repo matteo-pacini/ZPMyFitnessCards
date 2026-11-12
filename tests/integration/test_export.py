@@ -21,6 +21,7 @@ from custom_components.metron.export import build_zip
 
 from .conftest import mock_entry, person
 from .test_activity import GARMIN, KCAL, anna
+from .test_services import added_on
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
 
@@ -199,14 +200,12 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
 
 
 async def test_exports_a_person_s_active_calories(
-    hass: HomeAssistant, entry_data: dict[str, Any]
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
 ) -> None:
-    hass.states.async_set(GARMIN, "120", KCAL)
     entry = mock_entry(anna(), person(), data=entry_data)
-    entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
+    data = (await added_on(hass, freezer, "2026-11-08", entry)).runtime_data.data
+    hass.states.async_set(GARMIN, "120", KCAL)
     await hass.async_block_till_done()
-    data = entry.runtime_data.data
     await data.async_log_activity(data.people["anna"], "2026-11-08", 906)
     archive = zipfile.ZipFile(
         io.BytesIO(await hass.async_add_executor_job(build_zip, data.db, "anna"))
