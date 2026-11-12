@@ -53,13 +53,16 @@ jobs:
       - name: Cards bundle is up to date
         run: nix develop -c node scripts/build.js --check
 
-      # Unit coverage of the cards is reported, not enforced: the end-to-end
-      # tests, which it cannot see, cover their interactions.
+      # The cards' coverage is that of these unit tests and the end-to-end
+      # tests together, which cover their interactions: see "Card coverage".
       - name: Card tests
         shell: bash
         run: |
           nix develop -c node --experimental-vm-modules --experimental-test-coverage \
-            --test-coverage-include='src/**' --test 'tests/cards/*.test.js' | tee card-tests.txt
+            --test-coverage-include='src/**' \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=lcov --test-reporter-destination=card-unit.lcov \
+            --test 'tests/cards/*.test.js' | tee card-tests.txt
           {
             echo "### Card unit test coverage"
             echo '```'
@@ -82,6 +85,21 @@ jobs:
 
       - name: End-to-end tests
         run: nix develop -c scripts/e2e
+        env:
+          METRON_CARD_COVERAGE: card-e2e
+
+      - name: Card coverage
+        if: ${{ !cancelled() && hashFiles('card-unit.lcov') != '' }}
+        shell: bash
+        run: |
+          nix develop -c node scripts/card-coverage.js card-e2e card-unit.lcov --fail-under 90 \
+            | tee card-coverage.txt
+          {
+            echo "### Card coverage, unit and end-to-end tests together"
+            echo '```'
+            cat card-coverage.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The end-to-end tests again, inside NixOS VMs with no network, built from
   # uv.lock: one VM, and one job, per database. The Android VM test is left

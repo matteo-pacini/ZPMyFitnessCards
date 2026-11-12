@@ -24,6 +24,7 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+import uuid
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -37,7 +38,7 @@ import aiohttp
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
 
-from custom_components.metron.const import DB_FILE
+from custom_components.metron.const import CARDS_URL, DB_FILE
 from custom_components.metron.db import sqlite_url
 
 from ..conftest import new_database
@@ -502,5 +503,47 @@ def logged_in_page(home: Home, browser: Browser, **options: Any) -> Iterator[Pag
     }
     context.add_init_script(f"localStorage.setItem('hassTokens', {json.dumps(json.dumps(stored))})")
     page = context.new_page()
-    yield page
-    context.close()
+    coverage = CardCoverage(page) if os.environ.get(CARD_COVERAGE) else None
+    # Also when the generator is closed early, as test_meals.py's fixture does.
+    try:
+        yield page
+    finally:
+        if coverage:
+            coverage.save()
+        context.close()
+
+
+# A folder to write the cards' coverage to, for scripts/card-coverage.js.
+CARD_COVERAGE = "METRON_CARD_COVERAGE"
+
+
+class CardCoverage:
+    """Which code of the cards' bundle a page runs, as Chromium's block coverage.
+
+    Chromium only reports the scripts still loaded, so a snapshot is saved
+    before each navigation the test makes, and when the page closes.
+    """
+
+    def __init__(self, page: Page) -> None:
+        self.page = page
+        self.cdp = page.context.new_cdp_session(page)
+        self.cdp.send("Profiler.enable")
+        self.cdp.send("Profiler.startPreciseCoverage", {"callCount": False, "detailed": True})
+        for name in ("goto", "reload"):
+            navigate = getattr(page, name)
+
+            def snapshot_first(*args: Any, navigate=navigate, **kwargs: Any) -> Any:
+                self.save()
+                return navigate(*args, **kwargs)
+
+            setattr(page, name, snapshot_first)
+
+    def save(self) -> None:
+        if self.page.is_closed():
+            return
+        taken = self.cdp.send("Profiler.takePreciseCoverage")["result"]
+        cards = [s for s in taken if CARDS_URL in s["url"]]
+        if cards:
+            folder = Path(os.environ[CARD_COVERAGE])
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"{uuid.uuid4().hex}.json").write_text(json.dumps(cards))

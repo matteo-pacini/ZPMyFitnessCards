@@ -8,3 +8,6 @@ result
 card-tests.txt
 .android/
 .private/
+card-unit.lcov
+card-e2e/
+card-coverage.txt

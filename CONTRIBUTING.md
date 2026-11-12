@@ -18,7 +18,7 @@ If you like, the kit in `design/drafts/` builds an animated draft from the cards
 
 Every change comes with its tests, in the same pull request:
 
-- **Cards:** unit tests for their pure functions, in `tests/cards/`.
+- **Cards:** unit tests for their pure functions, in `tests/cards/`. CI fails when the unit and end-to-end tests together run less than 90% of the cards' lines.
 - **The integration:** integration tests, which run on both SQLite and Postgres. CI fails below 90% of lines and branches. Every line you add or change needs a test that checks what it does, not only one that runs it.
 - **Flows:** an end-to-end test in a laptop browser for every flow the change adds or changes, with its failure paths, not only the happy path. A flow written as a function in `FLOWS`, in `tests/e2e/flows.py`, runs on a laptop, on a phone and in the Home Assistant app; add a phone-only check where the phone behaves differently.
 - **Strings:** every new string in all 11 languages, for the cards and the integration. If you are unsure of a translation, say which in the pull request.
