@@ -458,7 +458,11 @@ def browser() -> Iterator[Browser]:
         f"{driver}: set playwright=={driver} in pyproject.toml"
     )
     # The shell's fonts in place of the host's, so pages render alike everywhere.
-    env = {**os.environ, "FONTCONFIG_FILE": os.environ["METRON_FONTCONFIG_FILE"]}
+    # A British English Chromium too, whatever the host's language: a date
+    # field takes its day, month and year in the order of Chromium's own
+    # language, which a context's locale does not change.
+    env = {k: v for k, v in os.environ.items() if k not in ("LANGUAGE", "LC_ALL", "LC_MESSAGES")}
+    env |= {"FONTCONFIG_FILE": os.environ["METRON_FONTCONFIG_FILE"], "LANG": "en_GB.UTF-8"}
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(env=env)
         yield browser

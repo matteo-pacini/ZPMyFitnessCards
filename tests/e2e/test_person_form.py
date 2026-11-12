@@ -25,9 +25,7 @@ def device(request: pytest.FixtureRequest) -> str:
 
 @pytest.fixture
 def device_page(device: str, home: Home, browser: Browser) -> Iterator[Page]:
-    # A British laptop, whose date fields take the day first.
-    options = PHONE if device == "phone" else {"locale": "en-GB"}
-    yield from logged_in_page(home, browser, **options)
+    yield from logged_in_page(home, browser, **(PHONE if device == "phone" else {}))
 
 
 def type_number(form: Page | Locator, name: str, value: str) -> None:
@@ -40,7 +38,7 @@ def type_number(form: Page | Locator, name: str, value: str) -> None:
 
 
 def enter_date(page: Page, field: Locator, day: str, typed: bool = True) -> None:
-    """Enter `day`, as YYYY-MM-DD: typed key by key, in a British browser's order.
+    """Enter `day`, as YYYY-MM-DD: typed key by key, in British English order.
 
     A phone's date field takes no typing: it opens the system's picker, which
     only the app test can reach. Unless `typed`, it is set as that picker sets it.

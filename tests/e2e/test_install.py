@@ -42,8 +42,8 @@ def new_home(request: pytest.FixtureRequest, search_server: FakeSearch) -> Itera
 
 @pytest.fixture
 def new_page(new_home: Home, browser: Browser) -> Iterator[Page]:
-    """A browser tab on `new_home`, logged in as the owner, in a British browser."""
-    yield from logged_in_page(new_home, browser, locale="en-GB")
+    """A browser tab on `new_home`, logged in as the owner."""
+    yield from logged_in_page(new_home, browser)
 
 
 def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
