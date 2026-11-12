@@ -328,6 +328,69 @@ def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page)
     expect(card.locator(".recent .item", has_text="69.3 kg")).to_have_count(0, timeout=TIMEOUT)
 
 
+def test_the_weight_card_s_headline_follows_the_weigh_ins(home: Home, page: Page) -> None:
+    # Wade starts at 70 kg and 170 cm, today: a healthy weight.
+    with person_named(home, "Wade e2e"):
+        card = open_card(home, page, {"type": "custom:metron-weight-card", "person": "Wade e2e"})
+        now = card.locator(".now")
+        expect(now.locator("b")).to_have_text("70 kg", timeout=TIMEOUT)
+        expect(now.locator(".sub")).to_have_text(re.compile(r"^±0 kg since "))
+        expect(now.locator(".chip")).to_have_text("Healthy")
+        expect(card.locator(".body .muted")).to_contain_text("No weigh-ins yet")
+
+        home.ws(
+            {
+                "type": "metron/weight/set",
+                "person": person_id(home, "Wade e2e"),
+                "day": today(),
+                "kg": 88,
+            }
+        )
+        expect(now.locator("b")).to_have_text("88 kg", timeout=TIMEOUT)
+        expect(now.locator(".sub")).to_have_text(re.compile(r"^\+18 kg since "))
+        expect(now.locator(".chip")).to_have_text("Obese")
+        expect(card.locator(".body .muted")).to_have_count(0)
+
+
+def test_typing_key_by_key_keeps_the_box_focused(home: Home, page: Page) -> None:
+    save_food(home, "Focus oats e2e")
+    home.ws(
+        {
+            "type": "metron/meal/add",
+            "name": "Focus latte e2e",
+            "owner": None,
+            "items": [{"name": "Latte", "kcal": 150}],
+        }
+    )
+
+    def typed(box: Locator, text: str) -> None:
+        box.click()
+        box.press("Control+a")
+        box.press_sequentially(text)
+        expect(box).to_be_focused()
+        expect(box).to_have_value(text)
+
+    card = open_card(home, page, {"type": "custom:metron-meals-card"})
+    card.locator('[data-action="new"]').click()
+    panel = card.locator(".panel")
+    typed(panel.locator('[data-field="meal-name"]'), "Focus bowl e2e")
+    typed(panel.locator('[data-action="add-food"]'), "Focus oats")
+    panel.locator('.addfood [data-action="add-item"]', has_text="Focus oats e2e").click()
+    typed(panel.locator('[data-action="item-grams"]'), "120")
+    expect(panel.locator(".mealitem .kcal")).to_have_text("467")
+    panel.locator('[data-action="close"]').click()
+    typed(card.locator('[data-action="query"]'), "Focus latte")
+    card.locator(".mealrow", has_text="Focus latte e2e").click()
+    typed(panel.locator('[data-action="fixed"][data-key="kcal"]'), "180")
+    typed(panel.locator('[data-action="fixed"][data-key="name"]'), "Oat latte")
+
+    foods = open_card(home, page, {"type": "custom:metron-foods-card"})
+    typed(foods.locator('[data-action="query"]'), "Focus oats")
+    expect(foods.locator(".row", has_text="Focus oats e2e")).to_be_visible()
+    foods.locator('[data-action="new"]').click()
+    typed(foods.locator('[data-action="off-query"]'), "muesli")
+
+
 def test_after_logging_a_past_day_the_weight_card_logs_today(home: Home, page: Page) -> None:
     past = (date.fromisoformat(today()) - timedelta(days=20)).isoformat()
     with person_named(home, "Wendy e2e"):
