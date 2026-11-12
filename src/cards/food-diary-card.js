@@ -13,10 +13,18 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     .calendar input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
     .calendar input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; cursor: pointer; }
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
+    .summary.withactivity { grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; container-type: inline-size; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
+    /* A missing sensor is named by its entity ID, which has no spaces to break at. */
+    .activity { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); overflow-wrap: anywhere; }
     .summary small, .macro small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
     .body { display: flex; flex-direction: column; gap: 14px; }
     .summary .op { color: var(--secondary-text-color); font-size: 1.3rem; align-self: start; }
+    /* Four four-digit figures and three signs overflow a narrow card, as on a
+       phone, at full size: a size down they fit from a 300 px card up. */
+    @container (max-width: 320px) {
+      .summary.withactivity b, .summary.withactivity .op { font-size: 1.05rem; }
+    }
     .summary .left b { color: var(--success-color, var(--green-color)); }
     .summary .over b { color: var(--error-color); }
     .macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -115,7 +123,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   _renderBody() {
     const body = this._card?.querySelector(".body");
-    if (body && this._data) body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale);
+    if (body && this._data) body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale, this._hass.states, this._person.name);
   }
 
   _renderPanel() {
@@ -683,29 +691,65 @@ function scaled(food, grams) {
 const optionList = (values, labels, selected) =>
   values.map((v) => `<option value="${esc(v)}"${v === selected ? " selected" : ""}>${esc(labels[v] ?? v)}</option>`).join("");
 
-// The summary and meals of one day, from metron/day.
-function diaryBodyHTML(data, t, locale) {
+// The summary and meals of one day, from metron/day. `states`, Home
+// Assistant's, names the sensor the day's activity came from, and `person`
+// is the name of whose day it is.
+function diaryBodyHTML(data, t, locale, states = {}, person = "") {
   const meals = MEALS.map((meal) => mealHTML(meal, data.entries.filter((e) => e.meal === meal), t, locale));
-  return diarySummaryHTML(totals(data.entries), data.goals, t, locale) + meals.join("");
+  const line = data.activity ? activityLine(data.activity, states, person, locale, t) : "";
+  return diarySummaryHTML(totals(data.entries), data.goals, t, locale, data.activity, line) + meals.join("");
 }
 
-// The day's totals `sums`, against its `goals` if it has any.
-function diarySummaryHTML(sums, goals, t, locale) {
+// The day's totals `sums`, against its `goals` if it has any. On a day with
+// `activity`, metron/day's, the goal splits into the goal without activity
+// and what activity added, and `line` goes under the sum.
+function diarySummaryHTML(sums, goals, t, locale, activity = null, line = "") {
   if (!goals) {
     return `<div class="summary num"><div></div><span></span><div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div></div>`;
   }
   const left = goals.kcal - sums.kcal;
-  return `<div class="summary num">
-        <div><b>${number(goals.kcal, locale)}</b><small>${esc(t.goal)}</small></div><span class="op">−</span>
+  // Rounded before the goal is split, so that the sum adds up as shown.
+  const added = activity && Math.round(activity.added);
+  const goal = activity
+    ? `<div><b>${number(goals.kcal - added, locale)}</b><small>${esc(t.goal)}</small></div><span class="op">+</span>
+        <div><b>${number(added, locale)}</b><small>${esc(t.activity)}</small></div>`
+    : `<div><b>${number(goals.kcal, locale)}</b><small>${esc(t.goal)}</small></div>`;
+  return `<div class="summary num${activity ? " withactivity" : ""}">
+        ${goal}<span class="op">−</span>
         <div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div><span class="op">=</span>
         <div class="${left < 0 ? "over" : "left"}"><b>${number(Math.abs(left), locale)}</b><small>${esc(left < 0 ? t.over : t.remaining)}</small></div>
-      </div>
+      </div>${activity ? `<div class="activity">${esc(line)}</div>` : ""}
       <div class="macros num">${MACROS.map((m) => {
         const share = goals[m] > 0 ? sums[m] / goals[m] : 0;
         return `<div class="macro ${m}${share > 1 ? " over" : ""}"><small>${esc(t[m])}</small>
           <div class="bar"><i style="width:${Math.min(share, 1) * 100}%"></i></div>
           <span>${number(sums[m], locale)} / ${number(goals[m], locale)} g</span></div>`;
       }).join("")}</div>`;
+}
+
+// What explains the Activity in the diary's sum, from metron/day's
+// `activity`: what was measured or logged, how much of it counts, and how
+// much of that the activity level already allows for. Today's status says
+// when there is nothing to count yet, or the sensor is unavailable or gone.
+// The sensor is named by its name in `states`, Home Assistant's, else by its
+// entity ID; `person` is the name of whose day it is.
+function activityLine(activity, states, person, locale, t) {
+  const { source, status, measured, share, cap, counted, allowed, added } = activity;
+  const logged = source === "action";
+  const sensor = (status !== "missing" && states[source]?.attributes.friendly_name) || source;
+  if (status === "waiting") return logged ? t.activity_logged_waiting : fill(t.activity_waiting, { sensor });
+  if (status === "missing" && measured == null) return fill(t.activity_missing, { sensor, person });
+  const leads = { missing: t.activity_missing_held, unavailable: t.activity_unavailable };
+  const lead = logged ? t.activity_logged : (leads[status] ?? t.activity_measured);
+  // Past days have no status, so whether the cap applied comes from the figures.
+  const capped = (measured * share) / 100 > cap;
+  const sentences = [
+    fill(lead, { sensor, person, measured: number(measured, locale) }),
+    fill(capped ? t.activity_capped : t.activity_counts, { share: percent(share, locale), counted: number(counted, locale), cap: number(cap, locale) }),
+    allowed === 0 ? t.activity_all : fill(added > 0 ? t.activity_allowed : t.activity_level, { allowed: number(allowed, locale) }),
+  ];
+  // Chinese runs sentences together; the other languages space them.
+  return sentences.join(locale.split("-")[0].toLowerCase() === "zh" ? "" : " ");
 }
 
 // One meal's `entries`, with buttons to add to it, copy into it, and save

@@ -32,6 +32,9 @@ function shiftDay(day, days) {
 const number = (value, locale, digits = 0) =>
   new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value);
 
+// `value` per cent, as the language writes it: "75%" in English, "75 %" in German.
+const percent = (value, locale) => new Intl.NumberFormat(locale, { style: "percent" }).format(value / 100);
+
 function totals(entries) {
   const sums = Object.fromEntries(NUTRIENTS.map((n) => [n, 0]));
   for (const e of entries) for (const n of NUTRIENTS) sums[n] += e[n] ?? 0;
