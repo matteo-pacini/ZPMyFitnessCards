@@ -338,6 +338,63 @@ def test_the_summary_card_shows_today_and_opens_its_path(home: Home, page: Page)
     expect(page).to_have_url(re.compile(r"/config"), timeout=TIMEOUT)
 
 
+def test_open_cards_move_to_the_new_day_at_midnight(home: Home, page: Page) -> None:
+    midnight = datetime.now(ZoneInfo("Europe/London")).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    new_day = midnight.date().isoformat()
+    old_day = (midnight.date() - timedelta(days=1)).isoformat()
+    with person_named(home, "Nell e2e"):
+        home.ws(
+            {
+                "type": "metron/entry/add",
+                "person": person_id(home, "Nell e2e"),
+                "day": new_day,
+                "meal": "lunch",
+                "name": "Midnight soup e2e",
+                "kcal": 321,
+            }
+        )
+        # The browser's clock starts before last midnight, so the cards first
+        # take yesterday for today.
+        page.clock.install(time=midnight - timedelta(minutes=5))
+        home.dashboard(
+            [
+                {"type": "custom:metron-food-diary-card", "person": "Nell e2e"},
+                {"type": "custom:metron-food-diary-card", "person": "Nell e2e", "title": "Earlier"},
+                {"type": "custom:metron-weight-card", "person": "Nell e2e"},
+                {"type": "custom:metron-summary-card", "person": "Nell e2e"},
+            ]
+        )
+        page.goto(home.url + "/" + home.DASHBOARD + "/0")
+        diary = page.locator("metron-food-diary-card").first
+        earlier = page.locator("metron-food-diary-card").last
+        weight = page.locator("metron-weight-card")
+        summary = page.locator("metron-summary-card")
+        expect(diary.locator(".meal")).to_have_count(4, timeout=30_000)
+        expect(diary.locator(".nav .label")).to_have_text("Today")
+        expect(diary.locator(".body")).not_to_contain_text("Midnight soup e2e")
+        earlier.locator('[data-action="prev"]').click()
+        expect(earlier.locator(".nav .label")).to_have_text("Yesterday")
+        expect(weight.locator('[data-field="day"]')).to_have_value(old_day, timeout=TIMEOUT)
+        expect(summary.locator(".body")).not_to_contain_text("321 of", timeout=TIMEOUT)
+
+        page.clock.fast_forward("05:10")
+        # Any new state reaches the cards, as Metron's own sensors' do at midnight.
+        home.api("POST", "/api/states/sensor.e2e_clock", {"state": "midnight"})
+
+        # A diary on today moves to the new day; one on an earlier day stays.
+        expect(diary.locator(".body")).to_contain_text("Midnight soup e2e", timeout=TIMEOUT)
+        expect(diary.locator(".nav .label")).to_have_text("Today")
+        expect(diary.locator('[data-action="next"]')).to_be_disabled()
+        expect(diary.locator('[data-action="pick-day"]')).to_have_attribute("max", new_day)
+        expect(earlier.locator(".nav .label")).not_to_have_text("Yesterday")
+        expect(earlier.locator('[data-action="next"]')).to_be_enabled()
+        expect(weight.locator('[data-field="day"]')).to_have_value(new_day)
+        expect(weight.locator('[data-field="day"]')).to_have_attribute("max", new_day)
+        expect(summary.locator(".body")).to_contain_text("321 of", timeout=TIMEOUT)
+
+
 # Open Food Facts is answered here, so the tests never call the real service.
 OFF_PRODUCTS = {
     "5201054017111": {

@@ -2730,16 +2730,30 @@ const rangeButtons = (ranges, selected, t) =>
 // The loading of a card that shows one person, as a subclass of `Base`: the
 // person its config names, or the logged-in user's, and that person's data
 // from the card's `_fetch`, drawn with `_renderBody`. Its title is its
-// config's, else the string its static `titleKey` names.
+// config's, else the string its static `titleKey` names. Once midnight
+// passes, it calls `_newDay`, which fetches again.
 const ShowsPerson = (Base) =>
   class extends Base {
+    set hass(hass) {
+      super.hass = hass;
+      // Home Assistant passes a new hass at least as often as its states
+      // change, and Metron's own sensors start the new day at midnight.
+      if (this._data && this._fetchedOn !== this._today) this._newDay();
+    }
+
     async _load() {
       this._people = await this._call({ type: "metron/people" });
       this._person = findPerson(this._people, this._config, this._hass);
+      this._fetchedOn = this._today;
       this._data = this._person ? await this._fetch() : null;
     }
 
+    _newDay() {
+      this._refresh();
+    }
+
     async _refresh() {
+      this._fetchedOn = this._today;
       try {
         this._data = await this._fetch();
         this._renderBody();
@@ -2863,6 +2877,13 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   _fetch() {
     return this._call({ type: "metron/day", person: this._person.id, day: this._day });
+  }
+
+  // A diary on today moves to the new today; one on an earlier day stays there.
+  _newDay() {
+    if (this._day === this._fetchedOn) this._day = this._today;
+    this._renderHead();
+    this._refresh();
   }
 
   _changed(event) {
@@ -4866,10 +4887,9 @@ class SummaryCard extends PersonCard {
     super.setConfig(config);
   }
 
+  // A getter needs its setter in the same class, or setting hass fails.
   set hass(hass) {
     super.hass = hass;
-    // Show the new day once midnight passes.
-    if (this._data && this._data.day.day !== this._today) this._refresh();
   }
 
   get hass() {

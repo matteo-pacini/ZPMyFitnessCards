@@ -68,6 +68,13 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     return this._call({ type: "metron/day", person: this._person.id, day: this._day });
   }
 
+  // A diary on today moves to the new today; one on an earlier day stays there.
+  _newDay() {
+    if (this._day === this._fetchedOn) this._day = this._today;
+    this._renderHead();
+    this._refresh();
+  }
+
   _changed(event) {
     if (event.person === null) {
       if (this._onSearchTab) {

@@ -122,10 +122,9 @@ class SummaryCard extends PersonCard {
     super.setConfig(config);
   }
 
+  // A getter needs its setter in the same class, or setting hass fails.
   set hass(hass) {
     super.hass = hass;
-    // Show the new day once midnight passes.
-    if (this._data && this._data.day.day !== this._today) this._refresh();
   }
 
   get hass() {
