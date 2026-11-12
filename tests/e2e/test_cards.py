@@ -11,6 +11,7 @@ import pytest
 from playwright.sync_api import Locator, Page, expect
 
 from .conftest import FakeSearch, Home
+from .flows import person_named
 
 TIMEOUT = 15_000
 
@@ -241,6 +242,30 @@ def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page)
 
     item.locator('[data-action="delete-weight"]').click()
     expect(card.locator(".recent .item", has_text="69.3 kg")).to_have_count(0, timeout=TIMEOUT)
+
+
+def test_after_logging_a_past_day_the_weight_card_logs_today(home: Home, page: Page) -> None:
+    past = (date.fromisoformat(today()) - timedelta(days=20)).isoformat()
+    with person_named(home, "Wendy e2e"):
+        card = open_card(home, page, {"type": "custom:metron-weight-card", "person": "Wendy e2e"})
+        expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
+        card.locator('[data-field="day"]').fill(past)
+        # A weight out of range is refused, keeping the day chosen.
+        card.locator('[data-field="weight"]').fill("5")
+        card.locator('[data-action="log"]').click()
+        expect(card.locator(".error")).to_contain_text("from 20 to 400 kg")
+        expect(card.locator('[data-field="day"]')).to_have_value(past)
+        card.locator('[data-field="weight"]').fill("71.4")
+        card.locator('[data-action="log"]').click()
+        expect(card.locator(".recent .item", has_text="71.4 kg")).to_have_count(1, timeout=TIMEOUT)
+
+        # The day goes back to today, so the next weigh-in is today's.
+        expect(card.locator('[data-field="day"]')).to_have_value(today())
+        card.locator('[data-field="weight"]').fill("71.2")
+        card.locator('[data-action="log"]').click()
+        expect(card.locator(".recent .item", has_text="71.2 kg")).to_have_count(1, timeout=TIMEOUT)
+        weights = home.ws({"type": "metron/weights", "person": person_id(home, "Wendy e2e")})
+        assert weights == [{"day": past, "kg": 71.4}, {"day": today(), "kg": 71.2}]
 
 
 def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> None:

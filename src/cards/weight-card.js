@@ -111,7 +111,7 @@ class WeightCard extends PersonCard {
       ${weightChartHTML(shown, person, start, today, locale, t, unit)}
       ${weights.length ? "" : `<div class="muted">${esc(fill(t.no_weights, { weight: weightText(person.start_weight_kg, unit, locale, t) }))}</div>`}
       <div class="log">
-        <label>${esc(t.day)}<input type="date" data-field="day" value="${this._logDay ?? today}" max="${today}"></label>
+        <label>${esc(t.day)}<input type="date" data-field="day" data-action="log-day" value="${this._logDay ?? today}" max="${today}"></label>
         <label>${esc(t[unit])}<input type="number" data-field="weight" min="${low}" max="${high}" step="0.1" inputmode="decimal"></label>
         <button class="fill" data-action="log">${esc(t.log_weight)}</button>
       </div>
@@ -128,10 +128,19 @@ class WeightCard extends PersonCard {
     this._renderBody();
   }
 
+  // Keep the log form on `day` when the card redraws. Today is not kept: the
+  // form shows today anyway, and the new today once midnight passes.
+  _keepLogDay(day) {
+    this._logDay = day && day < this._today ? day : null;
+  }
+
   static actions = {
     "click:range"(el) {
       this._chosenRange = el.dataset.range;
       this._render();
+    },
+    "change:log-day"(el) {
+      this._keepLogDay(el.value);
     },
     async "click:log"() {
       const day = this._card.querySelector('[data-field="day"]').value || this._today;
@@ -144,10 +153,12 @@ class WeightCard extends PersonCard {
         return this._renderBody();
       }
       this._error = null;
-      this._logDay = day;
+      // Before sending: the redraw the change brings can come before the reply.
+      this._logDay = null;
       try {
         await this._call({ type: "metron/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
       } catch (err) {
+        this._keepLogDay(day);
         this._showFailure(err);
       }
     },

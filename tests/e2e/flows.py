@@ -295,12 +295,15 @@ def scan_from_head(s: Screen, card: Locator, code: str) -> None:
 
 
 @contextmanager
-def person_named(s: Screen, name: str) -> Iterator[str]:
-    """A person added for a flow, as the person form adds one; removed after."""
-    [found] = s.home.api("GET", "/api/config/config_entries/entry?domain=metron")
+def person_named(home: Home, name: str) -> Iterator[Callable[[], None]]:
+    """A person added for a test, as the person form adds one; removed after.
+
+    Yields what removes them sooner.
+    """
+    [found] = home.api("GET", "/api/config/config_entries/entry?domain=metron")
     entry = found["entry_id"]
     flows = "/api/config/config_entries/subentries/flow"
-    form = s.home.api("POST", flows, {"handler": [entry, "person"]})
+    form = home.api("POST", flows, {"handler": [entry, "person"]})
     details = {
         "sex": "female",
         "birth_date": "1990-01-01",
@@ -314,30 +317,30 @@ def person_named(s: Screen, name: str) -> Iterator[str]:
         "carbs_pct": 45,
         "fat_pct": 30,
     }
-    done = s.home.api("POST", f"{flows}/{form['flow_id']}", {"name": name, **details})
+    done = home.api("POST", f"{flows}/{form['flow_id']}", {"name": name, **details})
     assert done["type"] == "create_entry", done
     subentry = next(
         x["subentry_id"]
-        for x in s.ws({"type": "config_entries/subentries/list", "entry_id": entry})
+        for x in home.ws({"type": "config_entries/subentries/list", "entry_id": entry})
         if x["title"] == name
     )
 
     def remove() -> None:
-        s.ws(
+        home.ws(
             {"type": "config_entries/subentries/delete", "entry_id": entry, "subentry_id": subentry}
         )
 
     try:
-        wait_for(lambda: name in {p["name"] for p in people(s)})
+        wait_for(lambda: name in {p["name"] for p in people(home)})
         yield remove
     finally:
-        if any(p["name"] == name for p in people(s)):
+        if any(p["name"] == name for p in people(home)):
             remove()
 
 
-def people(s: Screen) -> list[dict]:
+def people(home: Home) -> list[dict]:
     try:
-        return s.ws({"type": "metron/people"})
+        return home.ws({"type": "metron/people"})
     except AssertionError:
         return []  # reloading
 
@@ -949,7 +952,7 @@ def e8_keyboard_only(s: Screen) -> None:
 def e9_a_removed_person_s_meals(s: Screen) -> None:
     """Ana's meals become everyone's when she is removed, one renamed."""
     ana = s.name("Ana")
-    with person_named(s, ana) as remove:
+    with person_named(s.home, ana) as remove:
         s.saved_meal(s.name("E9 usual breakfast"), "Debora", [{"name": "Oats", "kcal": 300}])
         key = s.person(ana)
         for meal_name in ("E9 usual breakfast", "E9 berries bowl"):
@@ -964,7 +967,7 @@ def e9_a_removed_person_s_meals(s: Screen) -> None:
         food = s.food(s.name("E9 berries"), 45, person=key)
         assert food["saved_by"] == key
         remove()
-        wait_for(lambda: ana not in {p["name"] for p in people(s)} and people(s))
+        wait_for(lambda: ana not in {p["name"] for p in people(s.home)} and people(s.home))
     card = s.meals_card()
     s.type(card.locator('[data-action="query"]'), "E9")
     renamed = card.locator(".mealrow", has_text=f"{s.name('E9 usual breakfast')} ({ana})")
