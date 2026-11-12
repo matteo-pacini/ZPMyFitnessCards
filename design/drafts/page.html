@@ -1,0 +1,376 @@
+<title><!--TITLE--></title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<style>
+  /* A UX draft, built by design/drafts/kit.js: brief, before/after pairs with diff marks, then animated flows (a device with a fake cursor beside its captions), then still frames. */
+  :root {
+    --primary-color: #009ac7; --text-primary-color: #ffffff; --primary-text-color: #141414; --secondary-text-color: #5e5e5e;
+    --card-background-color: #ffffff; --primary-background-color: #fafafa; --secondary-background-color: #e5e5e5;
+    --divider-color: #0000001f; --error-color: #db4437; --warning-color: #ffa600; --success-color: #43a047;
+    --pink-color: #e91e63; --amber-color: #ffc107; --deep-purple-color: #6e41ab;
+    --change-bg: #e6f5fa; --change-fg: #00627f;
+    --device: #1d1d1f; --device-screen: #f2f2f2; --cursor: #00000099;
+    --diff-new: #2e7d32; --diff-changed: #a35a00; --diff-gone: #c62828;
+    --ha-font-size-xs: 10px; --ha-font-size-s: 12px; --ha-font-size-m: 14px; --ha-font-size-l: 16px; --ha-font-weight-medium: 500;
+    --font-body: Roboto, Noto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b; --card-background-color: #1c1c1c;
+      --primary-background-color: #111111; --secondary-background-color: #282828; --divider-color: #e1e1e11f;
+      --change-bg: #0c2a35; --change-fg: #7fd3ef; --device: #3a3a3c; --device-screen: #111111; --cursor: #ffffffaa; --diff-new: #81c784; --diff-changed: #ffb74d; --diff-gone: #ef9a9a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --primary-text-color: #e1e1e1; --secondary-text-color: #9b9b9b; --card-background-color: #1c1c1c;
+    --primary-background-color: #111111; --secondary-background-color: #282828; --divider-color: #e1e1e11f;
+    --change-bg: #0c2a35; --change-fg: #7fd3ef; --device: #3a3a3c; --device-screen: #111111; --cursor: #ffffffaa; --diff-new: #81c784; --diff-changed: #ffb74d; --diff-gone: #ef9a9a; color-scheme: dark;
+  }
+  body { margin: 0; background: var(--primary-background-color); color: var(--primary-text-color); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+  .page { max-width: 1040px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 40px; }
+  header { display: flex; flex-direction: column; gap: 12px; max-width: 70ch; }
+  .status { align-self: flex-start; font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--change-fg); background: var(--change-bg); border-radius: 16px; padding: 3px 10px; }
+  h1 { margin: 0; font-size: 28px; font-weight: 500; line-height: 1.2; text-wrap: balance; }
+  h2 { margin: 0; font-size: 22px; font-weight: 500; }
+  h3 { margin: 0; font-size: 17px; font-weight: 500; text-wrap: balance; display: flex; gap: 10px; align-items: baseline; }
+  h4 { margin: 0 0 6px; font-size: 14px; font-weight: 500; }
+  h3 .id { font-size: 12px; font-weight: 700; color: var(--change-fg); background: var(--change-bg); border-radius: 6px; padding: 1px 7px; font-variant-numeric: tabular-nums; flex: none; }
+  p { margin: 0; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+  nav.toc a { color: var(--primary-color); text-decoration: none; }
+  .muted-text { color: var(--secondary-text-color); }
+  .brief { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+  .brief ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+  .brief > div { min-width: 0; }
+  .strings { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .strings th, .strings td { text-align: left; vertical-align: top; padding: 6px 10px 6px 0; border-top: 1px solid var(--divider-color); }
+  .strings th { font-weight: 500; color: var(--secondary-text-color); }
+  .strings code { font-size: 12px; }
+  .scroll { overflow-x: auto; }
+  .part { display: flex; flex-direction: column; gap: 36px; }
+  .part > p { max-width: 70ch; color: var(--secondary-text-color); }
+  .scenario, .flow { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; }
+  .scenario > p { max-width: 70ch; color: var(--secondary-text-color); }
+  .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+  @media (max-width: 860px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+  figure { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 460px; width: 100%; }
+  figcaption { font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--secondary-text-color); }
+  figure:last-child figcaption { color: var(--change-fg); }
+  .still { max-width: 460px; }
+  .d-new, .key.new { --d: var(--diff-new); }
+  .d-changed, .key.changed { --d: var(--diff-changed); }
+  .d-gone, .key.gone { --d: var(--diff-gone); }
+  /* Drawn inside each element: lists scroll, so an outline outside would be clipped. */
+  .diffs-on :is(.d-new, .d-changed, .d-gone) { outline: 2px solid var(--d) !important; outline-offset: -2px !important; box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--d) 9%, transparent); }
+  .diffs-on .d-gone { outline-style: dashed !important; }
+  .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 13px; color: var(--secondary-text-color); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .key::before { content: ""; width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--d); background: color-mix(in srgb, var(--d) 9%, transparent); box-sizing: border-box; }
+  .legend .key.gone::before { border-style: dashed; }
+  .legend .toggle { flex-direction: row; font-size: inherit; color: inherit; }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggle input { margin: 0; accent-color: var(--change-fg); }
+  ha-card { display: flex; background: var(--card-background-color); border: 1px solid var(--divider-color); border-radius: 12px; color: var(--primary-text-color); box-sizing: border-box; }
+  ha-card button, ha-card input, ha-card select, ha-card label { pointer-events: none; }
+
+  /* The cards' own styles, from src/cards. */
+  /*CARDS*/
+
+  /* Mock-ups any draft can use: a camera viewfinder, a spinner, a highlight, a still frame. */
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--divider-color); border-top-color: var(--primary-color); animation: spin 0.8s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .viewfinder { position: relative; height: 150px; border-radius: 8px; background: #1b1b1b; overflow: hidden; display: grid; place-items: center; }
+  .viewfinder .stop { position: absolute; right: 6px; bottom: 4px; color: #fff; }
+  .bars { width: 120px; height: 64px; background: repeating-linear-gradient(90deg, #eee 0 2px, transparent 2px 4px, #eee 4px 7px, transparent 7px 9px, #eee 9px 10px, transparent 10px 13px); border-radius: 2px; }
+  .scanline { position: absolute; left: 12%; right: 12%; height: 2px; background: #ff3b30; box-shadow: 0 0 8px #ff3b30; animation: sweep 1.6s ease-in-out infinite alternate; }
+  @keyframes sweep { from { top: 22%; } to { top: 78%; } }
+  .flash { animation: flash 1.8s ease-out 2; }
+  @keyframes flash { 0% { background: color-mix(in srgb, var(--warning-color) 40%, transparent); } 100% { background: transparent; } }
+  .settings, .editor { flex-direction: column; gap: 10px; padding: 16px; }
+  .editor pre { margin: 0; font-size: 11px; overflow-x: auto; background: var(--secondary-background-color); padding: 8px; border-radius: 6px; }
+  .kb-focus { outline: 2px solid var(--primary-color) !important; outline-offset: 2px; border-radius: 6px; }
+
+  /* What this draft proposes. */
+  /*PROPOSED*/
+
+  /* The flow player. */
+  .player { display: grid; grid-template-columns: auto minmax(240px, 1fr); gap: 28px; align-items: start; }
+  .player.wide { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 760px) { .player { grid-template-columns: minmax(0, 1fr); } }
+  .devicewrap { position: relative; min-width: 0; }
+  .device { position: relative; background: var(--device); border-radius: 40px; padding: 12px; box-shadow: 0 10px 30px #0003; transform-origin: top left; width: max-content; }
+  .device.laptop { border-radius: 14px; padding: 10px 10px 18px; }
+  .screen { position: relative; width: 375px; height: 700px; border-radius: 30px; overflow: hidden; background: var(--device-screen); }
+  .laptop .screen { width: 780px; height: 540px; border-radius: 6px; }
+  .chrome { height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: var(--secondary-background-color); color: var(--secondary-text-color); font-size: 11px; }
+  .chrome i { width: 9px; height: 9px; border-radius: 50%; background: var(--divider-color); display: inline-block; }
+  .chrome span { margin-left: 10px; background: var(--card-background-color); border-radius: 5px; padding: 1px 10px; flex: 1; max-width: 360px; }
+  .appstrip { height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--secondary-text-color); background: var(--secondary-background-color); }
+  .stage { position: absolute; inset: 24px 0 0 0; overflow: hidden; padding: 10px 8px 40px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; }
+  .laptop .stage { inset: 28px 0 0 0; padding: 16px; flex-flow: row wrap; align-content: flex-start; gap: 16px; }
+  .laptop .stage > ha-card { width: 360px; }
+  .stage.narrow > ha-card { width: 300px; align-self: center; }
+  .overlay { position: absolute; inset: 0; pointer-events: none; }
+  .stage.kbpad { padding-bottom: 300px; }
+  .keyboard { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; background: #d1d3d9; padding: 8px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; transform: translateY(100%); transition: transform .3s ease; }
+  .keyboard.up { transform: none; }
+  .keyboard div { display: flex; gap: 5px; justify-content: center; }
+  .keyboard i { flex: 0 0 31px; height: 40px; border-radius: 5px; background: #fff; display: grid; place-items: center; font-style: normal; font-size: 15px; color: #000; box-shadow: 0 1px 0 #898a8d; }
+  .keyboard i.wide { flex: 0 0 200px; font-size: 12px; } .keyboard i.enter { flex: 0 0 70px; background: #adb1ba; }
+  .appscan { position: absolute; inset: 0; background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .appbar { align-self: stretch; display: flex; gap: 16px; padding: 40px 16px 0; font-size: 16px; }
+  .appframe { position: relative; width: 240px; height: 160px; border: 3px solid #fff; border-radius: 16px; display: grid; place-items: center; margin-top: 120px; overflow: hidden; }
+  .appframe.found { border-color: #4cd964; }
+  .appscan p { margin: 0; color: #ccc; }
+  .appback { margin-top: auto; margin-bottom: 30px; color: #fff; background: #ffffff22; border: 0; border-radius: 20px; padding: 8px 18px; font: inherit; }
+  .permission { position: absolute; top: 34px; left: 12px; right: 12px; background: var(--card-background-color); color: var(--primary-text-color); border-radius: 14px; padding: 14px; box-shadow: 0 6px 24px #0005; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  .pbuttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+  .pbuttons button { font: inherit; border: 0; border-radius: 16px; padding: 6px 14px; background: var(--secondary-background-color); color: var(--primary-text-color); }
+  .pbuttons button:last-child { background: var(--primary-color); color: #fff; }
+  .cursor { position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: var(--cursor); border: 2px solid #fff; box-shadow: 0 2px 8px #0006; transition: transform .65s cubic-bezier(.3, .7, .2, 1), opacity .3s; opacity: 0; z-index: 5; }
+  .laptop .cursor { width: 0; height: 0; margin: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+  .laptop .cursor::before { content: ""; position: absolute; left: 0; top: 0; width: 18px; height: 26px; background: #fff; clip-path: polygon(0 0, 0 100%, 28% 76%, 50% 100%, 64% 94%, 44% 70%, 80% 70%); filter: drop-shadow(0 1px 2px #000a); }
+  .laptop .cursor::after { content: ""; position: absolute; left: 2px; top: 3px; width: 13px; height: 20px; background: #111; clip-path: polygon(0 0, 0 100%, 28% 76%, 50% 100%, 64% 94%, 44% 70%, 80% 70%); }
+  .cursor.on { opacity: 1; }
+  .ripple { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 2px solid var(--primary-color); animation: ripple .45s ease-out forwards; z-index: 4; }
+  @keyframes ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+  .keybadge { position: absolute; z-index: 6; font: 600 12px var(--font-body); background: #111; color: #fff; border-radius: 6px; padding: 3px 8px; margin: -34px 0 0 -10px; animation: pop .9s ease-out forwards; }
+  @keyframes pop { 0% { opacity: 0; transform: translateY(6px); } 20%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .typing { outline: 2px solid var(--primary-color) !important; outline-offset: 1px; }
+  .side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .who { font-size: 12px; color: var(--secondary-text-color); }
+  .steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; counter-reset: s; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; color: var(--secondary-text-color); }
+  .steps li::before { content: counter(s); font-size: 12px; font-weight: 700; text-align: right; padding-top: 1px; }
+  .steps li:hover { background: var(--secondary-background-color); }
+  .steps li.now { background: var(--change-bg); color: var(--primary-text-color); }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .controls button { font: inherit; font-size: 13px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); border-radius: 16px; padding: 4px 12px; cursor: pointer; }
+  .controls button.play { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
+  .controls .count { font-size: 12px; color: var(--secondary-text-color); font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { transition: none; } .scanline, .spinner, .flash, .ripple, .keybadge { animation: none; } .keyboard { transition: none; }
+  }
+</style>
+<div class="page">
+  <header>
+    <span class="status"><!--STATUS--></span>
+    <h1><!--HEADING--></h1>
+    <p class="muted-text"><!--INTRO--> Comment on any part by its ID (B1, H1, E1, S1) to ask for a change.</p>
+    <nav class="toc"><!--TOC--></nav>
+  </header>
+
+  <section class="part" id="brief">
+    <h2>Brief</h2>
+    <!--BRIEF-->
+  </section>
+
+  <section class="part diffs-on" id="pairs">
+    <h2>Before and after</h2>
+    <div class="legend"><label class="toggle"><input type="checkbox" id="diffs" checked> Show changes</label><span class="key new">New</span><span class="key changed">Changed</span><span class="key gone">Removed or moved away (Before)</span></div>
+    <!--PAIRS-->
+  </section>
+
+  <section class="part" id="happy">
+    <h2>Happy paths</h2>
+    <p>Each flow plays when it scrolls into view; tap a caption to jump to its step.</p>
+    <!--HAPPY-->
+  </section>
+
+  <section class="part" id="edge">
+    <h2>Edge cases</h2>
+    <!--EDGE-->
+  </section>
+
+  <!--STILLS-->
+</div>
+<script type="application/json" id="flows">/*FLOWS*/</script>
+<script>
+(() => {
+  const FLOWS = JSON.parse(document.getElementById("flows").textContent);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, reduced ? Math.min(ms, 300) : ms));
+  const LABEL = { phone: "Phone, browser", app: "Phone, Home Assistant app", laptop: "Laptop" };
+
+  class Player {
+    constructor(root, flow) {
+      this.flow = flow;
+      this.i = 0;
+      this.token = 0;
+      this.playing = false;
+      this.userPaused = false;
+      const laptop = flow.device === "laptop";
+      root.classList.toggle("wide", laptop);
+      root.innerHTML = `<div class="devicewrap"><div class="device ${laptop ? "laptop" : "phone"}"><div class="screen">
+          ${laptop ? '<div class="chrome"><i></i><i></i><i></i><span>home.example.com/food</span></div>' : `<div class="appstrip">${flow.device === "app" ? "Home Assistant app" : "home.example.com"}</div>`}
+          <div class="stage"></div><div class="overlay"></div>${laptop ? "" : '<div class="keyboard"></div>'}<div class="cursor"></div></div></div></div>
+        <div class="side"><div class="who">${LABEL[flow.device]}${flow.keyboard ? " · keyboard only" : ""}</div><ol class="steps">${flow.steps.map((s) => `<li>${s.cap}</li>`).join("")}</ol>
+          <div class="controls"><button class="prev">Back</button><button class="play">Play</button><button class="next">Next</button><button class="again">Restart</button><span class="count"></span></div></div>`;
+      this.root = root;
+      this.wrap = root.querySelector(".devicewrap");
+      this.device = root.querySelector(".device");
+      this.screen = root.querySelector(".screen");
+      this.stage = root.querySelector(".stage");
+      this.overlay = root.querySelector(".overlay");
+      this.kb = root.querySelector(".keyboard");
+      if (this.kb) this.kb.innerHTML = `<div>${[..."qwertyuiop"].map((c) => `<i>${c}</i>`).join("")}</div><div>${[..."asdfghjkl"].map((c) => `<i>${c}</i>`).join("")}</div><div>${[..."zxcvbnm"].map((c) => `<i>${c}</i>`).join("")}</div><div><i class="wide">space</i><i class="enter">↵</i></div>`;
+      this.cursor = root.querySelector(".cursor");
+      this.items = [...root.querySelectorAll(".steps li")];
+      this.count = root.querySelector(".count");
+      this.playBtn = root.querySelector(".play");
+      this.items.forEach((li, i) => li.addEventListener("click", () => { this.userPaused = true; this.stop(); this.show(i); }));
+      root.querySelector(".prev").addEventListener("click", () => { this.userPaused = true; this.stop(); this.show(Math.max(0, this.i - 1)); });
+      root.querySelector(".next").addEventListener("click", () => { this.userPaused = true; this.stop(); this.show(Math.min(this.flow.steps.length - 1, this.i + 1)); });
+      root.querySelector(".again").addEventListener("click", () => { this.userPaused = false; this.stop(); this.i = 0; this.stage.scrollTop = 0; this.start(); });
+      this.playBtn.addEventListener("click", () => { if (this.playing) { this.userPaused = true; this.stop(); } else { this.userPaused = false; this.start(); } });
+      this.fit();
+      this.show(0);
+    }
+
+    fit() {
+      const avail = this.wrap.parentElement.clientWidth;
+      const w = this.device.offsetWidth;
+      this.scale = Math.min(1, avail / w);
+      this.device.style.transform = this.scale < 1 ? `scale(${this.scale})` : "";
+      this.wrap.style.height = `${this.device.offsetHeight * this.scale}px`;
+    }
+
+    // Draws step `i` without playing it.
+    show(i) {
+      this.i = i;
+      const s = this.flow.steps[i];
+      this.stage.innerHTML = s.html;
+      this.stage.classList.toggle("narrow", Boolean(s.narrow));
+      this.overlay.innerHTML = s.overlay || "";
+      if (this.kb) this.kb.classList.toggle("up", Boolean(s.keyboard));
+      this.stage.classList.toggle("kbpad", Boolean(s.keyboard));
+      this.items.forEach((li, j) => li.classList.toggle("now", j === i));
+      this.count.textContent = `Step ${i + 1} of ${this.flow.steps.length}`;
+      this.cursor.classList.remove("on");
+      const el = this.target(s);
+      if (el) {
+        if (this.flow.keyboard) el.classList.add("kb-focus");
+        this.reveal(el, s.keyboard, true);
+      }
+    }
+
+    target(s) {
+      if (!s.target) return null;
+      return this.overlay.querySelector(s.target) || this.stage.querySelector(s.target);
+    }
+
+    // Where `el`'s centre is on the screen, unscaled.
+    point(el) {
+      const r = el.getBoundingClientRect(), sr = this.screen.getBoundingClientRect();
+      return { x: (r.left - sr.left + r.width / 2) / this.scale, y: (r.top - sr.top + r.height / 2) / this.scale };
+    }
+
+    // Scrolls the stage so `el` sits in view, above the keyboard if it is up.
+    async reveal(el, keyboard, now = false) {
+      if (this.overlay.contains(el)) return;
+      const sr = this.stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+      const view = this.stage.clientHeight - (keyboard ? 250 : 0);
+      const top = (r.top - sr.top) / this.scale + this.stage.scrollTop;
+      const want = Math.max(0, Math.min(top - view * 0.45, this.stage.scrollHeight - this.stage.clientHeight + (keyboard ? 250 : 0)));
+      const from = this.stage.scrollTop, steps = reduced || now ? 1 : 14;
+      for (let k = 1; k <= steps; k++) {
+        this.stage.scrollTop = from + ((want - from) * k) / steps;
+        await new Promise((r2) => requestAnimationFrame(r2));
+      }
+    }
+
+    async play(i, token) {
+      this.show(i);
+      const s = this.flow.steps[i];
+      await sleep(650);
+      if (token !== this.token) return;
+      const el = this.target(s);
+      if (el) {
+        await this.reveal(el, s.keyboard);
+        if (token !== this.token) return;
+        const p = this.point(el);
+        if (this.flow.keyboard) {
+          el.classList.add("kb-focus");
+        } else {
+          this.cursor.classList.add("on");
+          this.cursor.style.transform = `translate(${p.x}px, ${p.y}px)`;
+          await sleep(750);
+        }
+        if (token !== this.token) return;
+        if (s.act === "tap") this.burst(p);
+        if (s.act === "key") this.badge(p, s.key);
+        if (s.act === "type") {
+          const input = el.matches("input") ? el : el.querySelector("input");
+          input.classList.add("typing");
+          input.value = "";
+          for (const ch of s.text) {
+            if (token !== this.token) return;
+            input.value += ch;
+            await sleep(55);
+          }
+        }
+      }
+      await sleep(s.act ? 1700 : 2600);
+    }
+
+    burst(p) {
+      const r = document.createElement("div");
+      r.className = "ripple";
+      r.style.left = `${p.x}px`;
+      r.style.top = `${p.y}px`;
+      this.screen.appendChild(r);
+      setTimeout(() => r.remove(), 600);
+    }
+
+    badge(p, key) {
+      const b = document.createElement("div");
+      b.className = "keybadge";
+      b.textContent = key;
+      b.style.left = `${p.x}px`;
+      b.style.top = `${p.y}px`;
+      this.screen.appendChild(b);
+      setTimeout(() => b.remove(), 1000);
+    }
+
+    async start() {
+      if (this.playing) return;
+      this.playing = true;
+      this.playBtn.textContent = "Pause";
+      const token = ++this.token;
+      for (;;) {
+        await this.play(this.i, token);
+        if (token !== this.token) return;
+        if (this.i === this.flow.steps.length - 1) {
+          await sleep(1500);
+          if (token !== this.token) return;
+          this.stage.scrollTop = 0;
+          this.i = 0;
+        } else this.i += 1;
+      }
+    }
+
+    stop() {
+      this.token += 1;
+      this.playing = false;
+      this.playBtn.textContent = "Play";
+    }
+  }
+
+  for (const fig of document.querySelectorAll("figure[data-marks]"))
+    for (const [sel, kind] of JSON.parse(fig.dataset.marks)) fig.querySelectorAll(sel).forEach((el) => el.classList.add(`d-${kind}`));
+  document.getElementById("diffs").addEventListener("change", (e) => document.getElementById("pairs").classList.toggle("diffs-on", e.target.checked));
+
+  const players = [...document.querySelectorAll(".player")].map((el) => new Player(el, FLOWS[el.dataset.flow]));
+  addEventListener("resize", () => players.forEach((p) => p.fit()));
+  if (!reduced && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const p = players.find((x) => x.root === e.target);
+        if (e.isIntersecting && !p.userPaused) p.start();
+        else if (!e.isIntersecting && p.playing) p.stop();
+      }
+    }, { threshold: 0.55 });
+    players.forEach((p) => io.observe(p.root));
+  }
+})();
+</script>
