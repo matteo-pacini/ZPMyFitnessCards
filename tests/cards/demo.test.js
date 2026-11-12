@@ -135,6 +135,8 @@ test("today's activity status follows from its figures", () => {
   assert.equal(demo.activityJSON({ ...row, measured: 2950, counted: 1500 }, true).status, "capped");
   // At exactly the cap, nothing is over it.
   assert.equal(demo.activityJSON({ ...row, measured: 2000, counted: 1500 }, true).status, "counting");
+  // Over a cap no higher than the level's allowance, nothing is added: level comes before capped, as in the spec.
+  assert.equal(demo.activityJSON({ ...row, measured: 900, counted: 300, added: 0, cap: 300 }, true).status, "level");
   assert.equal(demo.activityJSON(row, false).status, null);
 });
 

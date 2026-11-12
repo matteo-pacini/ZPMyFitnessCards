@@ -730,10 +730,11 @@ const personJSON = (p) => ({
 
 // metron/day's activity, from a day's stored row: with a status if the day
 // is `today`, else null. The demo's sensor is always there, with a reading
-// from today that counts, so today is capped, within the level or counting.
+// from today that counts, so today is within the level, capped or counting,
+// checked in that order, as the spec orders the statuses.
 function activityJSON({ source, measured, counted, added, allowed, share, cap }, today) {
   let status = null;
-  if (today) status = (measured * share) / 100 > cap ? "capped" : counted <= allowed ? "level" : "counting";
+  if (today) status = counted <= allowed ? "level" : (measured * share) / 100 > cap ? "capped" : "counting";
   return { source, measured, counted, added, allowed, share, cap, status };
 }
 
