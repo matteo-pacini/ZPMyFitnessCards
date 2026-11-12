@@ -1,4 +1,4 @@
-"""Calorie, macro and weight maths. Pure functions, no Home Assistant."""
+"""Calorie, macro, active calories and weight maths. Pure functions, no Home Assistant."""
 
 from __future__ import annotations
 
@@ -36,6 +36,11 @@ KCAL_PER_KG = 7700
 
 KCAL_PER_GRAM = {"protein": 4, "carbs": 4, "fat": 9}
 
+# The units active calories are read in, and how many of each make 1 kcal.
+# Withings says "calories" for kcal. Home Assistant's "cal" is the small
+# calorie, a thousandth of a kcal, and is not accepted.
+PER_KCAL = {"kcal": 1, "calories": 1, "kJ": 4.184}
+
 # Upper limits of the adult BMI bands: below 18.5 underweight, then healthy,
 # then overweight from 25, then obese from 30.
 BMI_BANDS = (("underweight", 18.5), ("healthy", 25.0), ("overweight", 30.0))
@@ -56,15 +61,44 @@ def age_on(birth: date, day: date) -> int:
     return day.year - birth.year - ((day.month, day.day) < (birth.month, birth.day))
 
 
+def resting_burn(sex: str, weight_kg: float, height_cm: float, age: int) -> float:
+    """Estimated kcal burnt a day at rest: Mifflin-St Jeor."""
+    return 10 * weight_kg + 6.25 * height_cm - 5 * age + (5 if sex == "male" else -161)
+
+
 def daily_burn(sex: str, weight_kg: float, height_cm: float, age: int, activity: str) -> float:
-    """Estimated kcal burnt a day: Mifflin-St Jeor times the activity level."""
-    resting = 10 * weight_kg + 6.25 * height_cm - 5 * age + (5 if sex == "male" else -161)
-    return resting * ACTIVITY[activity]
+    """Estimated kcal burnt a day: the resting burn times the activity level."""
+    return resting_burn(sex, weight_kg, height_cm, age) * ACTIVITY[activity]
 
 
 def suggested_calories(burn: float, pace: str) -> float:
     """The daily kcal that changes weight at `pace`."""
     return burn + PACES[pace] * KCAL_PER_KG / 7
+
+
+def activity_counted(measured: float, share_pct: float, cap: float) -> float:
+    """The kcal of a day's measured activity that count.
+
+    That is `share_pct` of `measured`, to the nearest 10 kcal by Python's
+    `round`, at most `cap` and never below 0.
+    """
+    return max(0.0, min(cap, round(measured * share_pct / 100, -1)))
+
+
+def activity_allowed(resting: float, activity: str) -> float:
+    """The kcal of activity the activity level already allows for: 0 for Sedentary."""
+    return resting * (ACTIVITY[activity] - ACTIVITY["sedentary"])
+
+
+def activity_added(counted: float, allowed: float) -> float:
+    """The kcal that activity adds to the goal: what counts beyond what is allowed for."""
+    return max(0.0, counted - allowed)
+
+
+def to_kcal(value: float, unit: str | None) -> float | None:
+    """`value`, in `unit`, as kcal; None unless `unit` is kcal, "calories" or kJ."""
+    per_kcal = PER_KCAL.get(unit)
+    return None if per_kcal is None else value / per_kcal
 
 
 def macro_grams(kcal: float, protein_pct: float, carbs_pct: float, fat_pct: float) -> Goals:
