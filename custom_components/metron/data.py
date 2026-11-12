@@ -174,6 +174,8 @@ class FitnessData:
         self.people = {p.key: p for p in people}
         # Held for every write, and for the whole of a backup.
         self._write_lock = asyncio.Lock()
+        # Whether a backup holds the lock.
+        self._paused = False
 
     async def _read(self, func: Callable[..., Any], *args: Any) -> Any:
         return await self.hass.async_add_executor_job(func, *args)
@@ -192,10 +194,14 @@ class FitnessData:
         except Exception:
             self._write_lock.release()
             raise
+        self._paused = True
 
     def resume_after_backup(self) -> None:
-        """Let writes continue."""
-        if self._write_lock.locked():
+        """Let writes continue, if a backup held them."""
+        # Not whether the lock is held: a write holds it too, as Home Assistant
+        # resumes after a backup whose pause failed.
+        if self._paused:
+            self._paused = False
             self._write_lock.release()
 
     # Goals and weight

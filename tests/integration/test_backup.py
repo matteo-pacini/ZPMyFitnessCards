@@ -48,3 +48,20 @@ async def test_resuming_without_a_backup_does_nothing(
 ) -> None:
     await backup.async_post_backup(hass)
     assert (await ws("weight/set", person="debora", day="2026-11-09", kg=69))["success"]
+
+
+async def test_resuming_after_a_failed_pause_leaves_a_write_alone(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> None:
+    data = entry.runtime_data.data
+    with (
+        patch.object(data.db, "checkpoint", side_effect=OSError("disk")),
+        pytest.raises(OSError, match="disk"),
+    ):
+        await backup.async_pre_backup(hass)
+    # A write in progress holds the lock as Home Assistant resumes, which it
+    # does after every backup, failed or not.
+    await data._write_lock.acquire()
+    await backup.async_post_backup(hass)
+    assert data._write_lock.locked()
+    data._write_lock.release()
