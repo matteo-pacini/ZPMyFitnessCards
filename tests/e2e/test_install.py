@@ -117,6 +117,6 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
     # dashboard resource added.
     new_home.dashboard([{"type": "custom:metron-weight-card", "person": "Nora"}])
     page.reload()
-    page.locator("ha-sidebar").get_by_text("FS test").click()
+    page.locator("ha-sidebar").get_by_text("Food", exact=True).click()
     card = page.locator("metron-weight-card")
     expect(card.locator(".chart")).to_contain_text("Goal 65 kg", timeout=30_000)

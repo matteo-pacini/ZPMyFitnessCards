@@ -93,7 +93,7 @@ test("the form's choices go into the config, and the defaults and empty fields l
     type: config.type,
     grid_options: { rows: 4 },
   });
-  assert.deepEqual(plain(fn.editedConfig(config, { navigation_path: "/fs-test/0" })), { ...config, navigation_path: "/fs-test/0" });
+  assert.deepEqual(plain(fn.editedConfig(config, { navigation_path: "/metron-test/0" })), { ...config, navigation_path: "/metron-test/0" });
 });
 
 test("the editor speaks the language of whoever edits", () => {

@@ -181,6 +181,36 @@ def shoot(
     page.context.close()
 
 
+def shoot_dashboard(home: Home, browser: Browser, name: str) -> None:
+    """Most of the cards on one dashboard, as someone might set it up, in the
+    whole window: sections in three columns, on the sample data."""
+    home.dashboard([])
+    sections = [
+        [SUMMARY, TRENDS],
+        [DIARY],
+        [WEIGHT, MEALS_CARD],
+    ]
+    view = {
+        "title": "Food and weight",
+        "type": "sections",
+        "max_columns": 3,
+        "sections": [{"type": "grid", "cards": cards} for cards in sections],
+    }
+    config = {"views": [view]}
+    home.ws({"type": "lovelace/config/save", "url_path": home.DASHBOARD, "config": config})
+    page = signed_in(home, browser, width=1600, height=1240)
+    page.add_init_script(SCANNER)
+    page.goto(home.url + "/" + home.DASHBOARD + "/0")
+    for tag in ("summary", "trends", "food-diary", "weight", "meals"):
+        expect(page.locator(f"metron-{tag}-card .title").first).to_be_visible(timeout=30_000)
+    page.locator('metron-trends-card [data-action="range"][data-range="30"]').click()
+    page.locator('metron-weight-card [data-action="range"][data-range="365"]').click()
+    page.wait_for_timeout(1500)
+    IMAGES.mkdir(exist_ok=True)
+    page.screenshot(path=str(IMAGES / f"{name}.png"), animations="disabled")
+    page.context.close()
+
+
 def shoot_editor(home: Home, browser: Browser, name: str) -> None:
     """The food diary's visual editor in the dashboard's dialog, with Debora
     chosen and the person dropdown open."""
@@ -314,6 +344,7 @@ def search_open_food_facts(search: FakeSearch):
 
 
 def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None:
+    shoot_dashboard(sample, browser, "dashboard")
     shoot_editor(sample, browser, "card-editor")
     shoot(sample, browser, DIARY, "food-diary")
     shoot(sample, browser, DIARY, "food-diary-dark", dark=True)
@@ -341,6 +372,7 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     assert sorted(taken) == sorted(
         f"{n}.png"
         for n in (
+            "dashboard",
             "card-editor",
             "food-diary",
             "food-diary-dark",

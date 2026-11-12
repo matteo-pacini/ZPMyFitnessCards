@@ -142,7 +142,7 @@ class Home:
         with ThreadPoolExecutor(1) as pool:
             return pool.submit(asyncio.run, call()).result()
 
-    DASHBOARD = "fs-test"
+    DASHBOARD = "metron-test"
 
     def dashboard(self, cards: list[dict[str, Any]]) -> None:
         """Show `cards` on the test dashboard, creating it the first time."""
@@ -152,7 +152,7 @@ class Home:
                 {
                     "type": "lovelace/dashboards/create",
                     "url_path": self.DASHBOARD,
-                    "title": "FS test",
+                    "title": "Food",
                     "mode": "storage",
                 }
             )
