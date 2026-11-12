@@ -66,7 +66,33 @@ nix flake prefetch github:matteo-pacini/metron/v0.5.0
 
 or rebuild with `lib.fakeHash` and copy the hash from the `got:` line of the error. Change `version` and `hash` together for each new release.
 
-The integration loads its cards itself, so nothing goes in `customLovelaceModules`. For Postgres, add the driver with `services.home-assistant.extraPackages = ps: [ ps.psycopg2 ];`, and make a database owned by the `hass` user. The URL `postgresql://@/metron` then connects over the local socket as that user.
+The integration loads its cards itself, so nothing goes in `customLovelaceModules`.
+
+For Postgres, give Home Assistant the driver and a database of its own, owned by the `hass` user:
+
+```nix
+services.home-assistant.extraPackages = ps: [ ps.psycopg2 ];
+
+services.postgresql = {
+  enable = true;
+  ensureDatabases = [ "metron" ];
+  ensureUsers = [ { name = "hass"; } ];
+};
+
+# ensureDBOwnership needs the role and the database to share a name, so
+# hand the database to hass once Postgres is set up.
+systemd.services.postgresql-setup.postStart = lib.mkAfter ''
+  psql -tAc 'ALTER DATABASE "metron" OWNER TO hass;'
+'';
+
+# Home Assistant's backups leave Postgres out: back it up yourself.
+services.postgresqlBackup = {
+  enable = true;
+  databases = [ "metron" ];
+};
+```
+
+Then, when adding the integration, choose Postgres and give the URL `postgresql://@/metron`. It connects over the local socket as the `hass` user, so it needs no password.
 
 ## Units
 
