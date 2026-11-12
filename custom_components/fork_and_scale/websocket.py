@@ -55,15 +55,24 @@ def _day(value: Any) -> str:
     return parsed.isoformat()
 
 
+def _number(value: Any) -> float:
+    # Schemas turn a ValueError into Invalid, but not a TypeError, as float()
+    # raises for None: then vol.Any would fail instead of trying the next.
+    try:
+        return float(value)
+    except TypeError as err:
+        raise vol.Invalid("not a number") from err
+
+
 def _non_negative(value: Any) -> float:
-    number = float(value)
+    number = _number(value)
     if number < 0:
         raise vol.Invalid("negative")
     return number
 
 
 def _positive(value: Any) -> float:
-    number = float(value)
+    number = _number(value)
     if number <= 0:
         raise vol.Invalid("not positive")
     return number

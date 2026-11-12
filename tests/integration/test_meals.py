@@ -401,6 +401,23 @@ async def test_logs_the_ticked_items_of_a_meal(hass: HomeAssistant, ws) -> None:
     ]
 
 
+async def test_saves_fixed_values_left_empty(ws) -> None:
+    """As Save as meal sends a quick add's entry: grams and macros may be empty."""
+    nutrients = ("protein", "carbs", "fat", "fibre", "sugar", "saturated_fat", "salt")
+    empty = dict.fromkeys(nutrients)
+    rice = {"name": "Rice", "grams": None, "kcal": 200, **empty}
+    meal = await ok(ws, "meal/add", name="Rice bowl", owner="debora", items=[rice])
+    assert {k: meal["items"][0][k] for k in ("food_id", "grams", "kcal", "protein")} == {
+        "food_id": None,
+        "grams": None,
+        "kcal": 200,
+        "protein": None,
+    }
+    no_grams = [{"food_id": 1, "grams": None}]
+    refused = await error(ws, "meal/add", name="x", owner=None, items=no_grams)
+    assert refused["code"] == "invalid_format"
+
+
 async def test_meal_commands_check_owners_foods_and_items(ws) -> None:
     item = [{"name": "Coffee", "kcal": 20}]
     assert (await error(ws, "meal/add", name="x", owner="nobody", items=item))["code"] == (
