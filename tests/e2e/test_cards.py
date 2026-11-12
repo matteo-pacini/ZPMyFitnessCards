@@ -76,8 +76,13 @@ def test_adds_a_saved_food_by_weight_then_edits_and_deletes_it(home: Home, page:
     expect(card.locator(".panel")).to_be_hidden()
 
     row.click()
-    card.locator('.panel [data-field="grams"]').fill("80")
+    # An empty amount is refused, keeping the meal chosen.
     card.locator('.panel [data-field="meal"]').select_option("lunch")
+    card.locator('.panel [data-field="grams"]').fill("")
+    card.locator('[data-action="save-edit"]').click()
+    expect(card.locator(".panel .error")).to_have_text("Enter an amount above 0.")
+    expect(card.locator('.panel [data-field="meal"]')).to_have_value("lunch")
+    card.locator('.panel [data-field="grams"]').fill("80")
     card.locator('[data-action="save-edit"]').click()
     moved = meal(card, "lunch").locator(".row", has_text="Porridge oats e2e")
     expect(moved).to_contain_text("311", timeout=TIMEOUT)
@@ -156,12 +161,33 @@ def test_copies_a_meal_from_yesterday_and_moves_between_days(home: Home, page: P
     expect(card.locator(".nav .label")).to_have_text("Today")
 
 
-def test_copying_an_empty_meal_says_so(home: Home, page: Page) -> None:
+def test_copying_an_empty_meal_says_so_keeping_what_was_chosen(home: Home, page: Page) -> None:
+    earlier = (date.fromisoformat(today()) - timedelta(days=3)).isoformat()
+    home.ws(
+        {
+            "type": "metron/entry/add",
+            "person": person_id(home, "Matteo"),
+            "day": earlier,
+            "meal": "dinner",
+            "name": "Copied curry e2e",
+            "kcal": 640,
+        }
+    )
     card = diary(home, page, "Matteo")
     meal(card, "snacks").locator('[data-action="copy"]').click()
-    card.locator('.panel [data-field="from_day"]').fill("2000-01-01")
+    from_day = card.locator('.panel [data-field="from_day"]')
+    from_meal = card.locator('.panel [data-field="from_meal"]')
+    from_day.fill("2000-01-01")
+    from_meal.select_option("dinner")
     card.locator('[data-action="do-copy"]').click()
     expect(card.locator(".panel .error")).to_contain_text("Nothing to copy")
+    expect(from_day).to_have_value("2000-01-01")
+    expect(from_meal).to_have_value("dinner")
+
+    from_day.fill(earlier)
+    card.locator('[data-action="do-copy"]').click()
+    copied = meal(card, "snacks").locator(".row", has_text="Copied curry e2e")
+    expect(copied).to_contain_text("640", timeout=TIMEOUT)
 
 
 def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> None:

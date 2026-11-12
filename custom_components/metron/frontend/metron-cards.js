@@ -3047,10 +3047,18 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     return this._card.querySelector(`.panel [data-field="${key}"]`);
   }
 
-  // Keep what was typed in the add panel's Quick add or New food tab, which a
-  // redraw for another tab, a scan or a lookup would lose.
+  // Keep what was typed or chosen in the open panel, which a redraw would
+  // lose: for an error, or in the add panel for another tab, a scan or a lookup.
   _keepTyped() {
     const p = this._panel;
+    if (p?.kind === "edit") {
+      p.amount = this._field(amountField(p.entry)).value;
+      p.meal = this._field("meal").value;
+    }
+    if (p?.kind === "copy") {
+      p.fromDay = this._field("from_day").value;
+      p.fromMeal = this._field("from_meal").value;
+    }
     if (p?.kind !== "add") return;
     if (p.tab === "quick" && this._field("name")) {
       p.quick = Object.fromEntries(["name", "kcal", ...MACROS, "meal"].map((k) => [k, this._field(k).value]));
@@ -3430,6 +3438,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     },
     async "click:save-edit"() {
       const p = this._panel;
+      this._keepTyped();
       const field = amountField(p.entry);
       const amount = numberValue(this._field(field));
       if (amount == null || amount <= 0) return this._showError(null, "error_amount");
@@ -3443,6 +3452,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       await this._sendAndClose({ type: "metron/entry/delete", entry_id: this._panel.entry.id });
     },
     async "click:do-copy"() {
+      this._keepTyped();
       const sent = await this._send({
         type: "metron/meal/copy",
         person: this._person.id,
@@ -3665,14 +3675,14 @@ const amountField = (entry) => (entry.grams != null ? "grams" : "kcal");
 function editPanelHTML(p, locale, t) {
   const e = p.entry;
   const field = amountField(e);
-  const amount = `<label>${esc(t[field])}<input data-field="${field}" ${NUMBER_INPUT} value="${e[field]}"></label>`;
+  const amount = `<label>${esc(t[field])}<input data-field="${field}" ${NUMBER_INPUT} value="${esc(p.amount ?? e[field])}"></label>`;
   const buttons = p.confirming
     ? `<span class="error">${esc(fill(t.really_delete, { name: e.name }))}</span>
        ${cancelButtonHTML(t)}<button class="danger" data-action="really-delete">${esc(t.yes_delete)}</button>`
     : `<button class="text" data-action="delete-entry">${esc(t.delete)}</button>${cancelButtonHTML(t)}
        <button class="fill" data-action="save-edit">${esc(t.save)}</button>`;
   return `<div class="mealhead"><span>${esc(t.edit_entry)}: ${esc(e.name)}</span><span class="sub num">${number(e.kcal, locale)} ${esc(t.kcal)}</span></div>
-    <div class="grid">${amount}<label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, e.meal)}</select></label></div>
+    <div class="grid">${amount}<label>${esc(t.meal)}<select data-field="meal">${optionList(MEALS, t, p.meal ?? e.meal)}</select></label></div>
     <div class="actions">${buttons}</div>`;
 }
 
