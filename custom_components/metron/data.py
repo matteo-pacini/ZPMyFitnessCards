@@ -178,6 +178,15 @@ def food_entry(food: Mapping[str, Any], grams: float) -> dict[str, Any]:
     }
 
 
+def _shown(row: Mapping[str, Any], status: str | None) -> dict[str, Any]:
+    """An activity row as metron/day gives it, with `status`, its kcal figures to 0.01 kcal."""
+    figures = {
+        key: None if row[key] is None else round(row[key], 2)
+        for key in ("measured", "counted", "added", "allowed")
+    }
+    return {**row, **figures, "status": status}
+
+
 def loaded_data(hass: HomeAssistant) -> FitnessData | None:
     """The loaded integration's FitnessData, or None while it is not loaded."""
     for entry in hass.config_entries.async_entries(DOMAIN):
@@ -336,12 +345,13 @@ class FitnessData:
 
         A past day has its stored row, with `status` None. Today has one
         whenever the box is ticked, with its status: with nothing measured
-        yet, `measured` is None and nothing counts.
+        yet, `measured` is None and nothing counts. Figures in kcal are to
+        0.01 kcal; the stored ones are kept as they are.
         """
         row = await self._read(self.db.activity, person.key, day)
         the_day = date.fromisoformat(day)
         if the_day != today():
-            return None if row is None else {**row, "status": None}
+            return None if row is None else _shown(row, None)
         if not person.active_calories_enabled:
             return None
         sensor = person.active_calories_entity
@@ -357,7 +367,7 @@ class FitnessData:
                 "cap": person.active_calories_cap,
             }
         state = self.hass.states.get(sensor) if sensor else None
-        return {**row, "status": a.status(sensor, state, held)}
+        return _shown(row, a.status(sensor, state, held))
 
     async def async_sensor_reading(
         self, person: Person, state: State | None, before: State | None

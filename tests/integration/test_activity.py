@@ -32,8 +32,8 @@ TOMORROW = "2026-11-10"
 GARMIN_2 = f"{GARMIN}_2"
 KCAL = {"unit_of_measurement": "kcal", "state_class": "total_increasing"}
 
-# Anna's figures, from goals.py's maths.
-ALLOWED = 1395.25 * 0.175
+# Anna's figures, from goals.py's maths. Replies give kcal to 0.01 kcal.
+ALLOWED = 244.17
 BASE = 1368
 
 
@@ -49,10 +49,10 @@ def figures(
     """metron/day's activity for Anna's Garmin, at her settings unless `more` says."""
     return {
         "source": GARMIN,
-        "measured": None if measured is None else pytest.approx(measured),
+        "measured": None if measured is None else pytest.approx(measured, abs=0.005),
         "counted": counted,
         "added": pytest.approx(added, abs=0.005),
-        "allowed": pytest.approx(ALLOWED),
+        "allowed": ALLOWED,
         "share": 75,
         "cap": 1500,
         "status": status,
@@ -269,6 +269,28 @@ async def test_e5_a_kj_sensor_counts_in_kcal(hass: HomeAssistant, set_up, day) -
     assert (await day())["activity"] == figures(3790 / 4.184, 680, 435.83, "counting")
 
 
+async def test_replies_and_attributes_give_the_figures_to_0_01_kcal(
+    hass: HomeAssistant, set_up, day, freezer: FrozenDateTimeFactory
+) -> None:
+    await reading(hass, 3790, unit_of_measurement="kJ")
+    entry = await set_up(anna())
+    figures = {"measured": 905.83, "counted": 680, "added": 435.83, "allowed": 244.17}
+    activity = (await day())["activity"]
+    assert {key: activity[key] for key in figures} == figures
+    attributes = hass.states.get("sensor.anna_activity").attributes
+    assert {key: attributes[key] for key in ("measured", "counted")} == {
+        "measured": 905.83,
+        "counted": 680,
+    }
+    # Stored as measured.
+    data = entry.runtime_data.data
+    assert (await data.async_read(data.db.activity, "anna", TODAY))["measured"] == 3790 / 4.184
+
+    await midnight(hass, freezer)
+    past = (await day(TODAY))["activity"]
+    assert {key: past[key] for key in figures} == figures
+
+
 async def test_e7_a_typed_calorie_goal_gets_activity_on_top(
     hass: HomeAssistant, set_up, day
 ) -> None:
@@ -384,7 +406,7 @@ async def test_the_units_table_at_runtime(
     if measured is None:
         assert (activity["measured"], activity["status"]) == (None, "waiting")
     else:
-        assert activity["measured"] == pytest.approx(measured)
+        assert activity["measured"] == pytest.approx(measured, abs=0.005)
 
 
 async def test_a_unit_changed_after_saving_is_read_in_its_new_unit(
@@ -422,8 +444,8 @@ async def test_the_activity_level_is_a_floor(
     allowed = 1395.25 * (multiplier - 1.2)
     added = max(0, 680 - allowed)
     found = await day()
-    assert found["activity"]["allowed"] == pytest.approx(allowed)
-    assert found["activity"]["added"] == pytest.approx(added)
+    assert found["activity"]["allowed"] == pytest.approx(allowed, abs=0.005)
+    assert found["activity"]["added"] == pytest.approx(added, abs=0.005)
     assert found["activity"]["status"] == status
     assert found["goals"]["kcal"] == round(1395.25 * multiplier - 550 + added)
 
@@ -434,7 +456,7 @@ async def test_share_and_cap_follow_the_person(hass: HomeAssistant, set_up, day)
     await set_up(anna(active_calories_share=50, active_calories_cap=300))
     activity = (await day())["activity"]
     assert (activity["share"], activity["cap"], activity["counted"]) == (50, 300, 300)
-    assert activity["added"] == pytest.approx(300 - ALLOWED)
+    assert activity["added"] == 55.83
     assert activity["status"] == "capped"
 
 
@@ -451,7 +473,7 @@ async def test_a_weight_changes_what_today_s_activity_adds(
     assert (await client.receive_json())["event"] == {"person": "anna", "days": []}
     resting = 1395.25 - 100
     found = await day()
-    assert found["activity"]["allowed"] == pytest.approx(resting * 0.175)
+    assert found["activity"]["allowed"] == pytest.approx(resting * 0.175, abs=0.005)
     assert found["goals"]["kcal"] == round(resting * 1.375 - 550 + 680 - resting * 0.175)
 
 
