@@ -15,9 +15,10 @@ from .conftest import Home
 TIMEOUT = 15_000
 
 # Mount a card at #mounted. `fail` maps a command type (or "*") to the error
-# code its calls reject with; "first" fails only the first call of each.
+# code its calls reject with; `once` fails only the first call of each. `slow`
+# maps a command type to how many ms its replies take.
 MOUNT = """
-async ({ tag, config, fail, once, subscribeFails }) => {
+async ({ tag, config, fail, once, subscribeFails, slow }) => {
   const base = document.querySelector("home-assistant").hass;
   const failed = new Set();
   const callWS = (message) => {
@@ -26,7 +27,9 @@ async ({ tag, config, fail, once, subscribeFails }) => {
       failed.add(message.type);
       return Promise.reject({ code, message: `${code} on purpose` });
     }
-    return base.callWS(message);
+    const reply = base.callWS(message);
+    const ms = slow[message.type];
+    return ms ? reply.then((r) => new Promise((done) => setTimeout(() => done(r), ms))) : reply;
   };
   const connection = subscribeFails
     ? { ...base.connection, subscribeMessage: () => Promise.reject(new Error("no")) }
@@ -47,7 +50,9 @@ def open_home(home: Home, page: Page) -> None:
     page.wait_for_function("document.querySelector('home-assistant')?.hass?.connected")
 
 
-def mount(page: Page, tag: str, config: dict, fail=None, once=False, subscribe_fails=False):
+def mount(
+    page: Page, tag: str, config: dict, fail=None, once=False, subscribe_fails=False, slow=None
+):
     page.evaluate(
         MOUNT,
         {
@@ -56,6 +61,7 @@ def mount(page: Page, tag: str, config: dict, fail=None, once=False, subscribe_f
             "fail": fail or {},
             "once": once,
             "subscribeFails": subscribe_fails,
+            "slow": slow or {},
         },
     )
     return page.locator("#mounted")
@@ -263,3 +269,46 @@ def test_a_failed_food_search_is_shown_in_the_panel(home: Home, page: Page) -> N
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
     card.locator('.meal[data-meal="lunch"] [data-action="add"]').dispatch_event("click")
     expect(card.locator(".panel .error")).to_have_text("Something went wrong: boom on purpose")
+
+
+def test_a_double_tap_sends_once_and_a_late_reply_keeps_to_its_panel(
+    home: Home, page: Page
+) -> None:
+    debora = next(p["id"] for p in home.ws({"type": "metron/people"}) if p["name"] == "Debora")
+    today = page.evaluate(
+        "() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())"
+    )
+    open_home(home, page)
+    card = mount(
+        page, "metron-food-diary-card", {"person": "Debora"}, slow={"metron/entry/add": 1500}
+    )
+    expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
+
+    def quick_add(name: str) -> None:
+        card.locator('.meal[data-meal="snacks"] [data-action="add"]').dispatch_event("click")
+        card.locator('[data-action="tab"][data-tab="quick"]').dispatch_event("click")
+        card.locator('.panel [data-field="name"]').fill(name)
+        card.locator('.panel [data-field="kcal"]').fill("120")
+
+    def logged(name: str) -> int:
+        day = home.ws({"type": "metron/day", "person": debora, "day": today})
+        return sum(e["name"] == name for e in day["entries"])
+
+    # Tapped twice while the first is on its way: logged once.
+    quick_add("Double tap e2e")
+    card.locator('[data-action="quick-add"]').dispatch_event("click")
+    card.locator('[data-action="quick-add"]').dispatch_event("click")
+    expect(card.locator(".row", has_text="Double tap e2e")).to_have_count(1, timeout=TIMEOUT)
+    expect(card.locator(".panel")).to_be_hidden()
+    page.wait_for_timeout(2000)
+    assert logged("Double tap e2e") == 1
+
+    # Cancelled, then another panel opened: the late reply leaves it open.
+    quick_add("Late reply e2e")
+    card.locator('[data-action="quick-add"]').dispatch_event("click")
+    card.locator('[data-action="close"]').first.dispatch_event("click")
+    card.locator('.meal[data-meal="dinner"] [data-action="copy"]').dispatch_event("click")
+    expect(card.locator(".row", has_text="Late reply e2e")).to_have_count(1, timeout=TIMEOUT)
+    # The change shows at once; the slowed reply comes after it.
+    page.wait_for_timeout(2000)
+    expect(card.locator('.panel [data-field="from_day"]')).to_be_visible()

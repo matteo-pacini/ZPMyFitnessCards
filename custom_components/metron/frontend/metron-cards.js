@@ -2569,16 +2569,31 @@ class FoodCard extends FitnessCard {
     this._renderOff();
   }
 
-  // Send a command; on failure show its error in the open panel.
+  // Send a command; on failure show its error in its panel, unless another
+  // took its place meanwhile.
   async _send(message, errorKey) {
+    const p = this._panel;
     try {
       return { ok: true, result: await this._call(message) };
     } catch (err) {
-      this._showError(err, errorKey?.(err) ?? "error_failed");
+      if (this._panel === p) this._showError(err, errorKey?.(err) ?? "error_failed");
       return { ok: false };
     }
   }
 }
+
+// A handler that writes. A tap on any such handler while one is under way
+// is ignored: a second tap on its button would send it again.
+const writes = (handler) =>
+  async function (...args) {
+    if (this._writing) return;
+    this._writing = true;
+    try {
+      await handler.apply(this, args);
+    } finally {
+      this._writing = false;
+    }
+  };
 
 // Handlers every card with a food form shares, for its static `actions`.
 const FOOD_ACTIONS = {
@@ -3015,10 +3030,11 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     this._renderPanel();
   }
 
-  // Send a command; close the panel once it succeeds.
+  // Send a command; close the panel once it succeeds, unless another took its place.
   async _sendAndClose(message) {
+    const p = this._panel;
     const sent = await this._send(message);
-    if (sent.ok) this._closePanel();
+    if (sent.ok && this._panel === p) this._closePanel();
   }
 
   // The Saved tab's saved foods for its query, or recent ones, and the meals
@@ -3216,7 +3232,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       this._panel.ticks[Number(el.dataset.index)] = el.checked;
       this._renderTicked();
     },
-    async "click:save-meal"() {
+    "click:save-meal": writes(async function () {
       const p = this._panel;
       const name = p.name.trim();
       if (!p.ticks.some(Boolean)) return;
@@ -3233,7 +3249,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         this._renderPanel();
         this._revealButtons();
       }
-    },
+    }),
     "click:choose-meal"(el) {
       const p = this._panel;
       // Tapping the chosen meal again goes back to the results. It may be
@@ -3251,7 +3267,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       this._panel.allMeals = true;
       this._renderResults();
     },
-    async "click:log-meal"() {
+    "click:log-meal": writes(async function () {
       const p = this._panel;
       const meal = p.chosen;
       if (!p.ticks.some(Boolean)) return;
@@ -3274,7 +3290,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         this._revealButtons();
         await this._search();
       }
-    },
+    }),
     "click:copy"(el) {
       this._openPanel({ kind: "copy", meal: el.dataset.meal, fromDay: shiftDay(this._day, -1), fromMeal: el.dataset.meal });
     },
@@ -3355,7 +3371,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       this._panel.grams = Number(el.dataset.grams);
       this._renderPicked();
     },
-    async "click:add-entry"() {
+    "click:add-entry": writes(async function () {
       const p = this._panel;
       if (!(p.grams > 0)) return this._showError(null, "error_amount");
       await this._sendAndClose({
@@ -3366,8 +3382,8 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         food_id: p.food.id,
         grams: p.grams,
       });
-    },
-    async "click:quick-add"() {
+    }),
+    "click:quick-add": writes(async function () {
       this._keepTyped();
       const name = this._field("name").value.trim();
       const kcal = numberValue(this._field("kcal"));
@@ -3382,7 +3398,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         kcal,
         ...macros,
       });
-    },
+    }),
     "click:add-portion"() {
       const p = this._panel;
       p.newFood = readFoodForm(this._card).food;
@@ -3408,19 +3424,19 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     "click:stop-scan"() {
       this._scanAbort?.abort();
     },
-    async "click:save-new-food"() {
+    "click:save-new-food": writes(async function () {
       const p = this._panel;
       const { food, error } = this._newFood();
       if (error) return this._showError(null, error);
       await this._saveNewFood(p, food);
-    },
-    async "click:save-anyway"() {
+    }),
+    "click:save-anyway": writes(async function () {
       const p = this._panel;
       const { food, error } = this._newFood();
       if (error) return this._showError(null, error);
       Object.assign(p, { taken: null, warning: null });
       await this._saveNewFood(p, food, true);
-    },
+    }),
     // The food a name warning was about, chosen instead of saving another.
     async "click:choose-taken"() {
       const p = this._panel;
@@ -3436,22 +3452,23 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         this._showError(err);
       }
     },
-    async "click:save-edit"() {
+    "click:save-edit": writes(async function () {
       const p = this._panel;
       this._keepTyped();
       const field = amountField(p.entry);
       const amount = numberValue(this._field(field));
       if (amount == null || amount <= 0) return this._showError(null, "error_amount");
       await this._sendAndClose({ type: "metron/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
-    },
+    }),
     "click:delete-entry"() {
       this._panel.confirming = true;
       this._renderPanel();
     },
-    async "click:really-delete"() {
+    "click:really-delete": writes(async function () {
       await this._sendAndClose({ type: "metron/entry/delete", entry_id: this._panel.entry.id });
-    },
-    async "click:do-copy"() {
+    }),
+    "click:do-copy": writes(async function () {
+      const p = this._panel;
       this._keepTyped();
       const sent = await this._send({
         type: "metron/meal/copy",
@@ -3461,10 +3478,10 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         to_day: this._day,
         to_meal: this._panel.meal,
       });
-      if (!sent.ok) return;
+      if (!sent.ok || this._panel !== p) return;
       if (sent.result.length) this._closePanel();
       else this._showError(null, "nothing_to_copy");
-    },
+    }),
   };
 }
 

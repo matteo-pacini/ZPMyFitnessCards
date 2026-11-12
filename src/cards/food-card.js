@@ -142,16 +142,31 @@ class FoodCard extends FitnessCard {
     this._renderOff();
   }
 
-  // Send a command; on failure show its error in the open panel.
+  // Send a command; on failure show its error in its panel, unless another
+  // took its place meanwhile.
   async _send(message, errorKey) {
+    const p = this._panel;
     try {
       return { ok: true, result: await this._call(message) };
     } catch (err) {
-      this._showError(err, errorKey?.(err) ?? "error_failed");
+      if (this._panel === p) this._showError(err, errorKey?.(err) ?? "error_failed");
       return { ok: false };
     }
   }
 }
+
+// A handler that writes. A tap on any such handler while one is under way
+// is ignored: a second tap on its button would send it again.
+const writes = (handler) =>
+  async function (...args) {
+    if (this._writing) return;
+    this._writing = true;
+    try {
+      await handler.apply(this, args);
+    } finally {
+      this._writing = false;
+    }
+  };
 
 // Handlers every card with a food form shares, for its static `actions`.
 const FOOD_ACTIONS = {
