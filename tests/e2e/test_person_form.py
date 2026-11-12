@@ -10,9 +10,8 @@ from collections.abc import Iterator
 import pytest
 from playwright.sync_api import Browser, Locator, Page, expect
 
-from .conftest import Home, logged_in_page
+from .conftest import PHONE, Home, logged_in_page
 from .flows import people, wait_for
-from .test_meals import PHONE
 from .test_units import entry_id, fields
 
 TIMEOUT = 15_000

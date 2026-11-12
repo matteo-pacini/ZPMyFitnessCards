@@ -39,6 +39,18 @@ def save_food(home: Home, name: str, **more) -> dict:
     )
 
 
+# For a test worth running on a phone as well: a phone's touch and narrow
+# layout can hide or cover what a laptop shows.
+ON_A_PHONE_TOO = pytest.mark.parametrize("page", ["laptop", "phone"], indirect=True)
+
+
+@pytest.fixture
+def on(request: pytest.FixtureRequest) -> str:
+    """Where the test runs, to keep what it saves apart from its other run's."""
+    callspec = getattr(request.node, "callspec", None)
+    return callspec.params.get("page", "laptop") if callspec else "laptop"
+
+
 def open_card(home: Home, page: Page, card: dict) -> Locator:
     home.dashboard([card])
     page.goto(home.url + "/" + home.DASHBOARD + "/0")
@@ -57,20 +69,23 @@ def meal(card: Locator, name: str) -> Locator:
     return card.locator(f'.meal[data-meal="{name}"]')
 
 
-def test_adds_a_saved_food_by_weight_then_edits_and_deletes_it(home: Home, page: Page) -> None:
-    save_food(home, "Porridge oats e2e", portions=[{"name": "Bowl", "grams": 40}])
+@ON_A_PHONE_TOO
+def test_adds_a_saved_food_by_weight_then_edits_and_deletes_it(
+    home: Home, page: Page, on: str
+) -> None:
+    save_food(home, f"Porridge oats e2e {on}", portions=[{"name": "Bowl", "grams": 40}])
     card = diary(home, page, "Debora")
 
     meal(card, "breakfast").locator('[data-action="add"]').click()
     card.locator('[data-action="query"]').fill("oats e2e")
-    card.locator('[data-action="choose"]', has_text="Porridge oats e2e").click()
+    card.locator('[data-action="choose"]', has_text=f"Porridge oats e2e {on}").click()
     grams = card.locator('[data-field="grams"]')
     expect(grams).to_have_value("40")  # the first portion
     grams.fill("60")
     expect(card.locator(".preview")).to_contain_text("233")
     card.locator('[data-action="add-entry"]').click()
 
-    row = meal(card, "breakfast").locator(".row", has_text="Porridge oats e2e")
+    row = meal(card, "breakfast").locator(".row", has_text=f"Porridge oats e2e {on}")
     expect(row).to_contain_text("60 g", timeout=TIMEOUT)
     expect(row).to_contain_text("233")
     expect(card.locator(".panel")).to_be_hidden()
@@ -84,25 +99,26 @@ def test_adds_a_saved_food_by_weight_then_edits_and_deletes_it(home: Home, page:
     expect(card.locator('.panel [data-field="meal"]')).to_have_value("lunch")
     card.locator('.panel [data-field="grams"]').fill("80")
     card.locator('[data-action="save-edit"]').click()
-    moved = meal(card, "lunch").locator(".row", has_text="Porridge oats e2e")
+    moved = meal(card, "lunch").locator(".row", has_text=f"Porridge oats e2e {on}")
     expect(moved).to_contain_text("311", timeout=TIMEOUT)
 
     moved.click()
     card.locator('[data-action="delete-entry"]').click()
     card.locator('[data-action="really-delete"]').click()
-    expect(meal(card, "lunch").locator(".row", has_text="Porridge oats e2e")).to_have_count(
+    expect(meal(card, "lunch").locator(".row", has_text=f"Porridge oats e2e {on}")).to_have_count(
         0, timeout=TIMEOUT
     )
 
 
-def test_quick_adds_a_name_and_kcal(home: Home, page: Page) -> None:
+@ON_A_PHONE_TOO
+def test_quick_adds_a_name_and_kcal(home: Home, page: Page, on: str) -> None:
     card = diary(home, page, "Debora")
     meal(card, "dinner").locator('[data-action="add"]').click()
     card.locator('[data-action="tab"][data-tab="quick"]').click()
-    card.locator('.panel [data-field="name"]').fill("Restaurant pizza e2e")
+    card.locator('.panel [data-field="name"]').fill(f"Restaurant pizza e2e {on}")
     card.locator('.panel [data-field="kcal"]').fill("900")
     card.locator('[data-action="quick-add"]').click()
-    row = meal(card, "dinner").locator(".row", has_text="Restaurant pizza e2e")
+    row = meal(card, "dinner").locator(".row", has_text=f"Restaurant pizza e2e {on}")
     expect(row).to_contain_text("900", timeout=TIMEOUT)
     expect(row).not_to_contain_text(" g")
 
@@ -189,7 +205,10 @@ def test_an_amount_must_be_above_0_to_add_or_save(home: Home, page: Page) -> Non
     expect(row).to_contain_text("450", timeout=TIMEOUT)
 
 
-def test_copies_a_meal_from_yesterday_and_moves_between_days(home: Home, page: Page) -> None:
+@ON_A_PHONE_TOO
+def test_copies_a_meal_from_yesterday_and_moves_between_days(
+    home: Home, page: Page, on: str
+) -> None:
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
     home.ws(
         {
@@ -197,7 +216,7 @@ def test_copies_a_meal_from_yesterday_and_moves_between_days(home: Home, page: P
             "person": person_id(home, "Matteo"),
             "day": yesterday,
             "meal": "lunch",
-            "name": "Soup e2e",
+            "name": f"Soup e2e {on}",
             "kcal": 250,
         }
     )
@@ -206,13 +225,13 @@ def test_copies_a_meal_from_yesterday_and_moves_between_days(home: Home, page: P
 
     meal(card, "lunch").locator('[data-action="copy"]').click()
     card.locator('[data-action="do-copy"]').click()
-    expect(meal(card, "lunch").locator(".row", has_text="Soup e2e")).to_have_count(
+    expect(meal(card, "lunch").locator(".row", has_text=f"Soup e2e {on}")).to_have_count(
         1, timeout=TIMEOUT
     )
 
     card.locator('[data-action="prev"]').click()
     expect(card.locator(".nav .label")).to_have_text("Yesterday")
-    expect(meal(card, "lunch").locator(".row", has_text="Soup e2e")).to_have_count(
+    expect(meal(card, "lunch").locator(".row", has_text=f"Soup e2e {on}")).to_have_count(
         1, timeout=TIMEOUT
     )
     card.locator('[data-action="next"]').click()
@@ -248,12 +267,17 @@ def test_copying_an_empty_meal_says_so_keeping_what_was_chosen(home: Home, page:
     expect(copied).to_contain_text("640", timeout=TIMEOUT)
 
 
-def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> None:
+# A barcode belongs to one food, so each run saves its own.
+BARCODES = {"laptop": "5201054017111", "phone": "5201054017128"}
+
+
+@ON_A_PHONE_TOO
+def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page, on: str) -> None:
     card = open_card(home, page, {"type": "custom:metron-foods-card"})
     card.locator('[data-action="new"]').click()
     form = card.locator(".foodform")
-    form.locator('[data-field="name"]').fill("Greek yogurt e2e")
-    form.locator('[data-field="barcode"]').fill("5201054017111")
+    form.locator('[data-field="name"]').fill(f"Greek yogurt e2e {on}")
+    form.locator('[data-field="barcode"]').fill(BARCODES[on])
     for field, value in {"kcal": "73", "protein": "10", "carbs": "3.6", "fat": "2"}.items():
         form.locator(f'[data-field="{field}"]').fill(value)
     card.locator('[data-action="add-portion"]').click()
@@ -261,10 +285,10 @@ def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> 
     form.locator('[data-portion="grams"]').fill("170")
     card.locator('[data-action="save"]').click()
 
-    card.locator('[data-action="query"]').fill("yogurt e2e")
-    row = card.locator(".row", has_text="Greek yogurt e2e")
+    card.locator('[data-action="query"]').fill(f"yogurt e2e {on}")
+    row = card.locator(".row", has_text=f"Greek yogurt e2e {on}")
     expect(row).to_contain_text("73 kcal per 100 g", timeout=TIMEOUT)
-    saved = home.ws({"type": "metron/food/barcode", "barcode": "5201054017111"})
+    saved = home.ws({"type": "metron/food/barcode", "barcode": BARCODES[on]})
     assert saved["portions"] == [{"name": "Pot", "grams": 170}]
 
     row.click()
@@ -275,7 +299,9 @@ def test_the_saved_foods_card_adds_edits_and_deletes(home: Home, page: Page) -> 
     row.click()
     card.locator('[data-action="delete"]').click()
     card.locator('[data-action="really-delete"]').click()
-    expect(card.locator(".row", has_text="Greek yogurt e2e")).to_have_count(0, timeout=TIMEOUT)
+    expect(card.locator(".row", has_text=f"Greek yogurt e2e {on}")).to_have_count(
+        0, timeout=TIMEOUT
+    )
 
 
 def test_a_used_barcode_opens_the_food_that_has_it(home: Home, page: Page) -> None:
@@ -306,7 +332,8 @@ def test_follows_the_locale_option(home: Home, page: Page, language: str) -> Non
     expect(meal(card, "breakfast").locator(".mealhead")).to_contain_text("Colazione")
 
 
-def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page) -> None:
+@ON_A_PHONE_TOO
+def test_the_weight_card_logs_and_deletes_a_day_s_weight(home: Home, page: Page, on: str) -> None:
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
     card = open_card(home, page, {"type": "custom:metron-weight-card", "person": "Debora"})
     expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
@@ -415,7 +442,8 @@ def test_after_logging_a_past_day_the_weight_card_logs_today(home: Home, page: P
         assert weights == [{"day": past, "kg": 71.4}, {"day": today(), "kg": 71.2}]
 
 
-def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> None:
+@ON_A_PHONE_TOO
+def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page, on: str) -> None:
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
     matteo = person_id(home, "Matteo")
     home.ws(
@@ -424,7 +452,7 @@ def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> Non
             "person": matteo,
             "day": yesterday,
             "meal": "breakfast",
-            "name": "Trend eggs e2e",
+            "name": f"Trend eggs e2e {on}",
             "kcal": 300,
         }
     )
@@ -443,7 +471,7 @@ def test_the_trends_card_opens_a_day_in_the_diary(home: Home, page: Page) -> Non
 
     trends.locator(f'.bar[data-day="{yesterday}"] .hit').click()
     expect(diary.locator(".nav .label")).to_have_text("Yesterday")
-    expect(diary.locator(".row", has_text="Trend eggs e2e")).to_have_count(1, timeout=TIMEOUT)
+    expect(diary.locator(".row", has_text=f"Trend eggs e2e {on}")).to_have_count(1, timeout=TIMEOUT)
 
     trends.locator('[data-action="range"][data-range="90"]').click()
     expect(trends.locator('[data-action="range"][data-range="90"]')).to_have_attribute(
@@ -826,23 +854,24 @@ def test_the_diary_s_calendar_and_cancel(home: Home, page: Page) -> None:
     expect(card.locator(".panel")).to_be_hidden()
 
 
-def test_portions_and_meal_can_change_before_adding(home: Home, page: Page) -> None:
+@ON_A_PHONE_TOO
+def test_portions_and_meal_can_change_before_adding(home: Home, page: Page, on: str) -> None:
     save_food(
         home,
-        "Sliced bread e2e",
+        f"Sliced bread e2e {on}",
         portions=[{"name": "Slice", "grams": 36}, {"name": "Half slice", "grams": 18}],
     )
     card = diary(home, page, "Matteo")
     meal(card, "breakfast").locator('[data-action="add"]').click()
-    card.locator('[data-action="query"]').fill("Sliced bread e2e")
-    card.locator('[data-action="choose"]', has_text="Sliced bread e2e").click()
+    card.locator('[data-action="query"]').fill(f"Sliced bread e2e {on}")
+    card.locator('[data-action="choose"]', has_text=f"Sliced bread e2e {on}").click()
     expect(card.locator('[data-field="grams"]')).to_have_value("36")
     card.locator('[data-action="portion"]', has_text="Half slice").click()
     expect(card.locator('[data-field="grams"]')).to_have_value("18")
     card.locator('.picked [data-field="meal"]').select_option("lunch")
     expect(card.locator('[data-action="add-entry"]')).to_have_text("Add to Lunch")
     card.locator('[data-action="add-entry"]').click()
-    row = meal(card, "lunch").locator(".row", has_text="Sliced bread e2e")
+    row = meal(card, "lunch").locator(".row", has_text=f"Sliced bread e2e {on}")
     expect(row).to_contain_text("18 g", timeout=TIMEOUT)
 
 

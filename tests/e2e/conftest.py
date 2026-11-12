@@ -469,10 +469,22 @@ def browser() -> Iterator[Browser]:
         browser.close()
 
 
+# A phone's window: small, touched, and laid out as the frontend lays out
+# phones.
+PHONE = {
+    "viewport": {"width": 390, "height": 844},
+    "device_scale_factor": 2,
+    "is_mobile": True,
+    "has_touch": True,
+}
+
+
 @pytest.fixture
-def page(home: Home, browser: Browser) -> Iterator[Page]:
-    """A browser tab, logged in as the owner."""
-    yield from logged_in_page(home, browser)
+def page(request: pytest.FixtureRequest, home: Home, browser: Browser) -> Iterator[Page]:
+    """A browser tab, logged in as the owner: a laptop's, or a phone's when a
+    test parametrizes `page` with "phone" (indirectly)."""
+    on_phone = getattr(request, "param", "laptop") == "phone"
+    yield from logged_in_page(home, browser, **(PHONE if on_phone else {}))
 
 
 def logged_in_page(home: Home, browser: Browser, **options: Any) -> Iterator[Page]:

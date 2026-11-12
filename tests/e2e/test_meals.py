@@ -11,16 +11,7 @@ import pytest
 from playwright.sync_api import Browser, Locator, Page, expect
 
 from . import flows
-from .conftest import FakeSearch, Home, logged_in_page
-
-# A phone's window: small, touched, and laid out as the frontend lays out
-# phones.
-PHONE = {
-    "viewport": {"width": 390, "height": 844},
-    "device_scale_factor": 2,
-    "is_mobile": True,
-    "has_touch": True,
-}
+from .conftest import PHONE, FakeSearch, Home, logged_in_page
 
 
 @pytest.fixture(params=["laptop", "phone"])
