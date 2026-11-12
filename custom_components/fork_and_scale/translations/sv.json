@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "{count} sparade livsmedel heter {food}. Byt namn på dem eller använd en streckkod."
     },
+    "barcode_taken": {
+      "message": "{name} har redan den här streckkoden."
+    },
     "future_day": {
       "message": "{day} ligger i framtiden."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "En snabbinmatning behöver kcal."
+    },
+    "meal_exists": {
+      "message": "En sparad måltid har redan det här namnet."
+    },
+    "name_taken": {
+      "message": "{name} är redan sparad."
     },
     "newer_database": {
       "message": "En nyare version av Fork & Scale har uppdaterat den här databasen till version {version}. Den här versionen känner bara till version {latest} och har lämnat databasen orörd. Uppdatera Fork & Scale för att använda den igen."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Ange exakt en av: sparad mat, en streckkod eller ett namn."
     },
+    "others_meal": {
+      "message": "{name} är {owner}s egen sparade måltid, så {person} kan inte logga den."
+    },
     "unknown_barcode": {
       "message": "Ingen sparad mat har streckkoden {barcode}."
     },
     "unknown_food": {
       "message": "Det finns ingen sparad mat som heter {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} har ingen sparad måltid som heter {name}."
     },
     "unknown_person": {
       "message": "Välj en person som har lagts till i Fork & Scale."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Logga mat"
+    },
+    "log_meal": {
+      "description": "Loggar all mat i en sparad måltid i en persons dagbok. Måltiden kan vara allas eller personens egen.",
+      "fields": {
+        "day": {
+          "description": "I dag om det lämnas tomt. Framtida dagar är inte tillåtna.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "Personen, som dess enhet i Fork & Scale.",
+          "name": "Person"
+        },
+        "meal": {
+          "description": "Måltiden att logga under.",
+          "name": "Måltid"
+        },
+        "saved_meal": {
+          "description": "Namnet på en sparad måltid. Stora och små bokstäver spelar ingen roll.",
+          "name": "Sparad måltid"
+        }
+      },
+      "name": "Logga sparad måltid"
     },
     "log_weight": {
       "description": "Registrerar en persons vikt för en dag. En dag har en vikt, så en ny loggning ersätter den.",

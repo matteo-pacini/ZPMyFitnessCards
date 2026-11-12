@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "{count} alimenti salvati si chiamano {food}. Rinominali o usa un codice a barre."
     },
+    "barcode_taken": {
+      "message": "{name} ha già questo codice a barre."
+    },
     "future_day": {
       "message": "{day} è nel futuro."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "Un'aggiunta rapida richiede le kcal."
+    },
+    "meal_exists": {
+      "message": "Un pasto salvato ha già questo nome."
+    },
+    "name_taken": {
+      "message": "{name} è già salvato."
     },
     "newer_database": {
       "message": "Una versione più recente di Fork & Scale ha aggiornato questo database alla versione {version}. Questa versione conosce solo fino alla versione {latest}, quindi non ha toccato il database. Aggiorna Fork & Scale per usarlo di nuovo."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Indica solo uno tra un alimento salvato, un codice a barre o un nome."
     },
+    "others_meal": {
+      "message": "{name} è un pasto salvato di {owner}, quindi {person} non può registrarlo."
+    },
     "unknown_barcode": {
       "message": "Nessun alimento salvato ha il codice a barre {barcode}."
     },
     "unknown_food": {
       "message": "Non c'è nessun alimento salvato chiamato {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} non ha nessun pasto salvato chiamato {name}."
     },
     "unknown_person": {
       "message": "Scegli una persona aggiunta a Fork & Scale."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Registra cibo"
+    },
+    "log_meal": {
+      "description": "Registra ogni alimento di un pasto salvato nel diario di una persona. Il pasto può essere di tutti o della persona stessa.",
+      "fields": {
+        "day": {
+          "description": "Oggi se lasciato vuoto. I giorni futuri non sono ammessi.",
+          "name": "Giorno"
+        },
+        "device_id": {
+          "description": "La persona, come suo dispositivo in Fork & Scale.",
+          "name": "Persona"
+        },
+        "meal": {
+          "description": "Il pasto in cui registrarlo.",
+          "name": "Pasto"
+        },
+        "saved_meal": {
+          "description": "Il nome di un pasto salvato. Maiuscole e minuscole non contano.",
+          "name": "Pasto salvato"
+        }
+      },
+      "name": "Registra pasto salvato"
     },
     "log_weight": {
       "description": "Registra il peso di una persona per un giorno. Ogni giorno ha un solo peso, quindi registrarlo di nuovo lo sostituisce.",

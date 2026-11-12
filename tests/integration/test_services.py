@@ -44,7 +44,7 @@ async def refused(hass: HomeAssistant, action: str, **data: Any) -> ServiceValid
 
 async def save_food(entry: MockConfigEntry, **food: Any) -> dict[str, Any]:
     data = entry.runtime_data.data
-    return await data.async_food_write(data.db.add_food, food)
+    return await data.async_shared_write(data.db.add_food, food)
 
 
 def state(hass: HomeAssistant, entity_id: str) -> float:
@@ -373,6 +373,7 @@ def test_every_action_field_is_described_and_validated() -> None:
     schemas = {
         "log_weight": services.LOG_WEIGHT_SCHEMA,
         "log_food": services.LOG_FOOD_SCHEMA,
+        "log_meal": services.LOG_MEAL_SCHEMA,
         "get_day": services.GET_DAY_SCHEMA,
     }
     assert described.keys() == schemas.keys()

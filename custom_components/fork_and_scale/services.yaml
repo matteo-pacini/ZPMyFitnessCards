@@ -92,6 +92,32 @@ log_food:
           unit_of_measurement: g
           mode: box
 
+log_meal:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: fork_and_scale
+    saved_meal:
+      required: true
+      example: Usual breakfast
+      selector:
+        text:
+    meal:
+      required: true
+      selector:
+        select:
+          options:
+            - breakfast
+            - lunch
+            - dinner
+            - snacks
+          translation_key: meal
+    day:
+      selector:
+        date:
+
 get_day:
   fields:
     device_id:

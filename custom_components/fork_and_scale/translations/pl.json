@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "Liczba zapisanych produktów o nazwie {food}: {count}. Zmień ich nazwy albo użyj kodu kreskowego."
     },
+    "barcode_taken": {
+      "message": "{name} ma już ten kod kreskowy."
+    },
     "future_day": {
       "message": "{day} jest w przyszłości."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "Szybkie dodanie wymaga kcal."
+    },
+    "meal_exists": {
+      "message": "Zapisany posiłek o tej nazwie już istnieje."
+    },
+    "name_taken": {
+      "message": "{name} jest już zapisany."
     },
     "newer_database": {
       "message": "Nowsza wersja Fork & Scale zaktualizowała tę bazę danych do wersji {version}. Ta wersja zna tylko wersje do {latest}, więc pozostawiła bazę danych bez zmian. Zaktualizuj Fork & Scale, aby znów z niej korzystać."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Podaj dokładnie jedno: zapisany produkt, kod kreskowy albo nazwę."
     },
+    "others_meal": {
+      "message": "{name} to własny zapisany posiłek osoby {owner}, więc {person} nie może go zapisać."
+    },
     "unknown_barcode": {
       "message": "Żaden zapisany produkt nie ma kodu kreskowego {barcode}."
     },
     "unknown_food": {
       "message": "Nie ma zapisanego produktu o nazwie {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} nie ma zapisanego posiłku o nazwie {name}."
     },
     "unknown_person": {
       "message": "Wybierz osobę dodaną do Fork & Scale."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Zapisz jedzenie"
+    },
+    "log_meal": {
+      "description": "Zapisuje każdy produkt zapisanego posiłku w dzienniku osoby. Posiłek może być wspólny albo własny tej osoby.",
+      "fields": {
+        "day": {
+          "description": "Dzisiaj, jeśli puste. Przyszłe dni są niedozwolone.",
+          "name": "Dzień"
+        },
+        "device_id": {
+          "description": "Osoba, jako jej urządzenie w Fork & Scale.",
+          "name": "Osoba"
+        },
+        "meal": {
+          "description": "Posiłek, do którego to zapisać.",
+          "name": "Posiłek"
+        },
+        "saved_meal": {
+          "description": "Nazwa zapisanego posiłku. Wielkość liter nie ma znaczenia.",
+          "name": "Zapisany posiłek"
+        }
+      },
+      "name": "Zapisz zapisany posiłek"
     },
     "log_weight": {
       "description": "Zapisuje wagę osoby w danym dniu. Dzień ma jedną wagę, więc ponowny zapis ją zastępuje.",

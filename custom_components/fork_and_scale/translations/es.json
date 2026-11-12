@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "Hay {count} alimentos guardados llamados {food}. Cámbiales el nombre o usa un código de barras."
     },
+    "barcode_taken": {
+      "message": "{name} ya tiene este código de barras."
+    },
     "future_day": {
       "message": "{day} está en el futuro."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "Un añadido rápido necesita las kcal."
+    },
+    "meal_exists": {
+      "message": "Ya hay una comida guardada con este nombre."
+    },
+    "name_taken": {
+      "message": "{name} ya está guardado."
     },
     "newer_database": {
       "message": "Una versión más reciente de Fork & Scale actualizó esta base de datos a la versión {version}. Esta versión solo conoce hasta la versión {latest}, así que no ha tocado la base de datos. Actualiza Fork & Scale para volver a usarla."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Indica solo uno: un alimento guardado, un código de barras o un nombre."
     },
+    "others_meal": {
+      "message": "{name} es una comida guardada propia de {owner}, así que {person} no puede registrarla."
+    },
     "unknown_barcode": {
       "message": "Ningún alimento guardado tiene el código de barras {barcode}."
     },
     "unknown_food": {
       "message": "No hay ningún alimento guardado llamado {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} no tiene ninguna comida guardada llamada {name}."
     },
     "unknown_person": {
       "message": "Elige una persona añadida a Fork & Scale."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Registrar comida"
+    },
+    "log_meal": {
+      "description": "Registra cada alimento de una comida guardada en el diario de una persona. La comida puede ser de todos o de la propia persona.",
+      "fields": {
+        "day": {
+          "description": "Hoy si se deja vacío. No se permiten días futuros.",
+          "name": "Día"
+        },
+        "device_id": {
+          "description": "La persona, como su dispositivo en Fork & Scale.",
+          "name": "Persona"
+        },
+        "meal": {
+          "description": "La comida en la que se registra.",
+          "name": "Comida"
+        },
+        "saved_meal": {
+          "description": "El nombre de una comida guardada. Da igual si va en mayúsculas o minúsculas.",
+          "name": "Comida guardada"
+        }
+      },
+      "name": "Registrar comida guardada"
     },
     "log_weight": {
       "description": "Registra el peso de una persona en un día. Cada día guarda un peso, así que registrarlo de nuevo lo reemplaza.",

@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "{count} aliments enregistrés s’appellent {food}. Renommez-les ou utilisez un code-barres."
     },
+    "barcode_taken": {
+      "message": "{name} a déjà ce code-barres."
+    },
     "future_day": {
       "message": "{day} est dans le futur."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "Un ajout rapide nécessite les kcal."
+    },
+    "meal_exists": {
+      "message": "Un repas enregistré porte déjà ce nom."
+    },
+    "name_taken": {
+      "message": "{name} est déjà enregistré."
     },
     "newer_database": {
       "message": "Une version plus récente de Fork & Scale a mis à jour cette base de données vers la version {version}. Cette version ne connaît que jusqu’à la version {latest} et n’a pas touché à la base de données. Mettez à jour Fork & Scale pour l’utiliser à nouveau."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Indiquez un seul élément : un aliment enregistré, un code-barres ou un nom."
     },
+    "others_meal": {
+      "message": "{name} est un repas enregistré propre à {owner}, donc {person} ne peut pas l’enregistrer."
+    },
     "unknown_barcode": {
       "message": "Aucun aliment enregistré n’a le code-barres {barcode}."
     },
     "unknown_food": {
       "message": "Aucun aliment enregistré ne s’appelle {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} n’a aucun repas enregistré appelé {name}."
     },
     "unknown_person": {
       "message": "Choisissez une personne ajoutée à Fork & Scale."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Enregistrer un aliment"
+    },
+    "log_meal": {
+      "description": "Enregistre chaque aliment d’un repas enregistré dans le journal d’une personne. Le repas peut être à tout le monde ou à la personne elle-même.",
+      "fields": {
+        "day": {
+          "description": "Aujourd’hui s’il est laissé vide. Les jours futurs ne sont pas autorisés.",
+          "name": "Jour"
+        },
+        "device_id": {
+          "description": "La personne, sous la forme de son appareil dans Fork & Scale.",
+          "name": "Personne"
+        },
+        "meal": {
+          "description": "Le repas sous lequel l’enregistrer.",
+          "name": "Repas"
+        },
+        "saved_meal": {
+          "description": "Le nom d’un repas enregistré. Majuscules et minuscules sont équivalentes.",
+          "name": "Repas enregistré"
+        }
+      },
+      "name": "Enregistrer un repas enregistré"
     },
     "log_weight": {
       "description": "Enregistre le poids d’une personne pour un jour. Un jour garde un seul poids : un nouvel enregistrement le remplace.",

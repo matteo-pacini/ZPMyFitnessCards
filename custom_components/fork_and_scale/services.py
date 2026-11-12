@@ -1,4 +1,4 @@
-"""Actions for automations, scripts and Assist: log a weight, log food, read a day.
+"""Actions for automations, scripts and Assist: log a weight, food or a saved meal, read a day.
 
 Each names a person by the device the integration makes for them, which the
 device selector offers by name. Days are dates in Home Assistant's time zone,
@@ -28,11 +28,13 @@ from homeassistant.helpers import device_registry as dr
 from . import goals as g
 from .const import DOMAIN, MAX_KG, MAX_LB, MEALS, MIN_KG, MIN_LB, NUTRIENTS
 from .data import FitnessData, Person, food_entry, loaded_data, today, uses_pounds
+from .db import MealChangedError
 from .schema import vol
 
 SERVICE_LOG_WEIGHT = "log_weight"
 SERVICE_LOG_FOOD = "log_food"
 SERVICE_GET_DAY = "get_day"
+SERVICE_LOG_MEAL = "log_meal"
 
 # What a quick add takes, as the diary's Quick add tab does.
 QUICK_NUTRIENTS = ("kcal", "protein", "carbs", "fat")
@@ -63,6 +65,10 @@ LOG_FOOD_SCHEMA = vol.Schema(
 
 GET_DAY_SCHEMA = vol.Schema(PERSON_AND_DAY)
 
+LOG_MEAL_SCHEMA = vol.Schema(
+    {**PERSON_AND_DAY, vol.Required("saved_meal"): _TEXT, vol.Required("meal"): vol.In(MEALS)}
+)
+
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
@@ -72,6 +78,9 @@ def async_register(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_LOG_FOOD, partial(_log_food, hass), schema=LOG_FOOD_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_LOG_MEAL, partial(_log_meal, hass), schema=LOG_MEAL_SCHEMA
     )
     hass.services.async_register(
         DOMAIN,
@@ -156,6 +165,29 @@ async def _saved_food(data: FitnessData, fields: dict[str, Any]) -> dict[str, An
     if len(foods) > 1:
         raise _error("ambiguous_food", food=fields["food"], count=len(foods))
     return foods[0]
+
+
+async def _log_meal(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Log every item of a saved meal, everyone's or the person's own, named in any case."""
+    data, person, day = _target(hass, call)
+    name = call.data["saved_meal"]
+    meals = await data.async_read(data.db.meals_named, name)
+    meal = next((m for m in meals if m["owner"] in (None, person.key)), None)
+    if meal is None and meals:
+        owner = data.people.get(meals[0]["owner"])
+        raise _error(
+            "others_meal",
+            name=meals[0]["name"],
+            person=person.name,
+            owner=owner.name if owner else meals[0]["owner"],
+        )
+    if meal is None:
+        raise _error("unknown_meal", name=name, person=person.name)
+    try:
+        await data.async_log_meal(person.key, day, call.data["meal"], meal["id"])
+    except MealChangedError as err:
+        # Deleted, or given to someone else, since it was read.
+        raise _error("unknown_meal", name=name, person=person.name) from err
 
 
 async def _get_day(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:

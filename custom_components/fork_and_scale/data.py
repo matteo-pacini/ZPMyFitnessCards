@@ -292,9 +292,26 @@ class FitnessData:
         await self._edit_days(old["person"], [old["day"]], lambda: self.db.delete_entry(old["id"]))
 
     async def async_add_entries(self, person: str, day: str, entries: list[dict]) -> list[dict]:
-        """Log several entries on one day."""
+        """Log several entries on one day, all or none."""
+        return await self._edit_days(person, [day], lambda: self.db.add_entries(person, entries))
+
+    async def async_log_meal(
+        self,
+        person: str,
+        day: str,
+        meal: str,
+        meal_id: int,
+        version: int | None = None,
+        item_ids: list[int] | None = None,
+    ) -> list[dict]:
+        """Log a saved meal's items under `meal` on `day`, all or none.
+
+        Raises db.MealChangedError, logging nothing, as Database.log_meal does.
+        """
         return await self._edit_days(
-            person, [day], lambda: [self.db.add_entry(person, e) for e in entries]
+            person,
+            [day],
+            lambda: self.db.log_meal(person, day, meal, meal_id, version, item_ids),
         )
 
     # Weights
@@ -351,8 +368,11 @@ class FitnessData:
 
     # Foods
 
-    async def async_food_write(self, func: Callable[..., Any], *args: Any) -> Any:
-        """Run a write to the foods table and announce it."""
+    async def async_shared_write(self, func: Callable[..., Any], *args: Any) -> Any:
+        """Run a write to saved foods or saved meals, and announce it.
+
+        Changes to either are everyone's, so they are announced for no person.
+        """
         result = await self._write(func, *args)
         self._changed(None)
         return result
@@ -360,9 +380,11 @@ class FitnessData:
     # People
 
     async def async_delete_person_data(self, person: str) -> None:
-        """Delete everything stored for a person."""
+        """Delete everything stored for a person, as Database.delete_person does."""
         await self._write(self.db.delete_person, person)
         self._changed(person)
+        # Their meals, and foods only they used, went too.
+        self._changed(None)
 
     async def async_read(self, func: Callable[..., Any], *args: Any) -> Any:
         """Run a read in the executor."""

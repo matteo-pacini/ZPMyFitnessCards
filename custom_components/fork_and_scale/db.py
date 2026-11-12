@@ -7,6 +7,7 @@ Assistant code calls them in the executor.
 
 from __future__ import annotations
 
+import itertools
 import json
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
@@ -160,6 +161,93 @@ def _schema_v2() -> MetaData:
     return metadata
 
 
+def _schema_v3() -> MetaData:
+    """Version 2, with who saved each food, and saved meals.
+
+    A meal's owner is a person's key, or "" for a meal everyone shares. Its
+    items are saved foods with grams, or fixed values with a name, for
+    entries that came from no saved food.
+    """
+    metadata = MetaData()
+    nutrients = [Column(n, Float) for n in NUTRIENTS]
+    Table(
+        "people",
+        metadata,
+        Column("key", String(64), primary_key=True),
+        Column("name", Text, nullable=False),
+    )
+    Table(
+        "foods",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("name", Text, nullable=False),
+        Column("barcode", String(64), unique=True),
+        *[
+            Column(n, Float, nullable=n in ("fibre", "sugar", "saturated_fat", "salt"))
+            for n in NUTRIENTS
+        ],
+        Column("portions", Text, nullable=False, default="[]"),
+        Column("updated_at", String(32), nullable=False),
+        Column("saved_by", String(64)),
+    )
+    entries = Table(
+        "entries",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("person", String(64), nullable=False),
+        Column("day", String(10), nullable=False),
+        Column("meal", String(16), nullable=False),
+        Column("food_id", Integer, ForeignKey("foods.id", ondelete="SET NULL")),
+        Column("name", Text, nullable=False),
+        Column("grams", Float),
+        *nutrients,
+        Column("created_at", String(32), nullable=False),
+        Column("source", String(16)),
+        CheckConstraint("meal IN ('breakfast', 'lunch', 'dinner', 'snacks')"),
+    )
+    Index("entries_by_day", entries.c.person, entries.c.day)
+    Table(
+        "weights",
+        metadata,
+        Column("person", String(64), primary_key=True),
+        Column("day", String(10), primary_key=True),
+        Column("kg", Float, nullable=False),
+        Column("updated_at", String(32), nullable=False),
+    )
+    Table(
+        "goals",
+        metadata,
+        Column("person", String(64), primary_key=True),
+        Column("day", String(10), primary_key=True),
+        *[Column(n, Float, nullable=False) for n in ("kcal", "protein", "carbs", "fat")],
+    )
+    meals = Table(
+        "meals",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("owner", String(64), nullable=False),
+        Column("name", Text, nullable=False),
+        # The name casefolded, so that names differing only in case clash.
+        Column("folded", Text, nullable=False),
+        # Raised by every change, so that a change made to the meal as it
+        # was at an older version can be refused.
+        Column("version", Integer, nullable=False),
+    )
+    Index("meals_by_name", meals.c.owner, meals.c.folded, unique=True)
+    Table(
+        "meal_items",
+        metadata,
+        Column("id", Integer, primary_key=True, autoincrement=True),
+        Column("meal_id", Integer, ForeignKey("meals.id", ondelete="CASCADE"), nullable=False),
+        Column("position", Integer, nullable=False),
+        Column("food_id", Integer, ForeignKey("foods.id", ondelete="CASCADE")),
+        Column("name", Text),
+        Column("grams", Float),
+        *[Column(n, Float) for n in NUTRIENTS],
+    )
+    return metadata
+
+
 def _migrate_to_v1(conn: Connection) -> None:
     _schema_v1().create_all(conn)
 
@@ -171,14 +259,25 @@ def _migrate_to_v2(conn: Connection) -> None:
     )
 
 
+def _migrate_to_v3(conn: Connection) -> None:
+    schema = _schema_v3()
+    saved_by = schema.tables["foods"].c.saved_by
+    conn.execute(
+        DDL(f"ALTER TABLE foods ADD COLUMN {CreateColumn(saved_by).compile(dialect=conn.dialect)}")
+    )
+    schema.tables["meals"].create(conn)
+    schema.tables["meal_items"].create(conn)
+
+
 # Each entry upgrades the schema by one version; schema_version holds the
 # version a database is at. Never edit a released entry, append a new one.
-MIGRATIONS: list[Callable[[Connection], None]] = [_migrate_to_v1, _migrate_to_v2]
+MIGRATIONS: list[Callable[[Connection], None]] = [_migrate_to_v1, _migrate_to_v2, _migrate_to_v3]
 
 # The tables the queries below use: those of the latest version.
-SCHEMA = _schema_v2()
-PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS = (
-    SCHEMA.tables[name] for name in ("people", "foods", "entries", "weights", "goals")
+SCHEMA = _schema_v3()
+PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS, SAVED_MEALS, MEAL_ITEMS = (
+    SCHEMA.tables[name]
+    for name in ("people", "foods", "entries", "weights", "goals", "meals", "meal_items")
 )
 
 VERSION = Table("schema_version", MetaData(), Column("version", Integer, nullable=False))
@@ -259,6 +358,134 @@ class NewerSchemaError(Exception):
     def __init__(self, version: int) -> None:
         super().__init__(f"schema version {version}; this release knows up to {len(MIGRATIONS)}")
         self.version = version
+
+
+# The owner of a saved meal that everyone shares.
+EVERYONE = ""
+
+
+class MealExistsError(Exception):
+    """A meal that some of the same people see already has the name.
+
+    `owner` is that meal's owner: a person's key, or EVERYONE.
+    """
+
+    def __init__(self, owner: str) -> None:
+        super().__init__(f"a meal with this name exists for {owner or 'everyone'}")
+        self.owner = owner
+
+
+class MealChangedError(Exception):
+    """The meal was changed or deleted since it was read."""
+
+
+class FoodGoneError(Exception):
+    """A meal item's saved food no longer exists."""
+
+
+def _scaled(values: dict[str, Any], grams: float) -> dict[str, float | None]:
+    """Nutrients per 100 g scaled to `grams`."""
+    return {n: None if values[n] is None else values[n] * grams / 100 for n in NUTRIENTS}
+
+
+def _clash(conn: Connection, owner: str, name: str, exclude: int | None = None) -> str | None:
+    """The owner of a meal called `name` that someone who sees `owner`'s meals sees, or None.
+
+    A person sees everyone's meals and their own, so a person's meal clashes
+    with those, and an everyone meal clashes with every meal. Everyone's
+    clash is the one returned when there are several.
+    """
+    query = select(SAVED_MEALS.c.owner).where(SAVED_MEALS.c.folded == name.casefold())
+    if owner != EVERYONE:
+        query = query.where(SAVED_MEALS.c.owner.in_([EVERYONE, owner]))
+    if exclude is not None:
+        query = query.where(SAVED_MEALS.c.id != exclude)
+    row = conn.execute(query.order_by(SAVED_MEALS.c.owner).limit(1)).first()
+    return None if row is None else row.owner
+
+
+def _meals(conn: Connection, *where: Any) -> list[dict[str, Any]]:
+    """The meals matching `where`, A to Z, each with its items in order.
+
+    An item of a saved food takes the food's name and its values now, scaled
+    to the item's grams. Owner is None for everyone's meals.
+    """
+    meals = conn.execute(
+        select(SAVED_MEALS).where(*where).order_by(SAVED_MEALS.c.folded, SAVED_MEALS.c.id)
+    ).all()
+    if not meals:
+        return []
+    food_values = [FOODS.c[n].label(f"food_{n}") for n in NUTRIENTS]
+    rows = conn.execute(
+        select(MEAL_ITEMS, FOODS.c.name.label("food_name"), *food_values)
+        .outerjoin(FOODS, FOODS.c.id == MEAL_ITEMS.c.food_id)
+        .where(MEAL_ITEMS.c.meal_id.in_([m.id for m in meals]))
+        .order_by(MEAL_ITEMS.c.meal_id, MEAL_ITEMS.c.position)
+    )
+    items: dict[int, list[dict[str, Any]]] = {m.id: [] for m in meals}
+    for row in rows:
+        r = row._mapping
+        item = {"id": r["id"], "food_id": r["food_id"], "grams": r["grams"]}
+        if r["food_id"] is None:
+            item |= {"name": r["name"], **{n: r[n] for n in NUTRIENTS}}
+        else:
+            per_100g = {n: r[f"food_{n}"] for n in NUTRIENTS}
+            item |= {"name": r["food_name"], **_scaled(per_100g, r["grams"])}
+        items[r["meal_id"]].append(item)
+    return [
+        {
+            "id": m.id,
+            "owner": m.owner or None,
+            "name": m.name,
+            "version": m.version,
+            "items": items[m.id],
+        }
+        for m in meals
+    ]
+
+
+def _write_items(conn: Connection, meal_id: int, items: Iterable[dict[str, Any]]) -> None:
+    """Add `items` to a meal, in order: {food_id, grams}, or a name, grams and nutrients.
+
+    Raises FoodGoneError if an item's food no longer exists.
+    """
+    for position, item in enumerate(items):
+        if item.get("food_id") is not None:
+            found = conn.execute(select(FOODS.c.id).where(FOODS.c.id == item["food_id"])).first()
+            if found is None:
+                raise FoodGoneError
+            values = {"food_id": item["food_id"], "grams": item["grams"]}
+        else:
+            values = {"name": item["name"], "grams": item.get("grams")}
+            values |= {n: item.get(n) for n in NUTRIENTS}
+        conn.execute(insert(MEAL_ITEMS).values(meal_id=meal_id, position=position, **values))
+
+
+def _insert_entries(conn: Connection, person: str, entries: Iterable[dict[str, Any]]) -> list[int]:
+    return [
+        conn.execute(
+            insert(ENTRIES)
+            .values(person=person, **{k: e.get(k) for k in ENTRY_FIELDS}, created_at=_now())
+            .returning(ENTRIES.c.id)
+        ).scalar_one()
+        for e in entries
+    ]
+
+
+def _read_entries(conn: Connection, ids: list[int]) -> list[dict[str, Any]]:
+    rows = conn.execute(select(ENTRIES).where(ENTRIES.c.id.in_(ids)).order_by(ENTRIES.c.id))
+    return [dict(r._mapping) for r in rows]
+
+
+def _check_meal(conn: Connection, meal_id: int, version: int | None) -> Any:
+    """The meal's row, unless it is gone or, given `version`, changed since.
+
+    Raises MealChangedError otherwise.
+    """
+    row = conn.execute(select(SAVED_MEALS).where(SAVED_MEALS.c.id == meal_id)).first()
+    if row is None or (version is not None and row.version != version):
+        raise MealChangedError
+    return row
 
 
 class Database:
@@ -347,21 +574,75 @@ class Database:
                 )
 
     def delete_person(self, person: str) -> None:
-        """Delete everything stored for a person."""
+        """Delete everything stored for a person.
+
+        That is their entries, weights, goals and own saved meals, and the
+        foods they saved that no entry of anyone's and no meal uses any more.
+        The foods they saved that are still used stay, saved by nobody.
+        """
         with self._db.begin() as conn:
             for table in (ENTRIES, WEIGHTS, GOALS):
                 conn.execute(delete(table).where(table.c.person == person))
+            own = select(SAVED_MEALS.c.id).where(SAVED_MEALS.c.owner == person)
+            conn.execute(delete(MEAL_ITEMS).where(MEAL_ITEMS.c.meal_id.in_(own)))
+            conn.execute(delete(SAVED_MEALS).where(SAVED_MEALS.c.owner == person))
+            logged = select(ENTRIES.c.id).where(ENTRIES.c.food_id == FOODS.c.id).exists()
+            in_meal = select(MEAL_ITEMS.c.id).where(MEAL_ITEMS.c.food_id == FOODS.c.id).exists()
+            conn.execute(delete(FOODS).where(FOODS.c.saved_by == person, ~logged, ~in_meal))
+            conn.execute(update(FOODS).where(FOODS.c.saved_by == person).values(saved_by=None))
             conn.execute(delete(PEOPLE).where(PEOPLE.c.key == person))
+
+    def adopt_removed(self, people: Iterable[str]) -> None:
+        """Give everyone the meals of people no longer in `people`, and forget who saved foods.
+
+        A removed person's meal that would clash with another is renamed
+        "Name (Person)", or "Name (Person 2)" and on. The meals stay
+        everyone's if the person comes back.
+        """
+        keys = list(people)
+        with self._db.begin() as conn:
+            names = {row.key: row.name for row in conn.execute(select(PEOPLE))}
+            orphans = conn.execute(
+                select(SAVED_MEALS)
+                .where(SAVED_MEALS.c.owner != EVERYONE, SAVED_MEALS.c.owner.not_in(keys))
+                .order_by(SAVED_MEALS.c.id)
+            ).all()
+            for meal in orphans:
+                who = names.get(meal.owner, meal.owner)
+                suffixes = itertools.chain(
+                    ["", f" ({who})"], (f" ({who} {n})" for n in itertools.count(2))
+                )
+                name = next(
+                    f"{meal.name}{s}"
+                    for s in suffixes
+                    if _clash(conn, EVERYONE, f"{meal.name}{s}", exclude=meal.id) is None
+                )
+                conn.execute(
+                    update(SAVED_MEALS)
+                    .where(SAVED_MEALS.c.id == meal.id)
+                    .values(
+                        owner=EVERYONE,
+                        name=name,
+                        folded=name.casefold(),
+                        version=SAVED_MEALS.c.version + 1,
+                    )
+                )
+            conn.execute(
+                update(FOODS)
+                .where(FOODS.c.saved_by.is_not(None), FOODS.c.saved_by.not_in(keys))
+                .values(saved_by=None)
+            )
 
     # Foods
 
     def add_food(self, food: dict[str, Any]) -> dict[str, Any]:
-        """Save a new food and return it.
+        """Save a new food and return it. `saved_by` is a person's key, or None.
 
         Raises sqlalchemy.exc.IntegrityError if another food has its barcode.
         """
         values = {k: food.get(k) for k in FOOD_FIELDS}
         values["portions"] = json.dumps(food.get("portions") or [])
+        values["saved_by"] = food.get("saved_by")
         with self._db.begin() as conn:
             food_id = conn.execute(
                 insert(FOODS).values(**values, updated_at=_now()).returning(FOODS.c.id)
@@ -381,9 +662,53 @@ class Database:
         return self.food(food_id)
 
     def delete_food(self, food_id: int) -> bool:
-        """Delete a food. Entries logged from it keep their copied numbers."""
+        """Delete a food, and return whether there was one.
+
+        Entries logged from it keep their copied numbers. It leaves the saved
+        meals it was in, and a meal it leaves empty is deleted too.
+        """
         with self._db.begin() as conn:
-            return conn.execute(delete(FOODS).where(FOODS.c.id == food_id)).rowcount > 0
+            meal_ids = (
+                conn.execute(
+                    select(MEAL_ITEMS.c.meal_id).where(MEAL_ITEMS.c.food_id == food_id).distinct()
+                )
+                .scalars()
+                .all()
+            )
+            conn.execute(delete(MEAL_ITEMS).where(MEAL_ITEMS.c.food_id == food_id))
+            if not conn.execute(delete(FOODS).where(FOODS.c.id == food_id)).rowcount:
+                return False
+            if meal_ids:
+                has_items = select(MEAL_ITEMS.c.id).where(MEAL_ITEMS.c.meal_id == SAVED_MEALS.c.id)
+                changed = SAVED_MEALS.c.id.in_(meal_ids)
+                conn.execute(delete(SAVED_MEALS).where(changed, ~has_items.exists()))
+                conn.execute(
+                    update(SAVED_MEALS).where(changed).values(version=SAVED_MEALS.c.version + 1)
+                )
+            return True
+
+    def meals_with_food(self, food_id: int) -> list[dict[str, Any]]:
+        """The saved meals a food is in, A to Z, as {id, name, owner, emptied}.
+
+        `emptied` says the meal holds nothing else, so deleting the food
+        would delete it. Owner is None for everyone's meals.
+        """
+        other = select(MEAL_ITEMS.c.id).where(
+            MEAL_ITEMS.c.meal_id == SAVED_MEALS.c.id,
+            or_(MEAL_ITEMS.c.food_id.is_(None), MEAL_ITEMS.c.food_id != food_id),
+        )
+        using = select(MEAL_ITEMS.c.meal_id).where(MEAL_ITEMS.c.food_id == food_id)
+        rows = self._all(
+            select(
+                SAVED_MEALS.c.id,
+                SAVED_MEALS.c.name,
+                SAVED_MEALS.c.owner,
+                (~other.exists()).label("emptied"),
+            )
+            .where(SAVED_MEALS.c.id.in_(using))
+            .order_by(SAVED_MEALS.c.folded, SAVED_MEALS.c.id)
+        )
+        return [r | {"owner": r["owner"] or None, "emptied": bool(r["emptied"])} for r in rows]
 
     def food(self, food_id: int) -> dict[str, Any] | None:
         """One food, or None."""
@@ -440,7 +765,120 @@ class Database:
         with self._db.connect() as conn:
             return [_food(r) for r in conn.execute(query)]
 
+    # Saved meals
+
+    def meals(self, person: str | None = None) -> list[dict[str, Any]]:
+        """Saved meals, A to Z, with their items: everyone's and `person`'s own, or all."""
+        with self._db.connect() as conn:
+            if person is None:
+                return _meals(conn)
+            return _meals(conn, SAVED_MEALS.c.owner.in_([EVERYONE, person]))
+
+    def meal(self, meal_id: int) -> dict[str, Any] | None:
+        """One saved meal with its items, or None."""
+        with self._db.connect() as conn:
+            found = _meals(conn, SAVED_MEALS.c.id == meal_id)
+        return found[0] if found else None
+
+    def meals_named(self, name: str) -> list[dict[str, Any]]:
+        """The saved meals called `name`, ignoring case, everyone's first."""
+        with self._db.connect() as conn:
+            found = _meals(conn, SAVED_MEALS.c.folded == name.casefold())
+        return sorted(found, key=lambda m: m["owner"] is not None)
+
+    def add_meal(self, owner: str, name: str, items: list[dict[str, Any]]) -> dict[str, Any]:
+        """Save a meal for `owner`, a person's key or EVERYONE, and return it.
+
+        Items are {food_id, grams}, or {name, grams, nutrients...} for fixed
+        values. Raises MealExistsError if the name clashes, and FoodGoneError
+        if a food is gone.
+        """
+        with self._db.begin() as conn:
+            clash = _clash(conn, owner, name)
+            if clash is not None:
+                raise MealExistsError(clash)
+            meal_id = conn.execute(
+                insert(SAVED_MEALS)
+                .values(owner=owner, name=name, folded=name.casefold(), version=1)
+                .returning(SAVED_MEALS.c.id)
+            ).scalar_one()
+            _write_items(conn, meal_id, items)
+        return self.meal(meal_id)
+
+    def update_meal(self, meal_id: int, version: int, changes: dict[str, Any]) -> dict[str, Any]:
+        """Change a meal's name, owner or items (all of them, replaced), and return it.
+
+        Raises MealChangedError if it changed or went since `version`,
+        MealExistsError if the new name or owner clashes, and FoodGoneError
+        if a food is gone.
+        """
+        with self._db.begin() as conn:
+            row = _check_meal(conn, meal_id, version)
+            name, owner = changes.get("name", row.name), changes.get("owner", row.owner)
+            clash = _clash(conn, owner, name, exclude=meal_id)
+            if clash is not None:
+                raise MealExistsError(clash)
+            conn.execute(
+                update(SAVED_MEALS)
+                .where(SAVED_MEALS.c.id == meal_id)
+                .values(
+                    owner=owner,
+                    name=name,
+                    folded=name.casefold(),
+                    version=SAVED_MEALS.c.version + 1,
+                )
+            )
+            if "items" in changes:
+                conn.execute(delete(MEAL_ITEMS).where(MEAL_ITEMS.c.meal_id == meal_id))
+                _write_items(conn, meal_id, changes["items"])
+        return self.meal(meal_id)
+
+    def delete_meal(self, meal_id: int, version: int) -> None:
+        """Delete a meal. Entries logged from it stay.
+
+        Raises MealChangedError if it changed or went since `version`.
+        """
+        with self._db.begin() as conn:
+            _check_meal(conn, meal_id, version)
+            conn.execute(delete(MEAL_ITEMS).where(MEAL_ITEMS.c.meal_id == meal_id))
+            conn.execute(delete(SAVED_MEALS).where(SAVED_MEALS.c.id == meal_id))
+
+    def log_meal(
+        self,
+        person: str,
+        day: str,
+        meal: str,
+        meal_id: int,
+        version: int | None = None,
+        item_ids: Iterable[int] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Log a saved meal's items as entries in one go, and return them.
+
+        Every item, or those in `item_ids`. Each becomes a plain entry, with
+        its food's values now. Raises MealChangedError, logging nothing, if
+        the meal is gone, is another person's own, changed since
+        `version`, or lacks one of `item_ids`.
+        """
+        with self._db.begin() as conn:
+            row = _check_meal(conn, meal_id, version)
+            if row.owner not in (EVERYONE, person):
+                raise MealChangedError
+            items = _meals(conn, SAVED_MEALS.c.id == meal_id)[0]["items"]
+            if item_ids is not None:
+                wanted = set(item_ids)
+                items = [i for i in items if i["id"] in wanted]
+                if len(items) != len(wanted):
+                    raise MealChangedError
+            values = ("food_id", "name", "grams", *NUTRIENTS)
+            entries = [{"day": day, "meal": meal, **{k: i[k] for k in values}} for i in items]
+            return _read_entries(conn, _insert_entries(conn, person, entries))
+
     # Entries
+
+    def add_entries(self, person: str, entries: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Log several entries, all or none, and return them in order."""
+        with self._db.begin() as conn:
+            return _read_entries(conn, _insert_entries(conn, person, entries))
 
     def add_entry(self, person: str, entry: dict[str, Any]) -> dict[str, Any]:
         """Log an entry and return it."""
@@ -578,11 +1016,12 @@ class Database:
 
     # Export
 
-    def export(self, person: str) -> dict[str, list[dict[str, Any]]]:
-        """A person's entries and weights, oldest first, and every saved food.
+    def export(self, person: str) -> dict[str, Any]:
+        """A person's entries and weights, oldest first, every saved food, and meals.
 
-        Foods are everyone's, so they are all there. Read in one transaction,
-        so the three agree.
+        Foods are everyone's, so they are all there; the meals are everyone's
+        and the person's own. `people` maps every key ever known to its name.
+        Read in one transaction, so they all agree.
         """
         with self._db.begin() as conn:
             entries = conn.execute(
@@ -597,6 +1036,8 @@ class Database:
                 "entries": [dict(r._mapping) for r in entries],
                 "weights": [dict(r._mapping) for r in weights],
                 "foods": [_food(r) for r in conn.execute(select(FOODS).order_by(FOODS.c.id))],
+                "meals": _meals(conn, SAVED_MEALS.c.owner.in_([EVERYONE, person])),
+                "people": {row.key: row.name for row in conn.execute(select(PEOPLE))},
             }
 
     # Goals

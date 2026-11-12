@@ -29,6 +29,7 @@ from .const import (
     SIGNAL_CHANGED,
 )
 from .data import FitnessData, Person, food_entry, loaded_data, today
+from .db import EVERYONE, FoodGoneError, MealChangedError, MealExistsError
 from .openfoodfacts import SearchError, async_search
 from .schema import vol
 
@@ -39,6 +40,9 @@ ERR_NOT_LOADED = "not_loaded"
 ERR_NOT_FOUND = "not_found"
 ERR_BARCODE_TAKEN = "barcode_taken"
 ERR_SEARCH_FAILED = "search_failed"
+ERR_NAME_TAKEN = "name_taken"
+ERR_MEAL_EXISTS = "meal_exists"
+ERR_MEAL_CHANGED = "meal_changed"
 
 
 def _day(value: Any) -> str:
@@ -91,6 +95,22 @@ FOOD_FIELDS = {
 
 PERSON = {vol.Required("person"): str}
 
+# A saved meal's item: a saved food and grams, or fixed values with a name.
+MEAL_ITEM = vol.Any(
+    {vol.Required("food_id"): int, vol.Required("grams"): _positive},
+    {
+        vol.Required("name"): _name,
+        vol.Optional("grams"): vol.Any(None, _positive),
+        # Not **NUTRIENT_FIELDS: its Optional("kcal") would keep kcal optional.
+        vol.Required("kcal"): _non_negative,
+        **{vol.Optional(n): vol.Any(None, _non_negative) for n in NUTRIENTS[1:]},
+    },
+)
+MEAL_ITEMS = vol.All([MEAL_ITEM], vol.Length(min=1))
+
+# A meal's owner: a person's key, or None for everyone.
+OWNER = vol.Any(None, str)
+
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
@@ -111,6 +131,12 @@ def async_register(hass: HomeAssistant) -> None:
         ws_update_food,
         ws_delete_food,
         ws_search_open_food_facts,
+        ws_food_meals,
+        ws_meals,
+        ws_add_meal,
+        ws_update_meal,
+        ws_delete_meal,
+        ws_log_meal,
         ws_weights,
         ws_set_weight,
         ws_delete_weight,
@@ -142,7 +168,19 @@ def _command(schema: dict) -> Callable:
                     connection.send_error(msg["id"], ERR_NOT_FOUND, "No such person")
                     return
             result = await handler(data, person, msg)
-            if isinstance(result, _Error):
+            if isinstance(result, _Error) and result.details is not None:
+                # Details go in the translation placeholders, the only place
+                # an error has for them; the integration's translations have
+                # the code as an exception's key.
+                connection.send_error(
+                    msg["id"],
+                    result.code,
+                    result.message,
+                    translation_key=result.code,
+                    translation_domain=DOMAIN,
+                    translation_placeholders=result.details,
+                )
+            elif isinstance(result, _Error):
                 connection.send_error(msg["id"], result.code, result.message)
             else:
                 connection.send_result(msg["id"], result)
@@ -154,9 +192,14 @@ def _command(schema: dict) -> Callable:
 
 
 class _Error:
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(self, code: str, message: str, details: dict[str, str] | None = None) -> None:
         self.code = code
         self.message = message
+        self.details = details
+
+
+def _food_details(food: dict[str, Any]) -> dict[str, str]:
+    return {"food_id": str(food["id"]), "name": food["name"], "saved_by": food["saved_by"] or ""}
 
 
 NOT_FOUND = _Error(ERR_NOT_FOUND, "Not found")
@@ -378,16 +421,32 @@ async def ws_food_by_barcode(data: FitnessData, _person: None, msg: dict) -> dic
         vol.Required("type"): f"{DOMAIN}/food/add",
         vol.Required("name"): _name,
         **FOOD_FIELDS,
+        vol.Optional("person"): str,
+        vol.Optional("anyway", default=False): bool,
     }
 )
-async def ws_add_food(data: FitnessData, _person: None, msg: dict) -> dict | _Error:
-    """Save a food, with nutrients per 100 g."""
+async def ws_add_food(data: FitnessData, person: Person | None, msg: dict) -> dict | _Error:
+    """Save a food, with nutrients per 100 g, saved by `person` if given.
+
+    A food with no barcode whose name a saved food has is refused with
+    name_taken, unless `anyway`. A barcode a saved food has is refused with
+    barcode_taken. Both errors' details name that food: food_id, name and
+    saved_by (a person's key, or "").
+    """
     if any(msg.get(n) is None for n in REQUIRED_NUTRIENTS):
         return _Error("invalid_format", "kcal, protein, carbs and fat are required")
+    if not msg.get("barcode") and not msg["anyway"]:
+        same = await data.async_read(data.db.foods_named, msg["name"])
+        if same:
+            return _Error(ERR_NAME_TAKEN, "A saved food has this name", _food_details(same[0]))
+    food = msg | {"saved_by": person.key if person else None}
     try:
-        return await data.async_food_write(data.db.add_food, msg)
+        return await data.async_shared_write(data.db.add_food, food)
     except IntegrityError:
-        return _Error(ERR_BARCODE_TAKEN, "Another food has this barcode")
+        taken = await data.async_read(data.db.food_by_barcode, msg["barcode"])
+        # None only if that food was deleted since.
+        details = _food_details(taken) if taken else None
+        return _Error(ERR_BARCODE_TAKEN, "Another food has this barcode", details)
 
 
 @_command(
@@ -404,7 +463,7 @@ async def ws_update_food(data: FitnessData, _person: None, msg: dict) -> dict | 
         return _Error("invalid_format", "kcal, protein, carbs and fat cannot be empty")
     changes = {k: v for k, v in msg.items() if k not in ("id", "type", "food_id")}
     try:
-        food = await data.async_food_write(data.db.update_food, msg["food_id"], changes)
+        food = await data.async_shared_write(data.db.update_food, msg["food_id"], changes)
     except IntegrityError:
         return _Error(ERR_BARCODE_TAKEN, "Another food has this barcode")
     return food or NOT_FOUND
@@ -413,9 +472,15 @@ async def ws_update_food(data: FitnessData, _person: None, msg: dict) -> dict | 
 @_command({vol.Required("type"): f"{DOMAIN}/food/delete", vol.Required("food_id"): int})
 async def ws_delete_food(data: FitnessData, _person: None, msg: dict) -> _Error | None:
     """Delete a saved food. Entries logged from it keep their numbers."""
-    if not await data.async_food_write(data.db.delete_food, msg["food_id"]):
+    if not await data.async_shared_write(data.db.delete_food, msg["food_id"]):
         return NOT_FOUND
     return None
+
+
+@_command({vol.Required("type"): f"{DOMAIN}/food/meals", vol.Required("food_id"): int})
+async def ws_food_meals(data: FitnessData, _person: None, msg: dict) -> list[dict]:
+    """The saved meals a food is in, as {id, name, owner, emptied}, for deleting it."""
+    return await data.async_read(data.db.meals_with_food, msg["food_id"])
 
 
 @websocket_api.websocket_command(
@@ -442,6 +507,133 @@ async def ws_search_open_food_facts(
         connection.send_error(msg["id"], ERR_SEARCH_FAILED, str(err))
         return
     connection.send_result(msg["id"], found)
+
+
+# Saved meals
+
+
+def _owner(data: FitnessData, owner: str | None) -> str | None:
+    """The stored owner for a message's `owner`, or None if no such person."""
+    if owner is None:
+        return EVERYONE
+    return owner if owner in data.people else None
+
+
+def _exists(err: MealExistsError) -> _Error:
+    return _Error(ERR_MEAL_EXISTS, "A saved meal has this name", {"owner": err.owner})
+
+
+MEAL_CHANGED = _Error(ERR_MEAL_CHANGED, "The meal was changed or deleted meanwhile")
+
+
+@_command({vol.Required("type"): f"{DOMAIN}/meals", vol.Optional("person"): str})
+async def ws_meals(data: FitnessData, person: Person | None, _msg: dict) -> list[dict]:
+    """Saved meals A to Z with their items: everyone's and the person's own, or all.
+
+    Each is {id, owner, name, version, items}; owner is a person's key, or
+    None for everyone. An item is {id, food_id, name, grams, nutrients...}:
+    a saved food's item has the food's values now, scaled to its grams.
+    """
+    return await data.async_read(data.db.meals, person.key if person else None)
+
+
+@_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/meal/add",
+        vol.Required("name"): _name,
+        vol.Required("owner"): OWNER,
+        vol.Required("items"): MEAL_ITEMS,
+    }
+)
+async def ws_add_meal(data: FitnessData, _person: None, msg: dict) -> dict | _Error:
+    """Save a meal for its owner.
+
+    A name that clashes is refused with meal_exists, whose details give the
+    clashing meal's owner: a person's key, or "" for everyone.
+    """
+    owner = _owner(data, msg["owner"])
+    if owner is None:
+        return NOT_FOUND
+    try:
+        return await data.async_shared_write(data.db.add_meal, owner, msg["name"], msg["items"])
+    except MealExistsError as err:
+        return _exists(err)
+    except FoodGoneError:
+        return NOT_FOUND
+
+
+@_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/meal/update",
+        vol.Required("meal_id"): int,
+        vol.Required("version"): int,
+        vol.Optional("name"): _name,
+        vol.Optional("owner"): OWNER,
+        vol.Optional("items"): MEAL_ITEMS,
+    }
+)
+async def ws_update_meal(data: FitnessData, _person: None, msg: dict) -> dict | _Error:
+    """Change a meal's name, owner or items, as it was at `version`.
+
+    Refused with meal_changed if someone changed or deleted it since, and
+    with meal_exists as fork_and_scale/meal/add is.
+    """
+    changes = {k: msg[k] for k in ("name", "items") if k in msg}
+    if "owner" in msg:
+        changes["owner"] = _owner(data, msg["owner"])
+        if changes["owner"] is None:
+            return NOT_FOUND
+    try:
+        return await data.async_shared_write(
+            data.db.update_meal, msg["meal_id"], msg["version"], changes
+        )
+    except MealChangedError:
+        return MEAL_CHANGED
+    except MealExistsError as err:
+        return _exists(err)
+    except FoodGoneError:
+        return NOT_FOUND
+
+
+@_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/meal/delete",
+        vol.Required("meal_id"): int,
+        vol.Required("version"): int,
+    }
+)
+async def ws_delete_meal(data: FitnessData, _person: None, msg: dict) -> _Error | None:
+    """Delete a meal as it was at `version`; entries logged from it stay."""
+    try:
+        await data.async_shared_write(data.db.delete_meal, msg["meal_id"], msg["version"])
+    except MealChangedError:
+        return MEAL_CHANGED
+    return None
+
+
+@_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/meal/log",
+        **PERSON,
+        vol.Required("day"): _day,
+        vol.Required("meal"): vol.In(MEALS),
+        vol.Required("meal_id"): int,
+        vol.Required("version"): int,
+        vol.Required("items"): vol.All([int], vol.Length(min=1)),
+    }
+)
+async def ws_log_meal(data: FitnessData, person: Person, msg: dict) -> list[dict] | _Error:
+    """Log some of a saved meal's items, by their IDs, as entries; return them.
+
+    All or nothing: refused with meal_changed if the meal changed or went
+    since `version`, or is another person's own.
+    """
+    try:
+        return await data.async_log_meal(
+            person.key, msg["day"], msg["meal"], msg["meal_id"], msg["version"], msg["items"]
+        )
+    except MealChangedError:
+        return MEAL_CHANGED
 
 
 # Weights

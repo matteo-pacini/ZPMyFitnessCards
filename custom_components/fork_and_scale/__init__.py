@@ -79,6 +79,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
         if s.subentry_type == SUBENTRY_PERSON
     ]
     await hass.async_add_executor_job(db.sync_people, [(p.key, p.name) for p in people])
+    # People removed since the last setup leave their meals to everyone.
+    await hass.async_add_executor_job(db.adopt_removed, [p.key for p in people])
     data = FitnessData(hass, db, people)
     coordinators = {p.key: PersonCoordinator(hass, data, p) for p in people}
     entry.runtime_data = RuntimeData(data, coordinators)

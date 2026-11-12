@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "{count} opgeslagen voedingsmiddelen heten {food}. Geef ze een andere naam of gebruik een streepjescode."
     },
+    "barcode_taken": {
+      "message": "{name} heeft deze streepjescode al."
+    },
     "future_day": {
       "message": "{day} ligt in de toekomst."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "Snel toevoegen heeft de kcal nodig."
+    },
+    "meal_exists": {
+      "message": "Een opgeslagen maaltijd heeft deze naam al."
+    },
+    "name_taken": {
+      "message": "{name} is al opgeslagen."
     },
     "newer_database": {
       "message": "Een nieuwere versie van Fork & Scale heeft deze database bijgewerkt naar versie {version}. Deze versie kent alleen tot en met versie {latest} en heeft de database ongewijzigd gelaten. Werk Fork & Scale bij om hem weer te gebruiken."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Geef precies één van: opgeslagen voeding, een streepjescode of een naam."
     },
+    "others_meal": {
+      "message": "{name} is een eigen opgeslagen maaltijd van {owner}, dus {person} kan die niet vastleggen."
+    },
     "unknown_barcode": {
       "message": "Geen opgeslagen voeding heeft de streepjescode {barcode}."
     },
     "unknown_food": {
       "message": "Er is geen opgeslagen voeding met de naam {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} heeft geen opgeslagen maaltijd met de naam {name}."
     },
     "unknown_person": {
       "message": "Kies een persoon die aan Fork & Scale is toegevoegd."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Voeding vastleggen"
+    },
+    "log_meal": {
+      "description": "Legt alle voeding van een opgeslagen maaltijd vast in het dagboek van een persoon. De maaltijd kan van iedereen zijn of van de persoon zelf.",
+      "fields": {
+        "day": {
+          "description": "Vandaag als je het leeg laat. Dagen in de toekomst zijn niet toegestaan.",
+          "name": "Dag"
+        },
+        "device_id": {
+          "description": "De persoon: het apparaat van die persoon in Fork & Scale.",
+          "name": "Persoon"
+        },
+        "meal": {
+          "description": "De maaltijd waaronder het komt.",
+          "name": "Maaltijd"
+        },
+        "saved_meal": {
+          "description": "De naam van een opgeslagen maaltijd. Hoofdletters maken niet uit.",
+          "name": "Opgeslagen maaltijd"
+        }
+      },
+      "name": "Opgeslagen maaltijd vastleggen"
     },
     "log_weight": {
       "description": "Legt het gewicht van een persoon vast voor een dag. Een dag heeft één gewicht, dus opnieuw vastleggen vervangt het.",

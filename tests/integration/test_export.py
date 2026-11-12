@@ -62,10 +62,14 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
     hass_client: ClientSessionGenerator,
     hass_client_no_auth: ClientSessionGenerator,
 ) -> None:
-    oats = (await ws("food/add", **OATS, barcode="5000", portions=[{"name": "Bowl", "grams": 40}]))[
-        "result"
-    ]
+    bowl = [{"name": "Bowl", "grams": 40}]
+    oats = (await ws("food/add", **OATS, barcode="5000", portions=bowl, person="debora"))["result"]
     await ws("food/add", name="Apple", kcal=52, protein=0.3, carbs=14, fat=0.2, salt=0)
+    coffee = {"name": "Coffee", "grams": 250, "kcal": 20, "protein": 1, "carbs": 1.5, "fat": 1}
+    porridge = [{"food_id": oats["id"], "grams": 60}, coffee]
+    await ws("meal/add", name="Porridge bowl", owner=None, items=porridge)
+    await ws("meal/add", name="Her snack", owner="debora", items=[{"name": "Bar", "kcal": 200}])
+    await ws("meal/add", name="His snack", owner="matteo", items=[{"name": "Bar", "kcal": 1}])
     await ws(
         "entry/add",
         person="debora",
@@ -95,7 +99,7 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
         'attachment; filename="fork-and-scale-debora-2026-11-09.zip"'
     )
     archive = zipfile.ZipFile(io.BytesIO(await response.read()))
-    assert archive.namelist() == ["entries.csv", "weights.csv", "foods.csv"]
+    assert archive.namelist() == ["entries.csv", "weights.csv", "foods.csv", "meals.csv"]
 
     pizza, porridge = read_csv(archive, "entries.csv")
     assert pizza == {
@@ -138,8 +142,46 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
         "saturated_fat_g_per_100g": "",
         "salt_g_per_100g": "",
         "portions": '[{"name": "Bowl", "grams": 40.0}]',
+        "saved_by": "Debora",
     }
     assert (apple["barcode"], apple["salt_g_per_100g"], apple["portions"]) == ("", "0", "")
+    assert apple["saved_by"] == ""
+
+    # Everyone's meals and hers, not his. A saved food's item follows the
+    # food, so it gives no values of its own.
+    snack, linked, fixed = read_csv(archive, "meals.csv")
+    assert snack == {
+        "owner": "Debora",
+        "meal": "Her snack",
+        "item": "Bar",
+        "food_id": "",
+        "grams": "",
+        "kcal": "200",
+        "protein_g": "",
+        "carbs_g": "",
+        "fat_g": "",
+        "fibre_g": "",
+        "sugar_g": "",
+        "saturated_fat_g": "",
+        "salt_g": "",
+    }
+    assert {k: v for k, v in linked.items() if v} == {
+        "owner": "Everyone",
+        "meal": "Porridge bowl",
+        "item": "Porridge oats",
+        "food_id": str(oats["id"]),
+        "grams": "60",
+    }
+    assert {k: v for k, v in fixed.items() if v} == {
+        "owner": "Everyone",
+        "meal": "Porridge bowl",
+        "item": "Coffee",
+        "grams": "250",
+        "kcal": "20",
+        "protein_g": "1",
+        "carbs_g": "1.5",
+        "fat_g": "1",
+    }
 
 
 async def test_the_link_is_short_lived_and_for_admins_only(

@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "{count} saved foods are called {food}. Rename them, or use a barcode."
     },
+    "barcode_taken": {
+      "message": "{name} already has this barcode."
+    },
     "future_day": {
       "message": "{day} is in the future."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "A quick add needs the kcal."
+    },
+    "meal_exists": {
+      "message": "A saved meal already has this name."
+    },
+    "name_taken": {
+      "message": "{name} is already saved."
     },
     "newer_database": {
       "message": "A newer release of Fork & Scale upgraded this database to version {version}. This release knows up to version {latest}, so it left the database as it is. Update Fork & Scale to use it again."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Give exactly one of a saved food, a barcode or a name."
     },
+    "others_meal": {
+      "message": "{name} is {owner}'s own saved meal, so {person} cannot log it."
+    },
     "unknown_barcode": {
       "message": "No saved food has the barcode {barcode}."
     },
     "unknown_food": {
       "message": "There is no saved food called {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} has no saved meal called {name}."
     },
     "unknown_person": {
       "message": "Choose a person added to Fork & Scale."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Log food"
+    },
+    "log_meal": {
+      "description": "Logs every food of a saved meal in a person's diary. The meal can be everyone's or the person's own.",
+      "fields": {
+        "day": {
+          "description": "Today if left out. Future days are not allowed.",
+          "name": "Day"
+        },
+        "device_id": {
+          "description": "The person, as their device in Fork & Scale.",
+          "name": "Person"
+        },
+        "meal": {
+          "description": "The meal to log it under.",
+          "name": "Meal"
+        },
+        "saved_meal": {
+          "description": "The name of a saved meal. Case does not matter.",
+          "name": "Saved meal"
+        }
+      },
+      "name": "Log saved meal"
     },
     "log_weight": {
       "description": "Records a person's weight for a day. A day keeps one weight, so logging again replaces it.",

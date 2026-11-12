@@ -231,9 +231,11 @@ def test_upgrades_a_version_1_database_keeping_its_entries(database_url: str) ->
     engine.dispose()
     db = Database(database_url)
     db.open()
-    assert db.schema_version() == len(MIGRATIONS) == 2
+    assert db.schema_version() == len(MIGRATIONS) == 3
     [soup] = db.day_entries("p", "2026-11-09")
     assert (soup["name"], soup["source"]) == ("Soup", None)
+    assert db.meals() == []
+    assert db.add_food(OATS | {"saved_by": "p"})["saved_by"] == "p"
     db.close()
 
 

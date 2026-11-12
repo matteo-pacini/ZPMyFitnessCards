@@ -255,6 +255,9 @@
     "ambiguous_food": {
       "message": "{count} gespeicherte Lebensmittel heißen {food}. Benenne sie um oder nimm einen Barcode."
     },
+    "barcode_taken": {
+      "message": "{name} hat diesen Barcode schon."
+    },
     "future_day": {
       "message": "{day} liegt in der Zukunft."
     },
@@ -263,6 +266,12 @@
     },
     "kcal_required": {
       "message": "Schnelles Eintragen braucht die kcal."
+    },
+    "meal_exists": {
+      "message": "Eine gespeicherte Mahlzeit hat diesen Namen schon."
+    },
+    "name_taken": {
+      "message": "{name} ist schon gespeichert."
     },
     "newer_database": {
       "message": "Eine neuere Version von Fork & Scale hat diese Datenbank auf Version {version} aktualisiert. Diese Version kennt nur bis Version {latest} und hat die Datenbank unverändert gelassen. Aktualisiere Fork & Scale, um sie wieder zu nutzen."
@@ -276,11 +285,17 @@
     "one_food": {
       "message": "Gib genau eines an: ein gespeichertes Lebensmittel, einen Barcode oder einen Namen."
     },
+    "others_meal": {
+      "message": "{name} ist eine eigene gespeicherte Mahlzeit von {owner}, daher kann {person} sie nicht eintragen."
+    },
     "unknown_barcode": {
       "message": "Kein gespeichertes Lebensmittel hat den Barcode {barcode}."
     },
     "unknown_food": {
       "message": "Es gibt kein gespeichertes Lebensmittel namens {food}."
+    },
+    "unknown_meal": {
+      "message": "{person} hat keine gespeicherte Mahlzeit namens {name}."
     },
     "unknown_person": {
       "message": "Wähle eine Person, die in Fork & Scale hinzugefügt ist."
@@ -401,6 +416,28 @@
         }
       },
       "name": "Essen eintragen"
+    },
+    "log_meal": {
+      "description": "Trägt jedes Lebensmittel einer gespeicherten Mahlzeit ins Tagebuch einer Person ein. Die Mahlzeit kann allen gehören oder der Person selbst.",
+      "fields": {
+        "day": {
+          "description": "Heute, wenn leer gelassen. Künftige Tage sind nicht erlaubt.",
+          "name": "Tag"
+        },
+        "device_id": {
+          "description": "Die Person, als ihr Gerät in Fork & Scale.",
+          "name": "Person"
+        },
+        "meal": {
+          "description": "Die Mahlzeit, unter der es eingetragen wird.",
+          "name": "Mahlzeit"
+        },
+        "saved_meal": {
+          "description": "Der Name einer gespeicherten Mahlzeit. Groß- und Kleinschreibung zählt nicht.",
+          "name": "Gespeicherte Mahlzeit"
+        }
+      },
+      "name": "Gespeicherte Mahlzeit eintragen"
     },
     "log_weight": {
       "description": "Trägt das Gewicht einer Person für einen Tag ein. Ein Tag hat ein Gewicht, ein neuer Eintrag ersetzt es.",
