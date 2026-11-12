@@ -160,8 +160,10 @@ def test_activity_added_is_what_counts_beyond_the_level() -> None:
     [
         (906, "kcal", 906),
         (906, "calories", 906),
+        # E5.
         (3790, "kJ", pytest.approx(905.8, abs=0.05)),
         (4184, "kJ", pytest.approx(1000)),
+        # E6: the most a day can measure.
         (41840, "kJ", pytest.approx(10000)),
         (0, "kJ", 0),
         (906, "cal", None),
