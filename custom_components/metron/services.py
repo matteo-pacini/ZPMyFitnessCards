@@ -9,6 +9,7 @@ given its unit.
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict
 from functools import partial
 from typing import Any
@@ -41,6 +42,15 @@ QUICK_NUTRIENTS = ("kcal", "protein", "carbs", "fat")
 
 _TEXT = vol.All(cv.string, vol.Strip, vol.Length(min=1))
 
+
+def _finite(value: float) -> float:
+    if not math.isfinite(value):
+        raise vol.Invalid("not a number")
+    return value
+
+
+_NUMBER = vol.All(vol.Coerce(float), _finite)
+
 PERSON_AND_DAY = {vol.Required("device_id"): cv.string, vol.Optional("day"): cv.date}
 
 LOG_WEIGHT_SCHEMA = vol.Schema(
@@ -57,9 +67,9 @@ LOG_FOOD_SCHEMA = vol.Schema(
         vol.Required("meal"): vol.In(MEALS),
         vol.Optional("food"): _TEXT,
         vol.Optional("barcode"): _TEXT,
-        vol.Optional("grams"): vol.All(vol.Coerce(float), vol.Range(min=0, min_included=False)),
+        vol.Optional("grams"): vol.All(_NUMBER, vol.Range(min=0, min_included=False)),
         vol.Optional("name"): _TEXT,
-        **{vol.Optional(n): cv.positive_float for n in QUICK_NUTRIENTS},
+        **{vol.Optional(n): vol.All(_NUMBER, vol.Range(min=0)) for n in QUICK_NUTRIENTS},
     }
 )
 

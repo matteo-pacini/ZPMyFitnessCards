@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 import re
 import zipfile
 from dataclasses import dataclass
@@ -348,9 +349,13 @@ def _number(name: str, line: int, text: str) -> float | None:
     if not text:
         return None
     try:
-        return float(text)
+        number = float(text)
     except ValueError as err:
         raise Unreadable("bad_line", file=name, line=str(line)) from err
+    # float() reads "nan" and "inf" too.
+    if not math.isfinite(number):
+        raise Unreadable("bad_line", file=name, line=str(line))
+    return number
 
 
 def _add_totals(totals: dict, name: str, columns: dict[str, int], lines) -> None:

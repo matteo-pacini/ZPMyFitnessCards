@@ -8,6 +8,7 @@ per-person permissions to apply.
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Callable
 from dataclasses import asdict
@@ -59,9 +60,13 @@ def _number(value: Any) -> float:
     # Schemas turn a ValueError into Invalid, but not a TypeError, as float()
     # raises for None: then vol.Any would fail instead of trying the next.
     try:
-        return float(value)
+        number = float(value)
     except TypeError as err:
         raise vol.Invalid("not a number") from err
+    # float() reads "nan" and "inf" too.
+    if not math.isfinite(number):
+        raise vol.Invalid("not a number")
+    return number
 
 
 def _non_negative(value: Any) -> float:

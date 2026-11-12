@@ -213,11 +213,27 @@ async def test_subscribers_hear_about_changes(hass: HomeAssistant, ws) -> None:
         {"day": "2026-11-09", "kcal": -1},
         {"day": "2026-11-09", "grams": 0},
         {"day": "2026-11-09", "name": "   "},
+        # Numbers, but not ones a value can be.
+        {"day": "2026-11-09", "kcal": "nan"},
+        {"day": "2026-11-09", "kcal": "inf"},
+        {"day": "2026-11-09", "protein": "-inf"},
     ],
 )
 async def test_rejects_bad_values(ws, fields: dict) -> None:
     message = {"person": "debora", "meal": "lunch", "name": "Soup", "kcal": 100, **fields}
     assert await error(ws, "entry/add", **message) == "invalid_format"
+
+
+@pytest.mark.parametrize("value", ["nan", "inf"])
+async def test_refuses_foods_and_weights_that_are_not_numbers(ws, value: str) -> None:
+    assert await error(ws, "food/add", **{**OATS, "kcal": value}) == "invalid_format"
+    assert await error(ws, "food/add", **{**OATS, "barcode": "5000", "fat": value}) == (
+        "invalid_format"
+    )
+    assert (
+        await error(ws, "weight/set", person="debora", day="2026-11-09", kg=value)
+        == "invalid_format"
+    )
 
 
 async def test_says_when_food_or_entries_are_missing(ws) -> None:

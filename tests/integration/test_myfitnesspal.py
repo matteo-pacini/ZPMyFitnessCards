@@ -183,8 +183,18 @@ def test_refuses_weights_outside_the_range_in_the_unit_chosen(tmp_path: Path) ->
         ("Date,Meal,Calories\n1/10/2025,Lunch,1\n13/13/2025,Lunch,1\n", "3"),
         ("Date,Meal,Calories\n2025-10-01,Lunch\n", "2"),
         ('Date,Meal,Calories,Note\n2025-10-01,Lunch,1,"' + "x" * 200_000 + '"\n', "2"),
+        ("Date,Meal,Calories\n2025-10-01,Lunch,nan\n", "2"),
+        ("Date,Meal,Calories\n2025-10-01,Lunch,inf\n", "2"),
     ],
-    ids=["not a number", "no such date", "no such slash date", "too few cells", "a cell too long"],
+    ids=[
+        "not a number",
+        "no such date",
+        "no such slash date",
+        "too few cells",
+        "a cell too long",
+        "nan",
+        "infinite",
+    ],
 )
 def test_names_the_line_it_cannot_read(tmp_path: Path, text: str, line: str) -> None:
     assert refusal(write(tmp_path, "Nutrition.csv", text)) == (

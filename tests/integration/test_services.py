@@ -263,6 +263,9 @@ async def test_refuses_a_name_two_saved_foods_share(
         {"meal": "lunch", "name": "  ", "kcal": 200},
         {"meal": "lunch", "name": "Eggs", "kcal": -1},
         {"meal": "lunch", "food": "Eggs", "grams": 0},
+        {"meal": "lunch", "name": "Eggs", "kcal": float("nan")},
+        {"meal": "lunch", "name": "Eggs", "kcal": 200, "fat": float("inf")},
+        {"meal": "lunch", "food": "Eggs", "grams": float("nan")},
     ],
 )
 async def test_log_food_refuses_invalid_values(hass: HomeAssistant, data: dict) -> None:
