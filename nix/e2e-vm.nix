@@ -35,7 +35,7 @@ let
       PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
       # The Playwright wheel's bundled Node is a generic Linux binary.
       PLAYWRIGHT_NODEJS_PATH = "${pkgs.nodejs_24}/bin/node";
-      FORK_AND_SCALE_FONTCONFIG_FILE = import ./fonts.nix { inherit pkgs; };
+      METRON_FONTCONFIG_FILE = import ./fonts.nix { inherit pkgs; };
     };
   };
 
@@ -53,7 +53,7 @@ let
   web =
     database: other:
     pkgs.testers.runNixOSTest {
-      name = "fork-and-scale-e2e-${database}";
+      name = "metron-e2e-${database}";
       nodes.machine = {
         imports = [ common ];
         virtualisation = {
@@ -70,7 +70,7 @@ in
   web-postgresql = web "postgresql" "sqlite";
 
   android = pkgs.testers.runNixOSTest {
-    name = "fork-and-scale-android";
+    name = "metron-android";
     nodes.machine = {
       imports = [ common ];
       virtualisation = {
@@ -93,7 +93,7 @@ in
         ANDROID_HOME = android.sdkRoot;
         ANDROID_SDK_ROOT = android.sdkRoot;
         COMPANION_APK = "${android.companion}";
-        FORK_AND_SCALE_SCREENSHOTS = "/home/tester/screenshots";
+        METRON_SCREENSHOTS = "/home/tester/screenshots";
       };
     };
     testScript = copySource + ''

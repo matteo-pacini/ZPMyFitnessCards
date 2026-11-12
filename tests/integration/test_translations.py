@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-FOLDER = Path(__file__).parents[2] / "custom_components" / "fork_and_scale" / "translations"
+FOLDER = Path(__file__).parents[2] / "custom_components" / "metron" / "translations"
 LANGUAGES = ["de", "en", "es", "fr", "it", "nl", "pl", "pt", "pt-BR", "sv", "zh-Hans"]
 
 

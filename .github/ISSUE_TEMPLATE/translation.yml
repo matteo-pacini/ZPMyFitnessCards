@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Fork & Scale speaks 11 languages, and native speakers haven't checked all of them yet. Corrections are very welcome.
+        Metron speaks 11 languages, and native speakers haven't checked all of them yet. Corrections are very welcome.
   - type: dropdown
     id: language
     attributes:

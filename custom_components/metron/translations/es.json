@@ -1,10 +1,10 @@
 {
   "config": {
     "abort": {
-      "single_instance_allowed": "Fork & Scale ya está configurado. Añade personas con «Añadir persona»."
+      "single_instance_allowed": "Metron ya está configurado. Añade personas con «Añadir persona»."
     },
     "create_entry": {
-      "default": "Fork & Scale está configurado. Las páginas que ya estaban abiertas aún no pueden mostrar sus tarjetas: recárgalas antes de añadir tarjetas. Después, añade a cada persona con «Añadir persona»."
+      "default": "Metron está configurado. Las páginas que ya estaban abiertas aún no pueden mostrar sus tarjetas: recárgalas antes de añadir tarjetas. Después, añade a cada persona con «Añadir persona»."
     },
     "error": {
       "cannot_connect": "No se pudo conectar. Revisa el host, el puerto, el usuario, la contraseña y el nombre de la base de datos.",
@@ -17,9 +17,9 @@
           "db_url": "URL de la base de datos"
         },
         "data_description": {
-          "db_url": "Por ejemplo postgresql://user:password@192.168.1.10:5432/fork_and_scale. La base de datos ya debe existir."
+          "db_url": "Por ejemplo postgresql://user:password@192.168.1.10:5432/metron. La base de datos ya debe existir."
         },
-        "description": "Usa una base de datos propia para Fork & Scale, no la del registrador de Home Assistant.",
+        "description": "Usa una base de datos propia para Metron, no la del registrador de Home Assistant.",
         "title": "Base de datos Postgres"
       },
       "user": {
@@ -29,7 +29,7 @@
         "data_description": {
           "engine": "SQLite guarda un archivo en la carpeta de configuración, que se incluye en las copias de seguridad de Home Assistant. Postgres usa una base de datos que gestionas y respaldas tú."
         },
-        "description": "Elige dónde guarda Fork & Scale sus datos. Después, añade cada persona con «Añadir persona».",
+        "description": "Elige dónde guarda Metron sus datos. Después, añade cada persona con «Añadir persona».",
         "title": "Base de datos"
       }
     }
@@ -42,7 +42,7 @@
         "imported": "Importados {weights} pesos y {days} días de calorías.",
         "mfp_imported": "Importado de MyFitnessPal:\n\n- Días: {days}\n- Entradas: {entries}\n- Pesos añadidos: {weights}\n- Pesos omitidos, en días que ya tenían uno: {skipped}",
         "no_recorder": "El registrador no está en marcha, así que no hay historial que importar.",
-        "not_loaded": "Fork & Scale no está cargado. Recárgalo y vuelve a intentarlo.",
+        "not_loaded": "Metron no está cargado. Recárgalo y vuelve a intentarlo.",
         "reconfigure_successful": "Guardado."
       },
       "entry_type": "Persona",
@@ -50,7 +50,7 @@
         "bad_line": "No se pudo leer la línea {line} de {file}.",
         "bad_row": "No se pudo leer la fila {row} del {day}.",
         "birth_date_future": "La fecha de nacimiento debe estar en el pasado.",
-        "database_unavailable": "No se pudo leer la base de datos para buscar los datos anteriores de esta persona. Vuelve a intentarlo cuando Fork & Scale esté cargado.",
+        "database_unavailable": "No se pudo leer la base de datos para buscar los datos anteriores de esta persona. Vuelve a intentarlo cuando Metron esté cargado.",
         "date_not_english": "Las fechas del diario no están en inglés. Cambia MyFitnessPal a inglés y vuelve a guardar la página.",
         "height_out_of_range": "Introduce una altura de 3 ft 4 in a 8 ft 2 in.",
         "macros_not_100": "Proteínas, carbohidratos y grasas deben sumar 100 %.",
@@ -274,10 +274,10 @@
       "message": "{name} ya está guardado."
     },
     "newer_database": {
-      "message": "Una versión más reciente de Fork & Scale actualizó esta base de datos a la versión {version}. Esta versión solo conoce hasta la versión {latest}, así que no ha tocado la base de datos. Actualiza Fork & Scale para volver a usarla."
+      "message": "Una versión más reciente de Metron actualizó esta base de datos a la versión {version}. Esta versión solo conoce hasta la versión {latest}, así que no ha tocado la base de datos. Actualiza Metron para volver a usarla."
     },
     "not_loaded": {
-      "message": "Fork & Scale no está cargado."
+      "message": "Metron no está cargado."
     },
     "nutrients_with_saved_food": {
       "message": "Las kcal, proteínas, carbohidratos y grasas son solo para un añadido rápido. Un alimento guardado tiene los suyos."
@@ -298,7 +298,7 @@
       "message": "{person} no tiene ninguna comida guardada llamada {name}."
     },
     "unknown_person": {
-      "message": "Elige una persona añadida a Fork & Scale."
+      "message": "Elige una persona añadida a Metron."
     },
     "weight_out_of_range": {
       "message": "Indica un peso de {min} a {max} {unit}."
@@ -361,7 +361,7 @@
           "name": "Día"
         },
         "device_id": {
-          "description": "La persona, como su dispositivo en Fork & Scale.",
+          "description": "La persona, como su dispositivo en Metron.",
           "name": "Persona"
         }
       },
@@ -383,7 +383,7 @@
           "name": "Día"
         },
         "device_id": {
-          "description": "La persona, como su dispositivo en Fork & Scale.",
+          "description": "La persona, como su dispositivo en Metron.",
           "name": "Persona"
         },
         "fat": {
@@ -425,7 +425,7 @@
           "name": "Día"
         },
         "device_id": {
-          "description": "La persona, como su dispositivo en Fork & Scale.",
+          "description": "La persona, como su dispositivo en Metron.",
           "name": "Persona"
         },
         "meal": {
@@ -447,7 +447,7 @@
           "name": "Día"
         },
         "device_id": {
-          "description": "La persona, como su dispositivo en Fork & Scale.",
+          "description": "La persona, como su dispositivo en Metron.",
           "name": "Persona"
         },
         "unit": {

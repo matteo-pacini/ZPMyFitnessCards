@@ -189,11 +189,11 @@ async def test_weights(ws) -> None:
 
 async def test_subscribers_hear_about_changes(hass: HomeAssistant, ws) -> None:
     client = ws.client
-    await client.send_json_auto_id({"type": "fork_and_scale/subscribe"})
+    await client.send_json_auto_id({"type": "metron/subscribe"})
     assert (await client.receive_json())["success"]
     await client.send_json_auto_id(
         {
-            "type": "fork_and_scale/entry/add",
+            "type": "metron/entry/add",
             "person": "debora",
             "day": "2026-11-08",
             "meal": "lunch",
@@ -249,6 +249,6 @@ async def test_refuses_a_barcode_another_food_has(ws) -> None:
 async def test_answers_not_loaded_while_the_integration_is_unloaded(
     hass: HomeAssistant, ws
 ) -> None:
-    entry = hass.config_entries.async_entries("fork_and_scale")[0]
+    entry = hass.config_entries.async_entries("metron")[0]
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert await error(ws, "people") == "not_loaded"

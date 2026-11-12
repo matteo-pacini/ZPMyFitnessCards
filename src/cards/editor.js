@@ -1,7 +1,7 @@
 // The cards' visual editor, which FitnessCard.getConfigElement opens for each
 // card. It shows a field for each of the card's `options`, drawn by Home
 // Assistant's own form and selectors, in the language of whoever is editing.
-const EDITOR = "fork-and-scale-card-editor";
+const EDITOR = "metron-card-editor";
 
 // The first choice of the person and language dropdowns, which leaves the
 // option out of the config. Not "", which the frontend's dropdown shows as no
@@ -83,7 +83,7 @@ class CardEditor extends HTMLElement {
   }
 
   async _loadPeople(hass) {
-    this._people = await hass.callWS({ type: "fork_and_scale/people" }).catch(() => []);
+    this._people = await hass.callWS({ type: "metron/people" }).catch(() => []);
     this._render();
   }
 

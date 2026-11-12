@@ -10,7 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.fork_and_scale.const import DOMAIN, SUBENTRY_PERSON
+from custom_components.metron.const import DOMAIN, SUBENTRY_PERSON
 
 from ..schemas import LATEST, set_version
 from .conftest import mock_entry, person
@@ -207,7 +207,7 @@ async def test_rejects_postgres_urls_that_do_not_work(
 
 
 async def test_says_when_the_postgres_driver_is_missing(hass: HomeAssistant) -> None:
-    with patch("custom_components.fork_and_scale.config_flow.make_engine", side_effect=ImportError):
+    with patch("custom_components.metron.config_flow.make_engine", side_effect=ImportError):
         result = await _postgres_flow(hass, "postgresql://user@host/db")
     assert result["errors"] == {"db_url": "no_driver"}
 

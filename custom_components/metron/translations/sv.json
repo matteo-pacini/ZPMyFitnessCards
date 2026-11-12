@@ -1,10 +1,10 @@
 {
   "config": {
     "abort": {
-      "single_instance_allowed": "Fork & Scale är redan konfigurerat. Lägg till personer med ”Lägg till person”."
+      "single_instance_allowed": "Metron är redan konfigurerat. Lägg till personer med ”Lägg till person”."
     },
     "create_entry": {
-      "default": "Fork & Scale är konfigurerat. Sidor som redan var öppna kan inte visa dess kort ännu: läs in dem igen innan du lägger till kort. Lägg sedan till varje person med ”Lägg till person”."
+      "default": "Metron är konfigurerat. Sidor som redan var öppna kan inte visa dess kort ännu: läs in dem igen innan du lägger till kort. Lägg sedan till varje person med ”Lägg till person”."
     },
     "error": {
       "cannot_connect": "Det gick inte att ansluta. Kontrollera värd, port, användare, lösenord och databasnamn.",
@@ -17,9 +17,9 @@
           "db_url": "Databas-URL"
         },
         "data_description": {
-          "db_url": "Till exempel postgresql://user:password@192.168.1.10:5432/fork_and_scale. Databasen måste redan finnas."
+          "db_url": "Till exempel postgresql://user:password@192.168.1.10:5432/metron. Databasen måste redan finnas."
         },
-        "description": "Använd en egen databas för Fork & Scale, inte den som Home Assistants recorder använder.",
+        "description": "Använd en egen databas för Metron, inte den som Home Assistants recorder använder.",
         "title": "Postgres-databas"
       },
       "user": {
@@ -29,7 +29,7 @@
         "data_description": {
           "engine": "SQLite sparar en fil i konfigurationsmappen, som ingår i Home Assistants säkerhetskopior. Postgres använder en databas som du själv driver och säkerhetskopierar."
         },
-        "description": "Välj var Fork & Scale sparar sina data. Lägg sedan till varje person med ”Lägg till person”.",
+        "description": "Välj var Metron sparar sina data. Lägg sedan till varje person med ”Lägg till person”.",
         "title": "Databas"
       }
     }
@@ -42,7 +42,7 @@
         "imported": "Importerade {weights} vikter och {days} dagar med kalorier.",
         "mfp_imported": "Importerat från MyFitnessPal:\n\n- Dagar: {days}\n- Poster: {entries}\n- Vikter tillagda: {weights}\n- Vikter överhoppade, på dagar som redan hade en: {skipped}",
         "no_recorder": "Recordern körs inte, så det finns ingen historik att importera.",
-        "not_loaded": "Fork & Scale är inte inläst. Läs in det igen och försök sedan på nytt.",
+        "not_loaded": "Metron är inte inläst. Läs in det igen och försök sedan på nytt.",
         "reconfigure_successful": "Sparat."
       },
       "entry_type": "Person",
@@ -50,7 +50,7 @@
         "bad_line": "Rad {line} i {file} kunde inte läsas.",
         "bad_row": "Rad {row} den {day} kunde inte läsas.",
         "birth_date_future": "Födelsedatumet måste ligga bakåt i tiden.",
-        "database_unavailable": "Databasen kunde inte läsas för att hitta personens tidigare data. Försök igen när Fork & Scale har lästs in.",
+        "database_unavailable": "Databasen kunde inte läsas för att hitta personens tidigare data. Försök igen när Metron har lästs in.",
         "date_not_english": "Dagbokens datum är inte på engelska. Byt MyFitnessPal till engelska och spara sidan igen.",
         "height_out_of_range": "Ange en längd mellan 3 ft 4 in och 8 ft 2 in.",
         "macros_not_100": "Protein, kolhydrater och fett måste bli 100 % tillsammans.",
@@ -274,10 +274,10 @@
       "message": "{name} är redan sparad."
     },
     "newer_database": {
-      "message": "En nyare version av Fork & Scale har uppdaterat den här databasen till version {version}. Den här versionen känner bara till version {latest} och har lämnat databasen orörd. Uppdatera Fork & Scale för att använda den igen."
+      "message": "En nyare version av Metron har uppdaterat den här databasen till version {version}. Den här versionen känner bara till version {latest} och har lämnat databasen orörd. Uppdatera Metron för att använda den igen."
     },
     "not_loaded": {
-      "message": "Fork & Scale är inte inläst."
+      "message": "Metron är inte inläst."
     },
     "nutrients_with_saved_food": {
       "message": "kcal, protein, kolhydrater och fett gäller bara snabbinmatning. Sparad mat har egna värden."
@@ -298,7 +298,7 @@
       "message": "{person} har ingen sparad måltid som heter {name}."
     },
     "unknown_person": {
-      "message": "Välj en person som har lagts till i Fork & Scale."
+      "message": "Välj en person som har lagts till i Metron."
     },
     "weight_out_of_range": {
       "message": "Ange en vikt mellan {min} och {max} {unit}."
@@ -361,7 +361,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "Personen, som dess enhet i Fork & Scale.",
+          "description": "Personen, som dess enhet i Metron.",
           "name": "Person"
         }
       },
@@ -383,7 +383,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "Personen, som dess enhet i Fork & Scale.",
+          "description": "Personen, som dess enhet i Metron.",
           "name": "Person"
         },
         "fat": {
@@ -425,7 +425,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "Personen, som dess enhet i Fork & Scale.",
+          "description": "Personen, som dess enhet i Metron.",
           "name": "Person"
         },
         "meal": {
@@ -447,7 +447,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "Personen, som dess enhet i Fork & Scale.",
+          "description": "Personen, som dess enhet i Metron.",
           "name": "Person"
         },
         "unit": {

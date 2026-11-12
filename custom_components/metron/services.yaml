@@ -4,7 +4,7 @@ log_weight:
       required: true
       selector:
         device:
-          integration: fork_and_scale
+          integration: metron
     weight:
       required: true
       example: 68.4
@@ -28,7 +28,7 @@ log_food:
       required: true
       selector:
         device:
-          integration: fork_and_scale
+          integration: metron
     meal:
       required: true
       selector:
@@ -98,7 +98,7 @@ log_meal:
       required: true
       selector:
         device:
-          integration: fork_and_scale
+          integration: metron
     saved_meal:
       required: true
       example: Usual breakfast
@@ -124,7 +124,7 @@ get_day:
       required: true
       selector:
         device:
-          integration: fork_and_scale
+          integration: metron
     day:
       selector:
         date:

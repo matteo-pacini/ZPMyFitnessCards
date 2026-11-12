@@ -29,7 +29,7 @@ def postgres_server() -> Iterator[str]:
     if shutil.which("initdb") is None:
         pytest.fail("initdb is not on PATH: run the tests in the Nix dev shell")
     # Under /tmp, not $TMPDIR: a socket path must stay under about 100 bytes.
-    root = Path(tempfile.mkdtemp(prefix="fork-and-scale-pg-", dir="/tmp"))
+    root = Path(tempfile.mkdtemp(prefix="metron-pg-", dir="/tmp"))
     data = root / "data"
     try:
         subprocess.run(

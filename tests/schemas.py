@@ -8,7 +8,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import MetaData, delete, insert, inspect, select
 
-from custom_components.fork_and_scale.db import MIGRATIONS, VERSION, _schema_v1, make_engine
+from custom_components.metron.db import MIGRATIONS, VERSION, _schema_v1, make_engine
 
 LATEST = len(MIGRATIONS)
 

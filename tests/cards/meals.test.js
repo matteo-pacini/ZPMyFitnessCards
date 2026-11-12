@@ -365,7 +365,7 @@ test("the editor's food search lists saved foods to add", () => {
 // The card editor
 
 test("a card's editor can say another string, as the saved meals card does for its person", () => {
-  const Card = ctx.customElements.defined["fork-and-scale-meals-card"];
+  const Card = ctx.customElements.defined["metron-meals-card"];
   const t = fn.editorStrings(en(), Card.editorStrings);
   assert.equal(t.editor_person_linked, "All meals");
   assert.equal(t.editor_person_helper, "Shows everyone's meals and this person's own.");

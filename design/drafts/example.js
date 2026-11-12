@@ -34,7 +34,7 @@ async function build(file) {
       <div><h4>What changes</h4><ul><li>Clear on each meal with entries, with a confirmation.</li></ul></div>
       <div><h4>What stays</h4><ul><li>+ Add food and Copy.</li></ul></div></div>`,
     css: ".diary .mealactions { flex-wrap: wrap; }",
-    cards: { diary: "fork-and-scale-food-diary-card" },
+    cards: { diary: "metron-food-diary-card" },
     pairs: [
       {
         id: "B1",

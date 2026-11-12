@@ -30,7 +30,7 @@ function sparklineSVG(weights, start, today) {
   </svg>`;
 }
 
-// Today's summary from fork_and_scale/day, and the last 30 days of weights,
+// Today's summary from metron/day, and the last 30 days of weights,
 // shown in `unit`.
 const summaryHTML = (day, weights, person, start, today, locale, t, unit) =>
   summaryFoodHTML(day, locale, t) + summaryWeightHTML(weights, person, start, today, locale, t, unit);
@@ -136,8 +136,8 @@ class SummaryCard extends PersonCard {
     const today = this._today;
     const start = shiftDay(today, -29);
     const [day, weights] = await Promise.all([
-      this._call({ type: "fork_and_scale/day", person: this._person.id, day: today }),
-      this._call({ type: "fork_and_scale/weights", person: this._person.id, start }),
+      this._call({ type: "metron/day", person: this._person.id, day: today }),
+      this._call({ type: "metron/weights", person: this._person.id, start }),
     ]);
     return { day, weights, start };
   }

@@ -85,7 +85,7 @@ class WeightCard extends PersonCard {
   }
 
   async _fetch() {
-    return this._call({ type: "fork_and_scale/weights", person: this._person.id });
+    return this._call({ type: "metron/weights", person: this._person.id });
   }
 
   _renderBody() {
@@ -146,14 +146,14 @@ class WeightCard extends PersonCard {
       this._error = null;
       this._logDay = day;
       try {
-        await this._call({ type: "fork_and_scale/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
+        await this._call({ type: "metron/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
       } catch (err) {
         this._showFailure(err);
       }
     },
     async "click:delete-weight"(el) {
       try {
-        await this._call({ type: "fork_and_scale/weight/delete", person: this._person.id, day: el.dataset.day });
+        await this._call({ type: "metron/weight/delete", person: this._person.id, day: el.dataset.day });
       } catch (err) {
         this._showFailure(err);
       }

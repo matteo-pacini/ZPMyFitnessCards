@@ -13,8 +13,8 @@ class FoodsCard extends FoodCard {
   async _load() {
     this._query ??= "";
     [this._people, this._foods] = await Promise.all([
-      this._call({ type: "fork_and_scale/people" }),
-      this._call({ type: "fork_and_scale/food/search", query: this._query.trim(), limit: 100 }),
+      this._call({ type: "metron/people" }),
+      this._call({ type: "metron/food/search", query: this._query.trim(), limit: 100 }),
     ]);
   }
 
@@ -166,7 +166,7 @@ class FoodsCard extends FoodCard {
     const t = this._t;
     const person = findPerson(this._people, {}, this._hass);
     try {
-      await this._call({ type: "fork_and_scale/food/add", ...food, ...(person && { person: person.id }), ...(anyway && { anyway }) });
+      await this._call({ type: "metron/food/add", ...food, ...(person && { person: person.id }), ...(anyway && { anyway }) });
       if (this._panel !== p) return;
       this._panel = null;
       this._renderPanel();
@@ -174,7 +174,7 @@ class FoodsCard extends FoodCard {
       if (this._panel !== p) return;
       const taken = err?.translation_placeholders;
       if (err?.code === "barcode_taken" && taken) {
-        const existing = await this._call({ type: "fork_and_scale/food/barcode", barcode: food.barcode }).catch(() => null);
+        const existing = await this._call({ type: "metron/food/barcode", barcode: food.barcode }).catch(() => null);
         if (existing && this._panel === p) {
           this._panel = { food: existing, warning: takenText(err.code, taken, this._people, t) };
           this._renderPanel();
@@ -255,7 +255,7 @@ class FoodsCard extends FoodCard {
       const { food, error } = this._readFood();
       if (error) return this._showError(null, error);
       if (!id) return this._saveNew(food);
-      const sent = await this._send({ type: "fork_and_scale/food/update", food_id: id, ...food }, barcodeError);
+      const sent = await this._send({ type: "metron/food/update", food_id: id, ...food }, barcodeError);
       if (sent.ok) {
         this._panel = null;
         this._renderPanel();
@@ -272,7 +272,7 @@ class FoodsCard extends FoodCard {
       const p = this._panel;
       const { food_id: id, name } = p.taken;
       try {
-        const found = await this._call({ type: "fork_and_scale/food/search", query: name, limit: 100 });
+        const found = await this._call({ type: "metron/food/search", query: name, limit: 100 });
         const food = found.find((f) => String(f.id) === id);
         if (this._panel !== p) return;
         if (!food) return this._showError(null, "error_failed");
@@ -286,7 +286,7 @@ class FoodsCard extends FoodCard {
     async "click:delete"() {
       const p = this._panel;
       try {
-        const meals = await this._call({ type: "fork_and_scale/food/meals", food_id: p.food.id });
+        const meals = await this._call({ type: "metron/food/meals", food_id: p.food.id });
         if (this._panel !== p) return;
         Object.assign(p, { confirming: true, meals });
         this._renderPanel();
@@ -311,7 +311,7 @@ class FoodsCard extends FoodCard {
       this._scanAbort?.abort();
     },
     async "click:really-delete"() {
-      const sent = await this._send({ type: "fork_and_scale/food/delete", food_id: this._panel.food.id });
+      const sent = await this._send({ type: "metron/food/delete", food_id: this._panel.food.id });
       if (sent.ok) {
         this._panel = null;
         this._renderPanel();
@@ -321,7 +321,7 @@ class FoodsCard extends FoodCard {
 }
 
 // What deleting a food would do to the saved meals it is in, `meals` from
-// fork_and_scale/food/meals: take it out of them, and delete those it empties.
+// metron/food/meals: take it out of them, and delete those it empties.
 function deleteAlertHTML(meals, locale, t) {
   if (!meals?.length) return "";
   const names = (list) => listText(list.map((m) => m.name), locale);

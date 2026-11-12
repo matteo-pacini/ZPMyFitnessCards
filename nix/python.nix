@@ -44,4 +44,4 @@ let
     ]
   );
 in
-pythonSet.mkVirtualEnv "fork-and-scale-env" workspace.deps.all
+pythonSet.mkVirtualEnv "metron-env" workspace.deps.all

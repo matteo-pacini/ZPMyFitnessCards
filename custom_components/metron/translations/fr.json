@@ -1,10 +1,10 @@
 {
   "config": {
     "abort": {
-      "single_instance_allowed": "Fork & Scale est déjà configuré. Ajoutez des personnes avec « Ajouter une personne »."
+      "single_instance_allowed": "Metron est déjà configuré. Ajoutez des personnes avec « Ajouter une personne »."
     },
     "create_entry": {
-      "default": "Fork & Scale est configuré. Les pages déjà ouvertes ne peuvent pas encore afficher ses cartes : rechargez-les avant d’ajouter des cartes. Ajoutez ensuite chaque personne avec « Ajouter une personne »."
+      "default": "Metron est configuré. Les pages déjà ouvertes ne peuvent pas encore afficher ses cartes : rechargez-les avant d’ajouter des cartes. Ajoutez ensuite chaque personne avec « Ajouter une personne »."
     },
     "error": {
       "cannot_connect": "Connexion impossible. Vérifiez l’hôte, le port, l’utilisateur, le mot de passe et le nom de la base.",
@@ -17,9 +17,9 @@
           "db_url": "URL de la base de données"
         },
         "data_description": {
-          "db_url": "Par exemple postgresql://user:password@192.168.1.10:5432/fork_and_scale. La base doit déjà exister."
+          "db_url": "Par exemple postgresql://user:password@192.168.1.10:5432/metron. La base doit déjà exister."
         },
-        "description": "Utilisez une base dédiée à Fork & Scale, pas celle de l’enregistreur de Home Assistant.",
+        "description": "Utilisez une base dédiée à Metron, pas celle de l’enregistreur de Home Assistant.",
         "title": "Base de données Postgres"
       },
       "user": {
@@ -29,7 +29,7 @@
         "data_description": {
           "engine": "SQLite conserve un fichier dans le dossier de configuration, inclus dans les sauvegardes de Home Assistant. Postgres utilise une base que vous gérez et sauvegardez vous-même."
         },
-        "description": "Choisissez où Fork & Scale conserve ses données. Ajoutez ensuite chaque personne avec « Ajouter une personne ».",
+        "description": "Choisissez où Metron conserve ses données. Ajoutez ensuite chaque personne avec « Ajouter une personne ».",
         "title": "Base de données"
       }
     }
@@ -42,7 +42,7 @@
         "imported": "{weights} poids et {days} jours de calories importés.",
         "mfp_imported": "Importé depuis MyFitnessPal:\n\n- Jours: {days}\n- Entrées: {entries}\n- Poids ajoutés: {weights}\n- Poids ignorés, les jours qui en avaient déjà un: {skipped}",
         "no_recorder": "L’enregistreur ne fonctionne pas, il n’y a donc pas d’historique à importer.",
-        "not_loaded": "Fork & Scale n’est pas chargé. Rechargez-le, puis réessayez.",
+        "not_loaded": "Metron n’est pas chargé. Rechargez-le, puis réessayez.",
         "reconfigure_successful": "Enregistré."
       },
       "entry_type": "Personne",
@@ -50,7 +50,7 @@
         "bad_line": "La ligne {line} de {file} est illisible.",
         "bad_row": "La ligne {row} du {day} est illisible.",
         "birth_date_future": "La date de naissance doit être dans le passé.",
-        "database_unavailable": "Impossible de lire la base de données pour retrouver les données antérieures de cette personne. Réessayez une fois Fork & Scale chargé.",
+        "database_unavailable": "Impossible de lire la base de données pour retrouver les données antérieures de cette personne. Réessayez une fois Metron chargé.",
         "date_not_english": "Les dates du journal ne sont pas en anglais. Passez MyFitnessPal en anglais, puis enregistrez de nouveau la page.",
         "height_out_of_range": "Saisissez une taille entre 3 ft 4 in et 8 ft 2 in.",
         "macros_not_100": "Protéines, glucides et lipides doivent totaliser 100 %.",
@@ -274,10 +274,10 @@
       "message": "{name} est déjà enregistré."
     },
     "newer_database": {
-      "message": "Une version plus récente de Fork & Scale a mis à jour cette base de données vers la version {version}. Cette version ne connaît que jusqu’à la version {latest} et n’a pas touché à la base de données. Mettez à jour Fork & Scale pour l’utiliser à nouveau."
+      "message": "Une version plus récente de Metron a mis à jour cette base de données vers la version {version}. Cette version ne connaît que jusqu’à la version {latest} et n’a pas touché à la base de données. Mettez à jour Metron pour l’utiliser à nouveau."
     },
     "not_loaded": {
-      "message": "Fork & Scale n’est pas chargé."
+      "message": "Metron n’est pas chargé."
     },
     "nutrients_with_saved_food": {
       "message": "Les kcal, protéines, glucides et lipides servent uniquement à un ajout rapide. Un aliment enregistré a les siens."
@@ -298,7 +298,7 @@
       "message": "{person} n’a aucun repas enregistré appelé {name}."
     },
     "unknown_person": {
-      "message": "Choisissez une personne ajoutée à Fork & Scale."
+      "message": "Choisissez une personne ajoutée à Metron."
     },
     "weight_out_of_range": {
       "message": "Indiquez un poids entre {min} et {max} {unit}."
@@ -361,7 +361,7 @@
           "name": "Jour"
         },
         "device_id": {
-          "description": "La personne, sous la forme de son appareil dans Fork & Scale.",
+          "description": "La personne, sous la forme de son appareil dans Metron.",
           "name": "Personne"
         }
       },
@@ -383,7 +383,7 @@
           "name": "Jour"
         },
         "device_id": {
-          "description": "La personne, sous la forme de son appareil dans Fork & Scale.",
+          "description": "La personne, sous la forme de son appareil dans Metron.",
           "name": "Personne"
         },
         "fat": {
@@ -425,7 +425,7 @@
           "name": "Jour"
         },
         "device_id": {
-          "description": "La personne, sous la forme de son appareil dans Fork & Scale.",
+          "description": "La personne, sous la forme de son appareil dans Metron.",
           "name": "Personne"
         },
         "meal": {
@@ -447,7 +447,7 @@
           "name": "Jour"
         },
         "device_id": {
-          "description": "La personne, sous la forme de son appareil dans Fork & Scale.",
+          "description": "La personne, sous la forme de son appareil dans Metron.",
           "name": "Personne"
         },
         "unit": {

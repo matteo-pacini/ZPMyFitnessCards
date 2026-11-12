@@ -7,7 +7,7 @@ same REST API the UI uses, and saves a test dashboard. The folder is deleted
 afterwards, so every session starts from nothing.
 
 That Home Assistant searches Open Food Facts on a local fake (`search`), set
-through FORK_AND_SCALE_SEARCH_URL, since the VM checks run with no network.
+through METRON_SEARCH_URL, since the VM checks run with no network.
 """
 
 from __future__ import annotations
@@ -37,8 +37,8 @@ import aiohttp
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
 
-from custom_components.fork_and_scale.const import DB_FILE
-from custom_components.fork_and_scale.db import sqlite_url
+from custom_components.metron.const import DB_FILE
+from custom_components.metron.db import sqlite_url
 
 from ..conftest import new_database
 
@@ -245,11 +245,11 @@ def _onboard(home: Home) -> None:
 
 
 def _add_integration(home: Home, db_url: str | None) -> str:
-    """Add Fork & Scale on SQLite, or on Postgres at `db_url`, then each person.
+    """Add Metron on SQLite, or on Postgres at `db_url`, then each person.
 
     Everything goes through the same REST calls the UI's dialogs make.
     """
-    flow = home.api("POST", "/api/config/config_entries/flow", {"handler": "fork_and_scale"})
+    flow = home.api("POST", "/api/config/config_entries/flow", {"handler": "metron"})
     step = f"/api/config/config_entries/flow/{flow['flow_id']}"
     if db_url is None:
         entry = home.api("POST", step, {"engine": "sqlite"})
@@ -275,13 +275,13 @@ def _add_integration(home: Home, db_url: str | None) -> str:
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         try:
-            people = home.ws({"type": "fork_and_scale/people"})
+            people = home.ws({"type": "metron/people"})
         except AssertionError:
             people = []
         if sorted(p["name"] for p in people) == sorted(PEOPLE):
             return entry_id
         time.sleep(0.2)
-    raise TimeoutError("Fork & Scale did not finish loading its people")
+    raise TimeoutError("Metron did not finish loading its people")
 
 
 class FakeSearch:
@@ -391,13 +391,11 @@ def _home(
     starts, to leave a database there as an older release would have. With
     `integration` False, the integration is installed but not added.
     """
-    config_dir = Path(tempfile.mkdtemp(prefix="fork-and-scale-e2e-"))
+    config_dir = Path(tempfile.mkdtemp(prefix="metron-e2e-"))
     port = _free_port()
     (config_dir / "configuration.yaml").write_text(configuration.format(port=port))
     (config_dir / "custom_components").mkdir()
-    (config_dir / "custom_components" / "fork_and_scale").symlink_to(
-        REPO / "custom_components" / "fork_and_scale"
-    )
+    (config_dir / "custom_components" / "metron").symlink_to(REPO / "custom_components" / "metron")
     home = Home(
         url=f"http://127.0.0.1:{port}",
         config_dir=config_dir,
@@ -412,7 +410,7 @@ def _home(
     # integrations that fail without their packages are not ones it uses.
     env = {**os.environ, "TMPDIR": str(config_dir / "tmp")}
     if search_url:
-        env["FORK_AND_SCALE_SEARCH_URL"] = search_url
+        env["METRON_SEARCH_URL"] = search_url
     process = subprocess.Popen(
         [sys.executable, "-m", "homeassistant", "--config", str(config_dir), "--skip-pip"],
         stdout=subprocess.DEVNULL,
@@ -460,7 +458,7 @@ def browser() -> Iterator[Browser]:
         f"{driver}: set playwright=={driver} in pyproject.toml"
     )
     # The shell's fonts in place of the host's, so pages render alike everywhere.
-    env = {**os.environ, "FONTCONFIG_FILE": os.environ["FORK_AND_SCALE_FONTCONFIG_FILE"]}
+    env = {**os.environ, "FONTCONFIG_FILE": os.environ["METRON_FONTCONFIG_FILE"]}
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(env=env)
         yield browser

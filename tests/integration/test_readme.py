@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 REPO = Path(__file__).parents[2]
 README = (REPO / "README.md").read_text()
-MANIFEST = json.loads((REPO / "custom_components" / "fork_and_scale" / "manifest.json").read_text())
+MANIFEST = json.loads((REPO / "custom_components" / "metron" / "manifest.json").read_text())
 
 # A my.home-assistant.io button: its badge, then the redirect it links to.
 BUTTON = re.compile(

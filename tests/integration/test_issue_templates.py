@@ -13,7 +13,7 @@ REPO = Path(__file__).parents[2]
 TEMPLATES = REPO / ".github" / "ISSUE_TEMPLATE"
 README = (REPO / "README.md").read_text()
 FORMS = sorted(p.name for p in TEMPLATES.glob("*.yml") if p.name != "config.yml")
-README_LINK = re.compile(r"https://github\.com/matteo-pacini/fork-and-scale#([\w-]+)")
+README_LINK = re.compile(r"https://github\.com/matteo-pacini/metron#([\w-]+)")
 
 
 def form(name: str) -> dict:
@@ -54,5 +54,5 @@ def test_links_into_the_readme_lead_to_its_headings() -> None:
 
 def test_the_translation_form_lists_every_language() -> None:
     [language] = [item for item in form("translation.yml")["body"] if item.get("id") == "language"]
-    translations = REPO / "custom_components" / "fork_and_scale" / "translations"
+    translations = REPO / "custom_components" / "metron" / "translations"
     assert len(language["attributes"]["options"]) == len(list(translations.glob("*.json")))

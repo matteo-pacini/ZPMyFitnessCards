@@ -104,7 +104,7 @@ class FitnessCard extends HTMLElement {
 
   _subscribe() {
     this._unsubscribe = this._hass.connection
-      .subscribeMessage((event) => this._changed(event), { type: "fork_and_scale/subscribe" })
+      .subscribeMessage((event) => this._changed(event), { type: "metron/subscribe" })
       .catch(() => {
         this._unsubscribe = null;
       });

@@ -210,14 +210,12 @@ class Screen:
         return self.home.ws(message)
 
     def person(self, name: str) -> str:
-        return next(
-            p["id"] for p in self.ws({"type": "fork_and_scale/people"}) if p["name"] == name
-        )
+        return next(p["id"] for p in self.ws({"type": "metron/people"}) if p["name"] == name)
 
     def food(self, name: str, kcal: float = 100, **more: Any) -> dict:
         return self.ws(
             {
-                "type": "fork_and_scale/food/add",
+                "type": "metron/food/add",
                 "name": name,
                 "kcal": kcal,
                 "protein": 10,
@@ -230,7 +228,7 @@ class Screen:
     def entry(self, person: str, day: str, meal: str, **fields: Any) -> dict:
         return self.ws(
             {
-                "type": "fork_and_scale/entry/add",
+                "type": "metron/entry/add",
                 "person": self.person(person),
                 "day": day,
                 "meal": meal,
@@ -241,7 +239,7 @@ class Screen:
     def saved_meal(self, name: str, owner: str | None, items: list[dict]) -> dict:
         return self.ws(
             {
-                "type": "fork_and_scale/meal/add",
+                "type": "metron/meal/add",
                 "name": name,
                 "owner": owner and self.person(owner),
                 "items": items,
@@ -249,26 +247,22 @@ class Screen:
         )
 
     def entries(self, person: str, day: str) -> list[dict]:
-        return self.ws({"type": "fork_and_scale/day", "person": self.person(person), "day": day})[
-            "entries"
-        ]
+        return self.ws({"type": "metron/day", "person": self.person(person), "day": day})["entries"]
 
     def diary(self, person: str, day: str, **config: Any) -> Locator:
-        card = self.open_card(
-            {"type": "custom:fork-and-scale-food-diary-card", "person": person, **config}
-        )
+        card = self.open_card({"type": "custom:metron-food-diary-card", "person": person, **config})
         expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
         card.locator('[data-action="pick-day"]').fill(day)
         expect(card.locator('[data-action="pick-day"]')).to_have_value(day)
         return card
 
     def meals_card(self, **config: Any) -> Locator:
-        card = self.open_card({"type": "custom:fork-and-scale-meals-card", **config})
+        card = self.open_card({"type": "custom:metron-meals-card", **config})
         expect(card.locator(".list")).to_be_visible(timeout=TIMEOUT)
         return card
 
     def foods_card(self, **config: Any) -> Locator:
-        card = self.open_card({"type": "custom:fork-and-scale-foods-card", **config})
+        card = self.open_card({"type": "custom:metron-foods-card", **config})
         expect(card.locator(".list")).to_be_visible(timeout=TIMEOUT)
         return card
 
@@ -303,7 +297,7 @@ def scan_from_head(s: Screen, card: Locator, code: str) -> None:
 @contextmanager
 def person_named(s: Screen, name: str) -> Iterator[str]:
     """A person added for a flow, as the person form adds one; removed after."""
-    [found] = s.home.api("GET", "/api/config/config_entries/entry?domain=fork_and_scale")
+    [found] = s.home.api("GET", "/api/config/config_entries/entry?domain=metron")
     entry = found["entry_id"]
     flows = "/api/config/config_entries/subentries/flow"
     form = s.home.api("POST", flows, {"handler": [entry, "person"]})
@@ -343,7 +337,7 @@ def person_named(s: Screen, name: str) -> Iterator[str]:
 
 def people(s: Screen) -> list[dict]:
     try:
-        return s.ws({"type": "fork_and_scale/people"})
+        return s.ws({"type": "metron/people"})
     except AssertionError:
         return []  # reloading
 
@@ -494,7 +488,7 @@ def h4_scan_a_new_product(s: Screen) -> None:
     expect(panel.locator('[data-field="grams"]')).to_have_value("170")
     s.tap(panel.locator('[data-action="add-entry"]'))
     expect(meal_section(card, "breakfast").locator(".row")).to_contain_text("94", timeout=TIMEOUT)
-    saved = s.ws({"type": "fork_and_scale/food/barcode", "barcode": code})
+    saved = s.ws({"type": "metron/food/barcode", "barcode": code})
     assert (saved["kcal"], saved["saved_by"]) == (55, s.person("Debora"))
 
 
@@ -535,7 +529,7 @@ def h6_values_follow_the_food(s: Screen) -> None:
     meals = s.meals_card(person="Matteo")
     row = meals.locator(".mealrow", has_text=s.name("H6 shake"))
     expect(row).to_contain_text("120 kcal", timeout=TIMEOUT)
-    s.ws({"type": "fork_and_scale/food/update", "food_id": whey["id"], "kcal": 380})
+    s.ws({"type": "metron/food/update", "food_id": whey["id"], "kcal": 380})
     expect(row).to_contain_text("114 kcal", timeout=TIMEOUT)
     # In the foods card too.
     foods = s.foods_card()
@@ -624,7 +618,7 @@ def h9_scan_in_the_saved_foods_card(s: Screen) -> None:
     expect(panel.locator('[data-action="save"]')).to_have_text("Save food")
     s.tap(panel.locator('[data-action="save"]'))
     expect(panel).to_be_hidden(timeout=TIMEOUT)
-    assert s.ws({"type": "fork_and_scale/food/barcode", "barcode": code})["kcal"] == 63
+    assert s.ws({"type": "metron/food/barcode", "barcode": code})["kcal"] == 63
     s.camera_off()
 
 
@@ -634,7 +628,7 @@ def h10_delete_a_meal(s: Screen) -> None:
     meal = s.saved_meal(s.name("H10 toast"), None, [{"name": "Toast", "kcal": 150}])
     s.ws(
         {
-            "type": "fork_and_scale/meal/log",
+            "type": "metron/meal/log",
             "person": s.person("Debora"),
             "day": day,
             "meal": "breakfast",
@@ -729,7 +723,7 @@ def e2_two_people_at_once(s: Screen) -> None:
         f"Debora already saved this as {s.name('E2 her oat drink')}.", timeout=TIMEOUT
     )
     expect(panel.locator(".picked")).to_contain_text(s.name("E2 her oat drink"))
-    assert s.ws({"type": "fork_and_scale/food/barcode", "barcode": code})["id"] == hers["id"]
+    assert s.ws({"type": "metron/food/barcode", "barcode": code})["id"] == hers["id"]
     s.tap(panel.locator('.headactions [data-action="close"]'))
 
     # A meal chosen while someone deletes it.
@@ -737,9 +731,7 @@ def e2_two_people_at_once(s: Screen) -> None:
     panel = open_add(s, card, "lunch")
     s.type(panel.locator('[data-action="query"]'), s.name("E2 chicken salad"))
     s.tap(panel.locator(".mealrow", has_text=s.name("E2 chicken salad")))
-    s.ws(
-        {"type": "fork_and_scale/meal/delete", "meal_id": salad["id"], "version": salad["version"]}
-    )
+    s.ws({"type": "metron/meal/delete", "meal_id": salad["id"], "version": salad["version"]})
     s.tap(panel.locator('[data-action="log-meal"]'))
     expect(panel.locator(".error")).to_have_text(
         f"{s.name('E2 chicken salad')} was changed or deleted meanwhile, so nothing was added. "
@@ -771,7 +763,7 @@ def e3_delete_a_food_in_two_meals(s: Screen) -> None:
     expect(alert).to_contain_text(f"{s.name('E3 Snack')} wird ebenfalls gelöscht")
     s.tap(panel.locator('[data-action="really-delete"]'))
     expect(panel).to_be_hidden(timeout=TIMEOUT)
-    meals = {m["name"]: m for m in s.ws({"type": "fork_and_scale/meals"})}
+    meals = {m["name"]: m for m in s.ws({"type": "metron/meals"})}
     assert s.name("E3 Snack") not in meals
     assert [i["name"] for i in meals[s.name("E3 Frühstück")]["items"]] == [s.name("E3 Milch")]
 
@@ -942,11 +934,7 @@ def e8_keyboard_only(s: Screen) -> None:
     name.focus()
     s.page.keyboard.press("Enter")
     expect(panel).to_be_hidden(timeout=TIMEOUT)
-    saved = [
-        m
-        for m in s.ws({"type": "fork_and_scale/meals"})
-        if m["name"] == s.name("E8 rice and beans")
-    ]
+    saved = [m for m in s.ws({"type": "metron/meals"}) if m["name"] == s.name("E8 rice and beans")]
     assert [i["name"] for i in saved[0]["items"]] == ["Rice", "Beans"]
 
     # One match in the Saved search: Enter chooses it.
@@ -967,7 +955,7 @@ def e9_a_removed_person_s_meals(s: Screen) -> None:
         for meal_name in ("E9 usual breakfast", "E9 berries bowl"):
             s.ws(
                 {
-                    "type": "fork_and_scale/meal/add",
+                    "type": "metron/meal/add",
                     "name": s.name(meal_name),
                     "owner": key,
                     "items": [{"name": "x", "kcal": 1}],
@@ -985,7 +973,7 @@ def e9_a_removed_person_s_meals(s: Screen) -> None:
     both = card.locator(".mealrow", has_text=s.name("E9 usual breakfast"))
     expect(both).to_have_count(2)
     expect(both.filter(has_text="Debora")).to_have_count(1)
-    berries = s.ws({"type": "fork_and_scale/food/search", "query": s.name("E9 berries")})[0]
+    berries = s.ws({"type": "metron/food/search", "query": s.name("E9 berries")})[0]
     assert berries["saved_by"] is None
 
 
@@ -1008,7 +996,7 @@ def e10_save_a_food_again(s: Screen) -> None:
     expect(panel.locator('[data-action="save-anyway"]')).to_be_visible()
     s.tap(panel.locator('[data-action="choose-taken"]'))
     expect(panel.locator(".picked")).to_contain_text(s.name("E10 Banana"), timeout=TIMEOUT)
-    found = s.ws({"type": "fork_and_scale/food/search", "query": s.name("E10 Banana")})
+    found = s.ws({"type": "metron/food/search", "query": s.name("E10 Banana")})
     assert [f["id"] for f in found] == [hers["id"]]
     # Save anyway saves a second one.
     tab(s, card, "new")
@@ -1018,7 +1006,7 @@ def e10_save_a_food_again(s: Screen) -> None:
     s.tap(panel.locator('[data-action="save-new-food"]'))
     s.tap(panel.locator('[data-action="save-anyway"]'))
     expect(panel.locator(".picked")).to_contain_text(s.name("E10 banana"), timeout=TIMEOUT)
-    found = s.ws({"type": "fork_and_scale/food/search", "query": s.name("E10 Banana")})
+    found = s.ws({"type": "metron/food/search", "query": s.name("E10 Banana")})
     assert len(found) == 2
     assert {f["saved_by"] for f in found} == {s.person("Debora"), s.person("Matteo")}
 

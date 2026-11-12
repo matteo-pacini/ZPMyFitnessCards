@@ -4,8 +4,8 @@ from datetime import date
 
 import pytest
 
-from custom_components.fork_and_scale import goals as g
-from custom_components.fork_and_scale.const import MAX_KG, MAX_LB, MIN_KG, MIN_LB
+from custom_components.metron import goals as g
+from custom_components.metron.const import MAX_KG, MAX_LB, MIN_KG, MIN_LB
 
 
 def test_age_counts_whole_years() -> None:

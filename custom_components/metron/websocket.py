@@ -1,6 +1,6 @@
 """Websocket commands the cards call.
 
-People are identified by their key (the `id` that fork_and_scale/people
+People are identified by their key (the `id` that metron/people
 returns). Days are ISO dates in Home Assistant's time zone, never in the
 future. Any logged-in user may read and write; Home Assistant has no
 per-person permissions to apply.
@@ -33,7 +33,7 @@ from .db import EVERYONE, FoodGoneError, MealChangedError, MealExistsError
 from .openfoodfacts import SearchError, async_search
 from .schema import vol
 
-# The longest range fork_and_scale/days answers, in days.
+# The longest range metron/days answers, in days.
 MAX_RANGE = 400
 
 ERR_NOT_LOADED = "not_loaded"
@@ -168,7 +168,7 @@ def _command(schema: dict) -> Callable:
         ) -> None:
             data = loaded_data(hass)
             if data is None:
-                connection.send_error(msg["id"], ERR_NOT_LOADED, "Fork & Scale is not loaded")
+                connection.send_error(msg["id"], ERR_NOT_LOADED, "Metron is not loaded")
                 return
             person = None
             if "person" in msg:
@@ -585,7 +585,7 @@ async def ws_update_meal(data: FitnessData, _person: None, msg: dict) -> dict | 
     """Change a meal's name, owner or items, as it was at `version`.
 
     Refused with meal_changed if someone changed or deleted it since, and
-    with meal_exists as fork_and_scale/meal/add is.
+    with meal_exists as metron/meal/add is.
     """
     changes = {k: msg[k] for k in ("name", "items") if k in msg}
     if "owner" in msg:

@@ -130,7 +130,7 @@ class ExportView(HomeAssistantView):
             raise web.HTTPNotFound
         body = await data.async_read(build_zip, data.db, person)
         name = slugify(data.people[person].name, separator="-")
-        filename = f"fork-and-scale-{name}-{today().isoformat()}.zip"
+        filename = f"metron-{name}-{today().isoformat()}.zip"
         return web.Response(
             body=body,
             content_type="application/zip",

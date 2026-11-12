@@ -14,7 +14,7 @@ from contextlib import ExitStack
 import pytest
 from playwright.sync_api import Browser, Locator, Page, expect
 
-from custom_components.fork_and_scale.db import key_for_name
+from custom_components.metron.db import key_for_name
 
 from ..conftest import new_database
 from ..integration.test_readme import buttons
@@ -73,12 +73,10 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
     # Step 3's button leads, through my.home-assistant.io, to this address.
     domain = buttons()["config_flow_start"]["domain"]
     page.goto(f"{new_home.url}/_my_redirect/config_flow_start?domain={domain}")
-    expect(page.get_by_text("Do you want to set up Fork & Scale?")).to_be_visible(timeout=30_000)
+    expect(page.get_by_text("Do you want to set up Metron?")).to_be_visible(timeout=30_000)
     page.get_by_role("button", name="OK").click()
     dialog = page.locator("dialog-data-entry-flow")
-    expect(dialog.get_by_text("Choose where Fork & Scale keeps its data.")).to_be_visible(
-        timeout=TIMEOUT
-    )
+    expect(dialog.get_by_text("Choose where Metron keeps its data.")).to_be_visible(timeout=TIMEOUT)
     if new_home.db_url.startswith("postgresql"):
         dialog.get_by_role("radio", name="Postgres").check()
         dialog.get_by_role("button", name="Submit").click()
@@ -90,7 +88,7 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
     dialog.get_by_role("button", name="Finish").click()
 
     # Step 4: "Add person" on the integration's page.
-    page.get_by_text("Fork & Scale", exact=True).click()
+    page.get_by_text("Metron", exact=True).click()
     page.get_by_role("button", name="Add person").click()
     dialog.get_by_role("textbox", name="Name*").fill("Nora")
     # The form takes only a birth date in the past, so this must work for it to save.
@@ -102,7 +100,7 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
     dialog.get_by_role("button", name="Submit").click()
     dialog.get_by_role("button", name="Finish").click()
 
-    [nora] = new_home.ws({"type": "fork_and_scale/people"})
+    [nora] = new_home.ws({"type": "metron/people"})
     assert (nora["name"], nora["height_cm"], nora["start_weight_kg"], nora["goal_weight_kg"]) == (
         "Nora",
         168,
@@ -114,8 +112,8 @@ def test_installs_with_the_readme_s_button_and_shows_cards_after_a_reload(
 
     # As the success message says: reload, and the cards are there, with no
     # dashboard resource added.
-    new_home.dashboard([{"type": "custom:fork-and-scale-weight-card", "person": "Nora"}])
+    new_home.dashboard([{"type": "custom:metron-weight-card", "person": "Nora"}])
     page.reload()
     page.locator("ha-sidebar").get_by_text("FS test").click()
-    card = page.locator("fork-and-scale-weight-card")
+    card = page.locator("metron-weight-card")
     expect(card.locator(".chart")).to_contain_text("Goal 65 kg", timeout=30_000)

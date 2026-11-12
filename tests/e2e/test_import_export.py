@@ -23,7 +23,7 @@ EXPORT = "File-Export-2025-10-01-to-2025-10-04"
 
 def menu(home: Home, page: Page, person: str) -> Locator:
     """Open a person's menu, the one "Change person" shows; return its dialog."""
-    page.goto(home.url + "/config/integrations/integration/fork_and_scale")
+    page.goto(home.url + "/config/integrations/integration/metron")
     row = page.locator("ha-config-sub-entry-row", has_text=person)
     row.get_by_role("button", name="Change person").click()
     dialog = page.locator("dialog-data-entry-flow")
@@ -56,14 +56,14 @@ def summary(dialog: Locator, days: int, entries: int, added: int, skipped: int) 
 
 
 def day(home: Home, person: str, day: str) -> list[tuple[str, str, float]]:
-    reply = home.ws({"type": "fork_and_scale/day", "person": person_id(home, person), "day": day})
+    reply = home.ws({"type": "metron/day", "person": person_id(home, person), "day": day})
     return [(e["meal"], e["name"], e["kcal"]) for e in reply["entries"]]
 
 
 def weights(home: Home, person: str, start: str, end: str) -> dict[str, float]:
     reply = home.ws(
         {
-            "type": "fork_and_scale/weights",
+            "type": "metron/weights",
             "person": person_id(home, person),
             "start": start,
             "end": end,
@@ -78,9 +78,7 @@ def forget_weights(home: Home):
     added: list[tuple[str, str]] = []
     yield added
     for person, day_ in added:
-        home.ws(
-            {"type": "fork_and_scale/weight/delete", "person": person_id(home, person), "day": day_}
-        )
+        home.ws({"type": "metron/weight/delete", "person": person_id(home, person), "day": day_})
 
 
 def test_imports_the_export_zip_asking_for_meals_and_the_unit(
@@ -92,7 +90,7 @@ def test_imports_the_export_zip_asking_for_meals_and_the_unit(
             z.write(path, path.name)
     debora = person_id(home, "Debora")
     forget_weights += [("Debora", "2025-10-01"), ("Debora", "2025-10-04")]
-    home.ws({"type": "fork_and_scale/weight/set", "person": debora, "day": "2025-10-04", "kg": 79})
+    home.ws({"type": "metron/weight/set", "person": debora, "day": "2025-10-04", "kg": 79})
 
     dialog = upload(home, page, "Debora", archive)
     # The meal of the file's own, which goes under snacks unless changed.
@@ -177,12 +175,10 @@ def test_exports_a_person_s_data_from_a_link(home: Home, page: Page, forget_weig
     oats = save_food(home, "Export oats e2e", barcode="5099999000017")
     debora = person_id(home, "Debora")
     forget_weights.append(("Debora", "2025-10-25"))
-    home.ws(
-        {"type": "fork_and_scale/weight/set", "person": debora, "day": "2025-10-25", "kg": 68.4}
-    )
+    home.ws({"type": "metron/weight/set", "person": debora, "day": "2025-10-25", "kg": 68.4})
     home.ws(
         {
-            "type": "fork_and_scale/entry/add",
+            "type": "metron/entry/add",
             "person": debora,
             "day": "2025-10-25",
             "meal": "lunch",
@@ -200,7 +196,7 @@ def test_exports_a_person_s_data_from_a_link(home: Home, page: Page, forget_weig
     with page.expect_download(timeout=TIMEOUT) as info:
         link.click()
     download = info.value
-    assert download.suggested_filename.startswith("fork-and-scale-debora-")
+    assert download.suggested_filename.startswith("metron-debora-")
 
     archive = zipfile.ZipFile(download.path())
 

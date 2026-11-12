@@ -263,7 +263,7 @@ test("the foods list says when nothing matches", () => {
 });
 
 test("cards reject config that is not text", () => {
-  const Card = ctx.customElements.defined["fork-and-scale-food-diary-card"];
+  const Card = ctx.customElements.defined["metron-food-diary-card"];
   assert.throws(() => new Card().setConfig({ person: 3 }), /person: must be text/);
   assert.throws(() => new Card().setConfig(null), /Invalid configuration/);
   new Card().setConfig({});

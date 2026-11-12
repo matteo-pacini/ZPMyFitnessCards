@@ -1,10 +1,10 @@
 {
   "config": {
     "abort": {
-      "single_instance_allowed": "Fork & Scale is al ingesteld. Voeg personen toe met ‘Persoon toevoegen’."
+      "single_instance_allowed": "Metron is al ingesteld. Voeg personen toe met ‘Persoon toevoegen’."
     },
     "create_entry": {
-      "default": "Fork & Scale is ingesteld. Pagina’s die al open waren, kunnen de kaarten nog niet tonen: laad ze opnieuw voordat je kaarten toevoegt. Voeg daarna elke persoon toe met ‘Persoon toevoegen’."
+      "default": "Metron is ingesteld. Pagina’s die al open waren, kunnen de kaarten nog niet tonen: laad ze opnieuw voordat je kaarten toevoegt. Voeg daarna elke persoon toe met ‘Persoon toevoegen’."
     },
     "error": {
       "cannot_connect": "Verbinden is mislukt. Controleer host, poort, gebruiker, wachtwoord en databasenaam.",
@@ -17,9 +17,9 @@
           "db_url": "Database-URL"
         },
         "data_description": {
-          "db_url": "Bijvoorbeeld postgresql://user:password@192.168.1.10:5432/fork_and_scale. De database moet al bestaan."
+          "db_url": "Bijvoorbeeld postgresql://user:password@192.168.1.10:5432/metron. De database moet al bestaan."
         },
-        "description": "Gebruik een eigen database voor Fork & Scale, niet die van de recorder van Home Assistant.",
+        "description": "Gebruik een eigen database voor Metron, niet die van de recorder van Home Assistant.",
         "title": "Postgres-database"
       },
       "user": {
@@ -29,7 +29,7 @@
         "data_description": {
           "engine": "SQLite bewaart een bestand in de configuratiemap, dat in Home Assistant-back-ups zit. Postgres gebruikt een database die je zelf beheert en back-upt."
         },
-        "description": "Kies waar Fork & Scale zijn gegevens bewaart. Voeg daarna elke persoon toe met ‘Persoon toevoegen’.",
+        "description": "Kies waar Metron zijn gegevens bewaart. Voeg daarna elke persoon toe met ‘Persoon toevoegen’.",
         "title": "Database"
       }
     }
@@ -42,7 +42,7 @@
         "imported": "{weights} gewichten en {days} dagen calorieën geïmporteerd.",
         "mfp_imported": "Geïmporteerd uit MyFitnessPal:\n\n- Dagen: {days}\n- Items: {entries}\n- Gewichten toegevoegd: {weights}\n- Gewichten overgeslagen, op dagen die er al een hadden: {skipped}",
         "no_recorder": "De recorder draait niet, dus er is geen geschiedenis om te importeren.",
-        "not_loaded": "Fork & Scale is niet geladen. Laad het opnieuw en probeer het nog eens.",
+        "not_loaded": "Metron is niet geladen. Laad het opnieuw en probeer het nog eens.",
         "reconfigure_successful": "Opgeslagen."
       },
       "entry_type": "Persoon",
@@ -50,7 +50,7 @@
         "bad_line": "Regel {line} van {file} kon niet worden gelezen.",
         "bad_row": "Rij {row} op {day} kon niet worden gelezen.",
         "birth_date_future": "De geboortedatum moet in het verleden liggen.",
-        "database_unavailable": "De database kon niet worden gelezen om eerdere gegevens van deze persoon te vinden. Probeer het opnieuw zodra Fork & Scale is geladen.",
+        "database_unavailable": "De database kon niet worden gelezen om eerdere gegevens van deze persoon te vinden. Probeer het opnieuw zodra Metron is geladen.",
         "date_not_english": "De datums in het dagboek zijn niet in het Engels. Zet MyFitnessPal op Engels en sla de pagina opnieuw op.",
         "height_out_of_range": "Voer een lengte van 3 ft 4 in tot 8 ft 2 in in.",
         "macros_not_100": "Eiwit, koolhydraten en vet moeten samen 100% zijn.",
@@ -274,10 +274,10 @@
       "message": "{name} is al opgeslagen."
     },
     "newer_database": {
-      "message": "Een nieuwere versie van Fork & Scale heeft deze database bijgewerkt naar versie {version}. Deze versie kent alleen tot en met versie {latest} en heeft de database ongewijzigd gelaten. Werk Fork & Scale bij om hem weer te gebruiken."
+      "message": "Een nieuwere versie van Metron heeft deze database bijgewerkt naar versie {version}. Deze versie kent alleen tot en met versie {latest} en heeft de database ongewijzigd gelaten. Werk Metron bij om hem weer te gebruiken."
     },
     "not_loaded": {
-      "message": "Fork & Scale is niet geladen."
+      "message": "Metron is niet geladen."
     },
     "nutrients_with_saved_food": {
       "message": "kcal, eiwit, koolhydraten en vet zijn alleen voor snel toevoegen. Opgeslagen voeding heeft eigen waarden."
@@ -298,7 +298,7 @@
       "message": "{person} heeft geen opgeslagen maaltijd met de naam {name}."
     },
     "unknown_person": {
-      "message": "Kies een persoon die aan Fork & Scale is toegevoegd."
+      "message": "Kies een persoon die aan Metron is toegevoegd."
     },
     "weight_out_of_range": {
       "message": "Geef een gewicht van {min} tot {max} {unit}."
@@ -361,7 +361,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "De persoon: het apparaat van die persoon in Fork & Scale.",
+          "description": "De persoon: het apparaat van die persoon in Metron.",
           "name": "Persoon"
         }
       },
@@ -383,7 +383,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "De persoon: het apparaat van die persoon in Fork & Scale.",
+          "description": "De persoon: het apparaat van die persoon in Metron.",
           "name": "Persoon"
         },
         "fat": {
@@ -425,7 +425,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "De persoon: het apparaat van die persoon in Fork & Scale.",
+          "description": "De persoon: het apparaat van die persoon in Metron.",
           "name": "Persoon"
         },
         "meal": {
@@ -447,7 +447,7 @@
           "name": "Dag"
         },
         "device_id": {
-          "description": "De persoon: het apparaat van die persoon in Fork & Scale.",
+          "description": "De persoon: het apparaat van die persoon in Metron.",
           "name": "Persoon"
         },
         "unit": {

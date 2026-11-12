@@ -15,7 +15,7 @@ const SEARCH_DELAY_MS = 250;
 
 // Sent on window when the trends card asks to open a day: {person, day}.
 // A food diary showing that person moves to the day.
-const OPEN_DAY = "fork-and-scale-open-day";
+const OPEN_DAY = "metron-open-day";
 
 // Dates are ISO days ("2026-11-09") in Home Assistant's time zone. new Date()
 // reads one as its midnight in UTC, so format it in UTC to show that day.

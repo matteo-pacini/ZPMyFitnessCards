@@ -1,5 +1,5 @@
 // Saved meals and who saved what, for the food diary, saved foods and saved
-// meals cards. A meal, from fork_and_scale/meals, is {id, owner, name,
+// meals cards. A meal, from metron/meals, is {id, owner, name,
 // version, items}: owner is a person's id, or null for everyone, and each
 // item is {id, food_id, name, grams, nutrients...}, its food's values now
 // for a saved food, else fixed values, from a quick add.

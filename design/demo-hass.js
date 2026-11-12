@@ -100,7 +100,7 @@ const detailedError = (code, message, details) => ({
   message,
   translation_key: code,
   translation_placeholders: details,
-  translation_domain: "fork_and_scale",
+  translation_domain: "metron",
 });
 const NOT_FOUND = wsError("not_found", "Not found");
 const MEAL_CHANGED = wsError("meal_changed", "The meal was changed or deleted meanwhile");
@@ -273,11 +273,11 @@ const FIXED_ITEM = { name: required(name), grams: optional(orNone(positive)), ..
 
 // Each command's schema, after its type, and the DemoStore method that runs it.
 const COMMANDS = {
-  "fork_and_scale/people": [{}, "_listPeople"],
-  "fork_and_scale/subscribe": [{}, "_subscribed"],
-  "fork_and_scale/day": [{ ...PERSON, day: required(isoDay) }, "_day"],
-  "fork_and_scale/days": [{ ...PERSON, start: required(isoDay), end: required(isoDay) }, "_days"],
-  "fork_and_scale/entry/add": [
+  "metron/people": [{}, "_listPeople"],
+  "metron/subscribe": [{}, "_subscribed"],
+  "metron/day": [{ ...PERSON, day: required(isoDay) }, "_day"],
+  "metron/days": [{ ...PERSON, start: required(isoDay), end: required(isoDay) }, "_days"],
+  "metron/entry/add": [
     {
       ...PERSON,
       day: required(isoDay),
@@ -289,7 +289,7 @@ const COMMANDS = {
     },
     "_addEntry",
   ],
-  "fork_and_scale/entry/update": [
+  "metron/entry/update": [
     {
       entry_id: required(integer),
       day: optional(isoDay),
@@ -300,8 +300,8 @@ const COMMANDS = {
     },
     "_updateEntry",
   ],
-  "fork_and_scale/entry/delete": [{ entry_id: required(integer) }, "_deleteEntry"],
-  "fork_and_scale/meal/copy": [
+  "metron/entry/delete": [{ entry_id: required(integer) }, "_deleteEntry"],
+  "metron/meal/copy": [
     {
       ...PERSON,
       from_day: required(isoDay),
@@ -311,17 +311,17 @@ const COMMANDS = {
     },
     "_copyMeal",
   ],
-  "fork_and_scale/food/search": [{ query: required(text), limit: optional(between(integer, 1, 100), 20) }, "_searchFoods"],
-  "fork_and_scale/food/recent": [{ ...PERSON, limit: optional(between(integer, 1, 100), 10) }, "_recentFoods"],
-  "fork_and_scale/food/barcode": [{ barcode: required(name) }, "_foodByBarcode"],
-  "fork_and_scale/food/add": [
+  "metron/food/search": [{ query: required(text), limit: optional(between(integer, 1, 100), 20) }, "_searchFoods"],
+  "metron/food/recent": [{ ...PERSON, limit: optional(between(integer, 1, 100), 10) }, "_recentFoods"],
+  "metron/food/barcode": [{ barcode: required(name) }, "_foodByBarcode"],
+  "metron/food/add": [
     { name: required(name), ...FOOD_FIELDS, person: optional(text), anyway: optional(boolean, false) },
     "_addFood",
   ],
-  "fork_and_scale/food/meals": [{ food_id: required(integer) }, "_foodMeals"],
-  "fork_and_scale/meals": [{ person: optional(text) }, "_listMeals"],
-  "fork_and_scale/meal/add": [{ name: required(name), owner: required(orNone(text)), items: required(mealItems) }, "_addMeal"],
-  "fork_and_scale/meal/update": [
+  "metron/food/meals": [{ food_id: required(integer) }, "_foodMeals"],
+  "metron/meals": [{ person: optional(text) }, "_listMeals"],
+  "metron/meal/add": [{ name: required(name), owner: required(orNone(text)), items: required(mealItems) }, "_addMeal"],
+  "metron/meal/update": [
     {
       meal_id: required(integer),
       version: required(integer),
@@ -331,8 +331,8 @@ const COMMANDS = {
     },
     "_updateMeal",
   ],
-  "fork_and_scale/meal/delete": [{ meal_id: required(integer), version: required(integer) }, "_deleteMeal"],
-  "fork_and_scale/meal/log": [
+  "metron/meal/delete": [{ meal_id: required(integer), version: required(integer) }, "_deleteMeal"],
+  "metron/meal/log": [
     {
       ...PERSON,
       day: required(isoDay),
@@ -343,18 +343,18 @@ const COMMANDS = {
     },
     "_logMeal",
   ],
-  "fork_and_scale/food/update": [{ food_id: required(integer), name: optional(name), ...FOOD_FIELDS }, "_updateFood"],
-  "fork_and_scale/food/delete": [{ food_id: required(integer) }, "_deleteFood"],
-  "fork_and_scale/openfoodfacts/search": [
+  "metron/food/update": [{ food_id: required(integer), name: optional(name), ...FOOD_FIELDS }, "_updateFood"],
+  "metron/food/delete": [{ food_id: required(integer) }, "_deleteFood"],
+  "metron/openfoodfacts/search": [
     { query: required(name), language: required(language), page: optional(between(integer, 1), 1) },
     "_searchOpenFoodFacts",
   ],
-  "fork_and_scale/weights": [{ ...PERSON, start: optional(isoDay, "0001-01-01"), end: optional(isoDay) }, "_listWeights"],
-  "fork_and_scale/weight/set": [
+  "metron/weights": [{ ...PERSON, start: optional(isoDay, "0001-01-01"), end: optional(isoDay) }, "_listWeights"],
+  "metron/weight/set": [
     { ...PERSON, day: required(isoDay), kg: required(between(coerceFloat, MIN_KG, MAX_KG)) },
     "_setWeight",
   ],
-  "fork_and_scale/weight/delete": [{ ...PERSON, day: required(isoDay) }, "_deleteWeight"],
+  "metron/weight/delete": [{ ...PERSON, day: required(isoDay) }, "_deleteWeight"],
 };
 
 // Goals, as goals.py works them out
@@ -727,7 +727,7 @@ class DemoStore {
           const result = wire(this._handle(wire(message)));
           settle = () => resolve(result);
         } catch (err) {
-          if (err instanceof Error) console.error("Fork & Scale demo: error handling message", message, err);
+          if (err instanceof Error) console.error("Metron demo: error handling message", message, err);
           settle = () => reject(err instanceof Error ? wsError("unknown_error", "Unknown error") : err);
         }
         this._events = null;
@@ -803,7 +803,7 @@ class DemoStore {
     // same commands, in the same order.
     for (const [foodName, kcal, protein, carbs, fat, portions, meal, grams] of SAMPLE_FOODS) {
       const food = run({
-        type: "fork_and_scale/food/add",
+        type: "metron/food/add",
         name: foodName,
         kcal,
         protein,
@@ -813,26 +813,26 @@ class DemoStore {
         person: debora,
       });
       foods.push(food);
-      if (meal) run({ type: "fork_and_scale/entry/add", person: debora, day: today, meal, food_id: food.id, grams });
+      if (meal) run({ type: "metron/entry/add", person: debora, day: today, meal, food_id: food.id, grams });
     }
     for (const [mealName, owner, items] of SAMPLE_MEALS) {
       const mealItems = items.map(([index, grams]) => (typeof index === "number" ? { food_id: foods[index].id, grams } : index));
-      run({ type: "fork_and_scale/meal/add", name: mealName, owner: owner === "matteo" ? matteo : owner === "debora" ? debora : null, items: mealItems });
+      run({ type: "metron/meal/add", name: mealName, owner: owner === "matteo" ? matteo : owner === "debora" ? debora : null, items: mealItems });
     }
     const first = addDays(today, -360);
     for (let n = 0; n <= 360; n += 4) {
       const wobble = (((n * 37) % 11) - 5) / 10;
-      run({ type: "fork_and_scale/weight/set", person: matteo, day: addDays(first, n), kg: pyRound(95 - n * 0.018 + wobble, 1) });
+      run({ type: "metron/weight/set", person: matteo, day: addDays(first, n), kg: pyRound(95 - n * 0.018 + wobble, 1) });
     }
     [69.8, 69.6, 69.7, 69.4, 69.2, 69.3, 69.0, 68.9].forEach((kg, n) => {
-      run({ type: "fork_and_scale/weight/set", person: debora, day: addDays(today, -(28 - n * 4)), kg });
+      run({ type: "metron/weight/set", person: debora, day: addDays(today, -(28 - n * 4)), kg });
     });
     for (let n = 1; n <= 28; n++) {
       const day = addDays(today, -n);
       const kcals = [380 + ((n * 53) % 120), 560 + ((n * 71) % 220), 620 + ((n * 97) % 330), (n * 31) % 260];
       MEALS.forEach((meal, i) => {
         const kcal = kcals[i];
-        run({ type: "fork_and_scale/entry/add", person: debora, day, meal, name: "Sample", kcal, protein: kcal * 0.05, carbs: kcal * 0.12, fat: kcal * 0.035 });
+        run({ type: "metron/entry/add", person: debora, day, meal, name: "Sample", kcal, protein: kcal * 0.05, carbs: kcal * 0.12, fat: kcal * 0.035 });
       });
     }
     // Goals as the integration would have recorded them, refreshing them each
@@ -1241,7 +1241,7 @@ function demoHass(store, { locale = "en", unitSystem = "metric" } = {}) {
   return {
     language: locale,
     locale: { language: locale, number_format: "language", time_format: "language", date_format: "language", first_weekday: "language", time_zone: "local" },
-    config: { location_name: "Home", time_zone: TIME_ZONE, country: "GB", currency: "GBP", unit_system: UNIT_SYSTEMS[unitSystem], components: ["fork_and_scale", "person"] },
+    config: { location_name: "Home", time_zone: TIME_ZONE, country: "GB", currency: "GBP", unit_system: UNIT_SYSTEMS[unitSystem], components: ["metron", "person"] },
     user: DEMO_USER,
     states: Object.fromEntries(PEOPLE.map((p) => [p.person_entity, personState(p)])),
     auth: { external: demoExternal() },
@@ -1250,24 +1250,24 @@ function demoHass(store, { locale = "en", unitSystem = "metric" } = {}) {
   };
 }
 
-// window.ForkAndScale
+// window.Metron
 
 const CARD_TYPES = [
-  "fork-and-scale-food-diary-card",
-  "fork-and-scale-foods-card",
-  "fork-and-scale-meals-card",
-  "fork-and-scale-weight-card",
-  "fork-and-scale-trends-card",
-  "fork-and-scale-summary-card",
+  "metron-food-diary-card",
+  "metron-foods-card",
+  "metron-meals-card",
+  "metron-weight-card",
+  "metron-trends-card",
+  "metron-summary-card",
 ];
 
 // The page's API. `clock` is the cards' clock: `fixed`, in ms, stops it, and
 // `now()` reads it.
-function forkAndScaleDemo(clock) {
+function metronDemo(clock) {
   let store = null;
   return {
     // Mounts the card `config` describes, as a dashboard's YAML would (for
-    // example {type: "custom:fork-and-scale-food-diary-card", person:
+    // example {type: "custom:metron-food-diary-card", person:
     // "Debora"}), at the end of `target`, and resolves to its element once
     // the card is defined. Every card shares one store of sample data,
     // seeded by the first mount. Options: `locale`, the user's language
@@ -1277,16 +1277,16 @@ function forkAndScaleDemo(clock) {
     async mount(target, config, { locale = "en", unitSystem = "metric", today } = {}) {
       const type = String(config?.type ?? "");
       const tag = type.replace(/^custom:/, "");
-      if (tag === type || !CARD_TYPES.includes(tag)) throw new Error(`ForkAndScale.mount: no card of type ${type}`);
-      if (!UNIT_SYSTEMS[unitSystem]) throw new Error(`ForkAndScale.mount: unitSystem must be "metric" or "us_customary", not ${unitSystem}`);
-      if (today !== undefined && !isDay(today)) throw new Error(`ForkAndScale.mount: today must be a day as "YYYY-MM-DD", not ${today}`);
+      if (tag === type || !CARD_TYPES.includes(tag)) throw new Error(`Metron.mount: no card of type ${type}`);
+      if (!UNIT_SYSTEMS[unitSystem]) throw new Error(`Metron.mount: unitSystem must be "metric" or "us_customary", not ${unitSystem}`);
+      if (today !== undefined && !isDay(today)) throw new Error(`Metron.mount: today must be a day as "YYYY-MM-DD", not ${today}`);
       if (!store) {
         // Noon UTC is the same day in Europe/London all year.
         if (today) clock.fixed = Date.parse(today) + DAY_MS / 2;
         window.fetch = demoFetch(window.fetch.bind(window));
         store = new DemoStore(clock.now);
       } else if (today && today !== store.seededOn) {
-        throw new Error(`ForkAndScale.mount: the demo's today is ${store.seededOn}; reload the page to start on another day`);
+        throw new Error(`Metron.mount: the demo's today is ${store.seededOn}; reload the page to start on another day`);
       }
       const hass = demoHass(store, { locale, unitSystem });
       await customElements.whenDefined(tag);

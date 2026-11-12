@@ -100,7 +100,7 @@ class FoodCard extends FitnessCard {
     const t = this._t;
     const code = (food.barcode ?? "").trim();
     if (!BARCODE.test(code)) return { food, error: t.error_barcode };
-    const saved = await this._call({ type: "fork_and_scale/food/barcode", barcode: code }).catch(() => null);
+    const saved = await this._call({ type: "metron/food/barcode", barcode: code }).catch(() => null);
     if (saved && saved.id !== food.id) return { food, saved, note: fill(t.already_saved, { name: saved.name }) };
     try {
       const found = await lookUpBarcode(code, t.serving);
@@ -127,7 +127,7 @@ class FoodCard extends FitnessCard {
     this._renderOff();
     try {
       const found = await this._call({
-        type: "fork_and_scale/openfoodfacts/search",
+        type: "metron/openfoodfacts/search",
         query: off.query,
         language: offLanguage(this._locale),
         page: off.page + 1,

@@ -1,10 +1,10 @@
-// Packs the cards for the Fork & Scale design system:
+// Packs the cards for the Metron design system:
 //
 //   node design/build.js <out-dir>
 //
 // writes <out-dir>/components/bundle.js, one classic script that runs the
 // cards, built from src/ as it is now, against design/demo-hass.js and
-// defines window.ForkAndScale, and <out-dir>/components/bundle.css, the cards'
+// defines window.Metron, and <out-dir>/components/bundle.css, the cards'
 // shared styles for static previews, read from src/cards/.
 
 const fs = require("node:fs");
@@ -13,7 +13,7 @@ const vm = require("node:vm");
 const { build: buildCards } = require("../scripts/build.js");
 const { load } = require("../tests/cards/harness.js");
 
-const HEADER = '/* @ds-bundle: {"format":4,"namespace":"ForkAndScale","components":[]} */';
+const HEADER = '/* @ds-bundle: {"format":4,"namespace":"Metron","components":[]} */';
 
 // How Home Assistant's ha-card styles its host.
 const HA_CARD_STYLE =
@@ -73,16 +73,16 @@ function bundleJS() {
 (() => {
 "use strict";
 // Loaded already: the cards' elements cannot be defined twice.
-if (window.ForkAndScale) return;
+if (window.Metron) return;
 ${PREAMBLE}
 ((Date) => {
 ${buildCards()}})(DemoDate);
 
-window.ForkAndScale = (() => {
+window.Metron = (() => {
 // design/demo-hass.js
 ${demo}
 
-return forkAndScaleDemo(demoClock);
+return metronDemo(demoClock);
 })();
 })();
 `;

@@ -15,7 +15,7 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from custom_components.fork_and_scale.const import SUBENTRY_PERSON
+from custom_components.metron.const import SUBENTRY_PERSON
 
 LONDON = ZoneInfo("Europe/London")
 

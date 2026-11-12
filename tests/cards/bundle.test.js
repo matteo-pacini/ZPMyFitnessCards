@@ -23,6 +23,6 @@ test("the bundle defines every card", async () => {
   await mod.link(() => {});
   await mod.evaluate();
   await new Promise((r) => setImmediate(r));
-  assert.deepEqual(defined.sort(), ["fork-and-scale-card-editor", "fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-meals-card", "fork-and-scale-summary-card", "fork-and-scale-trends-card", "fork-and-scale-weight-card"]);
-  assert.deepEqual(Array.from(ctx.window.customCards, (c) => c.type).sort(), ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-meals-card", "fork-and-scale-summary-card", "fork-and-scale-trends-card", "fork-and-scale-weight-card"]);
+  assert.deepEqual(defined.sort(), ["metron-card-editor", "metron-food-diary-card", "metron-foods-card", "metron-meals-card", "metron-summary-card", "metron-trends-card", "metron-weight-card"]);
+  assert.deepEqual(Array.from(ctx.window.customCards, (c) => c.type).sort(), ["metron-food-diary-card", "metron-foods-card", "metron-meals-card", "metron-summary-card", "metron-trends-card", "metron-weight-card"]);
 });

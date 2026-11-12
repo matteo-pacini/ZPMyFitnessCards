@@ -11,9 +11,9 @@ body:
     attributes:
       label: Before you start
       options:
-        - label: I looked at [Troubleshooting](https://github.com/matteo-pacini/fork-and-scale#troubleshooting) in the README.
+        - label: I looked at [Troubleshooting](https://github.com/matteo-pacini/metron#troubleshooting) in the README.
           required: true
-        - label: I searched [the issues](https://github.com/matteo-pacini/fork-and-scale/issues?q=is%3Aissue) for the same problem.
+        - label: I searched [the issues](https://github.com/matteo-pacini/metron/issues?q=is%3Aissue) for the same problem.
           required: true
   - type: textarea
     id: what
@@ -39,7 +39,7 @@ body:
         - A card, in a browser
         - A card, in the Home Assistant app on Android
         - A card, in the Home Assistant app on iPhone or iPad
-        - Setting up Fork & Scale or a person
+        - Setting up Metron or a person
         - Importing from MyFitnessPal, or exporting
         - An action (log_weight, log_food or get_day)
         - The sensors
@@ -49,8 +49,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Fork & Scale version
-      description: Shown under its name on [its page in Settings > Devices & services](https://my.home-assistant.io/redirect/integration/?domain=fork_and_scale).
+      label: Metron version
+      description: Shown under its name on [its page in Settings > Devices & services](https://my.home-assistant.io/redirect/integration/?domain=metron).
       placeholder: "0.4.1"
     validations:
       required: true
@@ -86,7 +86,7 @@ body:
     attributes:
       label: Anything in the logs?
       description: |
-        In [Settings > System > Logs](https://my.home-assistant.io/redirect/logs/), look for lines that mention `fork_and_scale`. For a card, the browser's console may show errors too: press F12, then open Console.
+        In [Settings > System > Logs](https://my.home-assistant.io/redirect/logs/), look for lines that mention `metron`. For a card, the browser's console may show errors too: press F12, then open Console.
 
         Remove anything private first, such as email addresses or tokens. Please never attach a saved MyFitnessPal page: it holds your account's email address and sign-in tokens. The line or row number in the error message is enough.
       render: text

@@ -1,4 +1,4 @@
-"""Fork & Scale: a food diary and weight tracking for each person."""
+"""Metron: a food diary and weight tracking for each person."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS = [Platform.SENSOR]
 
-CARDS_FILE = Path(__file__).parent / "frontend" / "fork-and-scale-cards.js"
+CARDS_FILE = Path(__file__).parent / "frontend" / "metron-cards.js"
 
 
 @dataclass

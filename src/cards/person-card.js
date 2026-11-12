@@ -17,7 +17,7 @@ const rangeButtons = (ranges, selected, t) =>
 const ShowsPerson = (Base) =>
   class extends Base {
     async _load() {
-      this._people = await this._call({ type: "fork_and_scale/people" });
+      this._people = await this._call({ type: "metron/people" });
       this._person = findPerson(this._people, this._config, this._hass);
       this._data = this._person ? await this._fetch() : null;
     }

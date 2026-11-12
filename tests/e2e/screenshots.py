@@ -55,14 +55,14 @@ def sample(home: Home) -> Home:
 def add_sample_data(home: Home) -> None:
     """Debora's day so far from foods she saved, saved meals, her last four
     weeks, and a year of Matteo's weigh-ins."""
-    people = {p["name"]: p["id"] for p in home.ws({"type": "fork_and_scale/people"})}
+    people = {p["name"]: p["id"] for p in home.ws({"type": "metron/people"})}
     debora = people["Debora"]
     today = datetime.now(ZoneInfo("Europe/London")).date().isoformat()
     foods = []
     for name, kcal, protein, carbs, fat, portions, meal, grams in FOODS:
         food = home.ws(
             {
-                "type": "fork_and_scale/food/add",
+                "type": "metron/food/add",
                 "name": name,
                 "kcal": kcal,
                 "protein": protein,
@@ -76,7 +76,7 @@ def add_sample_data(home: Home) -> None:
         if meal:
             home.ws(
                 {
-                    "type": "fork_and_scale/entry/add",
+                    "type": "metron/entry/add",
                     "person": debora,
                     "day": today,
                     "meal": meal,
@@ -87,7 +87,7 @@ def add_sample_data(home: Home) -> None:
     for name, owner, items in MEALS:
         home.ws(
             {
-                "type": "fork_and_scale/meal/add",
+                "type": "metron/meal/add",
                 "name": name,
                 "owner": owner and people[owner],
                 "items": [
@@ -103,7 +103,7 @@ def add_sample_data(home: Home) -> None:
         wobble = ((n * 37) % 11 - 5) / 10
         home.ws(
             {
-                "type": "fork_and_scale/weight/set",
+                "type": "metron/weight/set",
                 "person": matteo,
                 "day": (first + timedelta(days=n)).isoformat(),
                 "kg": round(95 - n * 0.018 + wobble, 1),
@@ -111,7 +111,7 @@ def add_sample_data(home: Home) -> None:
         )
     for n, kg in enumerate((69.8, 69.6, 69.7, 69.4, 69.2, 69.3, 69.0, 68.9)):
         day = (date.fromisoformat(today) - timedelta(days=28 - n * 4)).isoformat()
-        home.ws({"type": "fork_and_scale/weight/set", "person": debora, "day": day, "kg": kg})
+        home.ws({"type": "metron/weight/set", "person": debora, "day": day, "kg": kg})
     # Four weeks of Debora's meals before today, as quick adds.
     for n in range(1, 29):
         day = (date.fromisoformat(today) - timedelta(days=n)).isoformat()
@@ -122,7 +122,7 @@ def add_sample_data(home: Home) -> None:
         ):
             home.ws(
                 {
-                    "type": "fork_and_scale/entry/add",
+                    "type": "metron/entry/add",
                     "person": debora,
                     "day": day,
                     "meal": meal,
@@ -198,12 +198,12 @@ def shoot_editor(home: Home, browser: Browser, name: str) -> None:
     page.context.close()
 
 
-DIARY = {"type": "custom:fork-and-scale-food-diary-card", "person": "Debora"}
-FOODS_CARD = {"type": "custom:fork-and-scale-foods-card"}
-MEALS_CARD = {"type": "custom:fork-and-scale-meals-card"}
-WEIGHT = {"type": "custom:fork-and-scale-weight-card", "person": "Matteo"}
-TRENDS = {"type": "custom:fork-and-scale-trends-card", "person": "Debora"}
-SUMMARY = {"type": "custom:fork-and-scale-summary-card", "person": "Debora"}
+DIARY = {"type": "custom:metron-food-diary-card", "person": "Debora"}
+FOODS_CARD = {"type": "custom:metron-foods-card"}
+MEALS_CARD = {"type": "custom:metron-meals-card"}
+WEIGHT = {"type": "custom:metron-weight-card", "person": "Matteo"}
+TRENDS = {"type": "custom:metron-trends-card", "person": "Debora"}
+SUMMARY = {"type": "custom:metron-summary-card", "person": "Debora"}
 
 
 def look_up_barcode(card) -> None:

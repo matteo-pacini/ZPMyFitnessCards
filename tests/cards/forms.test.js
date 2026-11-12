@@ -124,33 +124,33 @@ test("dates show the year only when asked", () => {
   assert.equal(fn.shortDate("2026-11-09", "en-GB", true), "9 Nov 26");
 });
 
-const ELEMENTS = ["fork-and-scale-food-diary-card", "fork-and-scale-foods-card", "fork-and-scale-meals-card", "fork-and-scale-weight-card", "fork-and-scale-trends-card", "fork-and-scale-summary-card"];
+const ELEMENTS = ["metron-food-diary-card", "metron-foods-card", "metron-meals-card", "metron-weight-card", "metron-trends-card", "metron-summary-card"];
 
 test("every card opens the visual editor on its options, which have labels, and has a stub config", () => {
   const options = Object.fromEntries(ELEMENTS.map((name) => [name, plain(ctx.customElements.defined[name].options)]));
   assert.deepEqual(options, {
-    "fork-and-scale-food-diary-card": ["person", "title", "locale"],
-    "fork-and-scale-foods-card": ["title", "locale"],
-    "fork-and-scale-meals-card": ["person", "title", "locale"],
-    "fork-and-scale-weight-card": ["person", "title", "locale"],
-    "fork-and-scale-trends-card": ["person", "title", "locale"],
-    "fork-and-scale-summary-card": ["person", "title", "locale", "navigation_path"],
+    "metron-food-diary-card": ["person", "title", "locale"],
+    "metron-foods-card": ["title", "locale"],
+    "metron-meals-card": ["person", "title", "locale"],
+    "metron-weight-card": ["person", "title", "locale"],
+    "metron-trends-card": ["person", "title", "locale"],
+    "metron-summary-card": ["person", "title", "locale", "navigation_path"],
   });
   ctx.document = { createElement: (tag) => ({ tag }) };
   for (const name of ELEMENTS) {
     const Card = ctx.customElements.defined[name];
     for (const option of Card.options) assert.ok(en()[`editor_${option}`], `${name}.${option}`);
     const editor = Card.getConfigElement();
-    assert.equal(editor.tag, "fork-and-scale-card-editor", name);
+    assert.equal(editor.tag, "metron-card-editor", name);
     assert.equal(editor.options, Card.options, name);
     assert.deepEqual(plain(Card.getStubConfig()), {}, name);
   }
 });
 
 test("cards say which option is wrong", () => {
-  const Summary = ctx.customElements.defined["fork-and-scale-summary-card"];
+  const Summary = ctx.customElements.defined["metron-summary-card"];
   assert.throws(() => new Summary().setConfig({ navigation_path: 3 }), /navigation_path: must be text/);
-  const Weight = ctx.customElements.defined["fork-and-scale-weight-card"];
+  const Weight = ctx.customElements.defined["metron-weight-card"];
   assert.throws(() => new Weight().setConfig({ title: ["x"] }), /title: must be text/);
   assert.throws(() => new Weight().setConfig({ locale: 1 }), /locale: must be text/);
 });

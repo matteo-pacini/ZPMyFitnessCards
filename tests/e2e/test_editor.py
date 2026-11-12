@@ -10,7 +10,7 @@ from playwright.sync_api import Locator, Page, expect
 from .conftest import Home
 from .test_cards import TIMEOUT, person_id, save_food, today
 
-EDITOR = "fork-and-scale-card-editor"
+EDITOR = "metron-card-editor"
 
 
 def edit_dashboard(home: Home, page: Page, cards: list[dict]) -> None:
@@ -52,7 +52,7 @@ def saved_cards(home: Home) -> list[dict]:
 def log(home: Home, person: str, day: str, name: str, kcal: float = 210) -> None:
     home.ws(
         {
-            "type": "fork_and_scale/entry/add",
+            "type": "metron/entry/add",
             "person": person_id(home, person),
             "day": day,
             "meal": "lunch",
@@ -75,7 +75,7 @@ def add_with_person(home: Home, page: Page, name: str, element: str) -> Locator:
 
 def test_adds_a_food_diary_from_the_card_picker(home: Home, page: Page) -> None:
     log(home, "Debora", today(), "Picked soup e2e")
-    card = add_with_person(home, page, "Food diary", "fork-and-scale-food-diary-card")
+    card = add_with_person(home, page, "Food diary", "metron-food-diary-card")
     expect(card.locator(".row", has_text="Picked soup e2e")).to_have_count(1, timeout=TIMEOUT)
 
 
@@ -84,13 +84,13 @@ def test_adds_a_saved_foods_card_from_the_card_picker(home: Home, page: Page) ->
     dialog = pick_card(home, page, "Saved foods")
     expect(dialog.get_by_role("textbox", name="Title")).to_be_visible()
     expect(dialog.get_by_label("Person")).to_have_count(0)
-    card = save(page, dialog, "fork-and-scale-foods-card")
+    card = save(page, dialog, "metron-foods-card")
     expect(card.locator(".list")).to_contain_text("Picked oats e2e", timeout=TIMEOUT)
-    assert saved_cards(home) == [{"type": "custom:fork-and-scale-foods-card"}]
+    assert saved_cards(home) == [{"type": "custom:metron-foods-card"}]
 
 
 def test_adds_a_weight_card_from_the_card_picker(home: Home, page: Page) -> None:
-    card = add_with_person(home, page, "Weight", "fork-and-scale-weight-card")
+    card = add_with_person(home, page, "Weight", "metron-weight-card")
     # Debora's goal; Matteo's is 82 kg.
     expect(card.locator(".chart")).to_contain_text("Goal 62 kg", timeout=TIMEOUT)
 
@@ -98,7 +98,7 @@ def test_adds_a_weight_card_from_the_card_picker(home: Home, page: Page) -> None
 def test_adds_a_trends_card_from_the_card_picker(home: Home, page: Page) -> None:
     yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
     log(home, "Debora", yesterday, "Picked eggs e2e")
-    card = add_with_person(home, page, "Trends", "fork-and-scale-trends-card")
+    card = add_with_person(home, page, "Trends", "metron-trends-card")
     expect(card.locator(f'.bar[data-day="{yesterday}"]')).not_to_have_class(
         re.compile(r"\bempty\b"), timeout=TIMEOUT
     )
@@ -107,17 +107,17 @@ def test_adds_a_trends_card_from_the_card_picker(home: Home, page: Page) -> None
 def test_adds_a_summary_card_that_opens_a_page_from_the_card_picker(home: Home, page: Page) -> None:
     log(home, "Debora", today(), "Picked salad e2e")
     debora = person_id(home, "Debora")
-    day = home.ws({"type": "fork_and_scale/day", "person": debora, "day": today()})
+    day = home.ws({"type": "metron/day", "person": debora, "day": today()})
     eaten = sum(e["kcal"] for e in day["entries"])
     dialog = pick_card(home, page, "Fitness summary")
     choose(dialog, "Person", "Debora")
     dialog.locator("ha-selector-navigation").click()
     dialog.locator("ha-combo-box-item", has_text="Settings").click()
-    card = save(page, dialog, "fork-and-scale-summary-card")
+    card = save(page, dialog, "metron-summary-card")
     expect(card.locator(".body")).to_contain_text(f"{round(eaten):,} of", timeout=TIMEOUT)
     assert saved_cards(home) == [
         {
-            "type": "custom:fork-and-scale-summary-card",
+            "type": "custom:metron-summary-card",
             "person": "Debora",
             "navigation_path": "/config",
         }
@@ -125,7 +125,7 @@ def test_adds_a_summary_card_that_opens_a_page_from_the_card_picker(home: Home, 
 
 
 def test_the_language_dropdown_sets_the_card_s_language(home: Home, page: Page) -> None:
-    element = "fork-and-scale-food-diary-card"
+    element = "metron-food-diary-card"
     dialog = pick_card(home, page, "Food diary")
     choose(dialog, "Person", "Debora")
     choose(dialog, "Language", "Italiano")
@@ -145,7 +145,7 @@ def test_the_language_dropdown_sets_the_card_s_language(home: Home, page: Page) 
 
 
 def test_a_config_typed_by_hand_opens_with_its_choices(home: Home, page: Page) -> None:
-    element = "fork-and-scale-food-diary-card"
+    element = "metron-food-diary-card"
     typed = {"type": f"custom:{element}", "person": "debora", "locale": "pt-br"}
     edit_dashboard(home, page, [typed])
     page.locator("hui-card-options").get_by_role("button", name="Edit").click()

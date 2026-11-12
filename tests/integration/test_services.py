@@ -11,9 +11,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM, UnitSystem
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.fork_and_scale import services
-from custom_components.fork_and_scale.const import DOMAIN
-from custom_components.fork_and_scale.schema import vol
+from custom_components.metron import services
+from custom_components.metron.const import DOMAIN
+from custom_components.metron.schema import vol
 
 from .test_translations import ENGLISH
 
@@ -150,7 +150,7 @@ async def test_refuses_a_device_that_is_not_a_person(hass: HomeAssistant) -> Non
     for device_id in (lamp.id, "no-such-device"):
         err = await refused(hass, "log_weight", weight=68, device_id=device_id)
         assert err.translation_key == "unknown_person"
-        assert str(err) == "Choose a person added to Fork & Scale"
+        assert str(err) == "Choose a person added to Metron"
 
 
 async def test_refuses_while_not_loaded(hass: HomeAssistant, entry: MockConfigEntry) -> None:
@@ -158,7 +158,7 @@ async def test_refuses_while_not_loaded(hass: HomeAssistant, entry: MockConfigEn
     assert await hass.config_entries.async_unload(entry.entry_id)
     err = await refused(hass, "log_weight", weight=68, device_id=debora)
     assert err.translation_key == "not_loaded"
-    assert str(err) == "Fork & Scale is not loaded"
+    assert str(err) == "Metron is not loaded"
 
 
 # log_food

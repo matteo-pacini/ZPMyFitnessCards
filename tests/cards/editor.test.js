@@ -87,7 +87,7 @@ test("a person or language the cards do not know shows as typed", () => {
 });
 
 test("the form's choices go into the config, and the defaults and empty fields leave it", () => {
-  const config = { type: "custom:fork-and-scale-summary-card", person: "Matteo", title: "Mine", grid_options: { rows: 4 } };
+  const config = { type: "custom:metron-summary-card", person: "Matteo", title: "Mine", grid_options: { rows: 4 } };
   assert.deepEqual(plain(fn.editedConfig(config, { person: "Debora", title: "Mine", locale: "it" })), { ...config, person: "Debora", locale: "it" });
   assert.deepEqual(plain(fn.editedConfig(config, { person: fn.DEFAULT_CHOICE, title: "", locale: fn.DEFAULT_CHOICE, navigation_path: undefined })), {
     type: config.type,

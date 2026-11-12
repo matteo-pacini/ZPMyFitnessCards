@@ -1,10 +1,10 @@
 {
   "config": {
     "abort": {
-      "single_instance_allowed": "Fork & Scale 已设置。请用“添加人员”添加人员。"
+      "single_instance_allowed": "Metron 已设置。请用“添加人员”添加人员。"
     },
     "create_entry": {
-      "default": "Fork & Scale 已设置。已打开的页面还无法显示它的卡片：添加卡片前，请重新加载这些页面。然后用“添加人员”添加每个人员。"
+      "default": "Metron 已设置。已打开的页面还无法显示它的卡片：添加卡片前，请重新加载这些页面。然后用“添加人员”添加每个人员。"
     },
     "error": {
       "cannot_connect": "无法连接。请检查主机、端口、用户、密码和数据库名称。",
@@ -17,9 +17,9 @@
           "db_url": "数据库 URL"
         },
         "data_description": {
-          "db_url": "例如 postgresql://user:password@192.168.1.10:5432/fork_and_scale。数据库必须已存在。"
+          "db_url": "例如 postgresql://user:password@192.168.1.10:5432/metron。数据库必须已存在。"
         },
-        "description": "请为 Fork & Scale 使用单独的数据库，而不是 Home Assistant 记录器使用的数据库。",
+        "description": "请为 Metron 使用单独的数据库，而不是 Home Assistant 记录器使用的数据库。",
         "title": "Postgres 数据库"
       },
       "user": {
@@ -29,7 +29,7 @@
         "data_description": {
           "engine": "SQLite 在配置文件夹中保存一个文件，Home Assistant 备份会包含它。Postgres 使用你自行运行和备份的数据库。"
         },
-        "description": "选择 Fork & Scale 存储数据的位置。之后请用“添加人员”逐个添加人员。",
+        "description": "选择 Metron 存储数据的位置。之后请用“添加人员”逐个添加人员。",
         "title": "数据库"
       }
     }
@@ -42,7 +42,7 @@
         "imported": "已导入 {weights} 条体重和 {days} 天的热量。",
         "mfp_imported": "已从 MyFitnessPal 导入：\n\n- 天数：{days}\n- 记录：{entries}\n- 已添加的体重：{weights}\n- 已跳过的体重（那些日期已有体重）：{skipped}",
         "no_recorder": "记录器未运行，因此没有可导入的历史记录。",
-        "not_loaded": "Fork & Scale 未加载。请重新加载后再试。",
+        "not_loaded": "Metron 未加载。请重新加载后再试。",
         "reconfigure_successful": "已保存。"
       },
       "entry_type": "人员",
@@ -50,7 +50,7 @@
         "bad_line": "无法读取 {file} 的第 {line} 行。",
         "bad_row": "无法读取 {day} 的第 {row} 行。",
         "birth_date_future": "出生日期必须早于今天。",
-        "database_unavailable": "无法读取数据库以查找此人之前的数据。请在 Fork & Scale 加载后重试。",
+        "database_unavailable": "无法读取数据库以查找此人之前的数据。请在 Metron 加载后重试。",
         "date_not_english": "日记中的日期不是英文。请将 MyFitnessPal 切换为英文，然后重新保存页面。",
         "height_out_of_range": "请输入 3 ft 4 in 到 8 ft 2 in 之间的身高。",
         "macros_not_100": "蛋白质、碳水化合物和脂肪合计必须为 100%。",
@@ -274,10 +274,10 @@
       "message": "{name} 已保存。"
     },
     "newer_database": {
-      "message": "较新版本的 Fork & Scale 已将此数据库升级到版本 {version}。此版本最高只支持版本 {latest}，因此未改动数据库。请更新 Fork & Scale 后再使用。"
+      "message": "较新版本的 Metron 已将此数据库升级到版本 {version}。此版本最高只支持版本 {latest}，因此未改动数据库。请更新 Metron 后再使用。"
     },
     "not_loaded": {
-      "message": "Fork & Scale 未加载。"
+      "message": "Metron 未加载。"
     },
     "nutrients_with_saved_food": {
       "message": "千卡、蛋白质、碳水化合物和脂肪仅用于快速添加。已保存的食物有自己的数值。"
@@ -298,7 +298,7 @@
       "message": "{person} 没有名为 {name} 的已保存的餐。"
     },
     "unknown_person": {
-      "message": "请选择已添加到 Fork & Scale 的人员。"
+      "message": "请选择已添加到 Metron 的人员。"
     },
     "weight_out_of_range": {
       "message": "请输入 {min} 到 {max} {unit} 之间的体重。"
@@ -361,7 +361,7 @@
           "name": "日期"
         },
         "device_id": {
-          "description": "该人员在 Fork & Scale 中对应的设备。",
+          "description": "该人员在 Metron 中对应的设备。",
           "name": "人员"
         }
       },
@@ -383,7 +383,7 @@
           "name": "日期"
         },
         "device_id": {
-          "description": "该人员在 Fork & Scale 中对应的设备。",
+          "description": "该人员在 Metron 中对应的设备。",
           "name": "人员"
         },
         "fat": {
@@ -425,7 +425,7 @@
           "name": "日期"
         },
         "device_id": {
-          "description": "该人员在 Fork & Scale 中对应的设备。",
+          "description": "该人员在 Metron 中对应的设备。",
           "name": "人员"
         },
         "meal": {
@@ -447,7 +447,7 @@
           "name": "日期"
         },
         "device_id": {
-          "description": "该人员在 Fork & Scale 中对应的设备。",
+          "description": "该人员在 Metron 中对应的设备。",
           "name": "人员"
         },
         "unit": {

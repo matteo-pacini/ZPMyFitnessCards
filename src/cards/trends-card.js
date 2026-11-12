@@ -1,4 +1,4 @@
-// One bar per day, or per week for long ranges, from fork_and_scale/days.
+// One bar per day, or per week for long ranges, from metron/days.
 // A week's bar is the average of its logged days, and so is its goal.
 function trendBars(days, weekly) {
   const logged = (d) => Object.keys(d.meals).length > 0;
@@ -103,7 +103,7 @@ class TrendsCard extends PersonCard {
 
   async _fetch() {
     const today = this._today;
-    return this._call({ type: "fork_and_scale/days", person: this._person.id, start: rangeStart(this._range, today), end: today });
+    return this._call({ type: "metron/days", person: this._person.id, start: rangeStart(this._range, today), end: today });
   }
 
   _renderBody() {

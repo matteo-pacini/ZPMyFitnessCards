@@ -12,8 +12,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
 
-from custom_components.fork_and_scale.const import DOMAIN
-from custom_components.fork_and_scale.db import (
+from custom_components.metron.const import DOMAIN
+from custom_components.metron.db import (
     EVERYONE,
     FOODS,
     MEAL_ITEMS,
@@ -342,7 +342,7 @@ async def test_says_whose_meal_has_the_name(ws) -> None:
     clash = await error(ws, "meal/add", name="pasta night", owner="debora", items=item)
     assert clash["code"] == "meal_exists"
     assert clash["translation_key"] == "meal_exists"
-    assert clash["translation_domain"] == "fork_and_scale"
+    assert clash["translation_domain"] == "metron"
     assert clash["translation_placeholders"] == {"owner": ""}
     clash = await error(ws, "meal/add", name="USUAL breakfast", owner=None, items=item)
     assert clash["translation_placeholders"] == {"owner": "debora"}
@@ -379,11 +379,11 @@ async def test_logs_the_ticked_items_of_a_meal(hass: HomeAssistant, ws) -> None:
     meal = await ok(ws, "meal/add", name="Porridge bowl", owner=None, items=items)
     linked, _coffee = meal["items"]
     client = ws.client
-    await client.send_json_auto_id({"type": "fork_and_scale/subscribe"})
+    await client.send_json_auto_id({"type": "metron/subscribe"})
     assert (await client.receive_json())["success"]
     await client.send_json_auto_id(
         {
-            "type": "fork_and_scale/meal/log",
+            "type": "metron/meal/log",
             "person": "debora",
             "day": "2026-11-09",
             "meal": "breakfast",

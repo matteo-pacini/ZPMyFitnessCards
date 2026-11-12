@@ -9,13 +9,13 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.fork_and_scale import CARDS_FILE
-from custom_components.fork_and_scale.const import (
+from custom_components.metron import CARDS_FILE
+from custom_components.metron.const import (
     CARDS_URL,
     DB_FILE,
     SUBENTRY_PERSON,
 )
-from custom_components.fork_and_scale.coordinator import PersonCoordinator
+from custom_components.metron.coordinator import PersonCoordinator
 
 from .conftest import mock_entry, person
 
@@ -52,7 +52,7 @@ async def test_registers_the_cards_with_the_frontend_when_it_runs(hass: HomeAssi
     hass.config.components.add("frontend")
     entry = mock_entry(person())
     entry.add_to_hass(hass)
-    with patch("custom_components.fork_and_scale.add_extra_js_url") as add:
+    with patch("custom_components.metron.add_extra_js_url") as add:
         assert await hass.config_entries.async_setup(entry.entry_id)
     add.assert_called_once_with(hass, f"{CARDS_URL}?v=0.4.1")
 
@@ -60,7 +60,7 @@ async def test_registers_the_cards_with_the_frontend_when_it_runs(hass: HomeAssi
 async def test_leaves_the_frontend_alone_when_it_does_not_run(hass: HomeAssistant) -> None:
     entry = mock_entry(person())
     entry.add_to_hass(hass)
-    with patch("custom_components.fork_and_scale.add_extra_js_url") as add:
+    with patch("custom_components.metron.add_extra_js_url") as add:
         assert await hass.config_entries.async_setup(entry.entry_id)
     add.assert_not_called()
 

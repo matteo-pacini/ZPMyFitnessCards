@@ -8,7 +8,7 @@ import aiohttp
 import pytest
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.fork_and_scale.openfoodfacts import COMPLETE, SEARCH_URL, search_query
+from custom_components.metron.openfoodfacts import COMPLETE, SEARCH_URL, search_query
 
 YOGURT = {
     "code": "8017596079480",
@@ -60,8 +60,8 @@ async def test_finds_a_page_of_complete_products_in_the_language_and_english(
     assert url.query["fields"] == (
         "code,product_name,product_name_it,product_name_en,brands,quantity,nutriments"
     )
-    assert headers["User-Agent"].startswith("ForkAndScale/")
-    assert headers["User-Agent"].endswith(" (https://github.com/matteo-pacini/fork-and-scale)")
+    assert headers["User-Agent"].startswith("Metron/")
+    assert headers["User-Agent"].endswith(" (https://github.com/matteo-pacini/metron)")
 
 
 async def test_the_last_page_has_no_more_and_english_is_asked_once(

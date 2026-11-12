@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import insert
 from sqlalchemy.exc import IntegrityError, OperationalError
 
-from custom_components.fork_and_scale.db import (
+from custom_components.metron.db import (
     MIGRATIONS,
     VERSION,
     Database,
@@ -16,7 +16,7 @@ from custom_components.fork_and_scale.db import (
     make_engine,
     sqlite_url,
 )
-from custom_components.fork_and_scale.goals import Goals
+from custom_components.metron.goals import Goals
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
 

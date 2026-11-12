@@ -32,13 +32,13 @@ class MealsCard extends FoodCard {
 
   async _load() {
     this._query ??= "";
-    this._people = await this._call({ type: "fork_and_scale/people" });
+    this._people = await this._call({ type: "metron/people" });
     this._person = this._config.person ? findPerson(this._people, this._config, this._hass) : null;
     if (this._config.person && !this._person) {
       this._meals = null;
       return;
     }
-    this._meals = await this._call({ type: "fork_and_scale/meals", ...(this._person && { person: this._person.id }) });
+    this._meals = await this._call({ type: "metron/meals", ...(this._person && { person: this._person.id }) });
   }
 
   // Meals change with foods, whose names and values their items show.
@@ -124,7 +124,7 @@ class MealsCard extends FoodCard {
       return;
     }
     try {
-      const found = await this._call({ type: "fork_and_scale/food/search", query });
+      const found = await this._call({ type: "metron/food/search", query });
       if (this._panel === p && p.addQuery.trim() === query) {
         p.addResults = found;
         this._renderAddResults();
@@ -221,8 +221,8 @@ class MealsCard extends FoodCard {
       const fields = { name, owner: p.owner, items };
       await this._write(
         p.meal
-          ? { type: "fork_and_scale/meal/update", meal_id: p.meal.id, version: p.meal.version, ...fields }
-          : { type: "fork_and_scale/meal/add", ...fields },
+          ? { type: "metron/meal/update", meal_id: p.meal.id, version: p.meal.version, ...fields }
+          : { type: "metron/meal/add", ...fields },
       );
     },
     "click:delete-meal"() {
@@ -232,7 +232,7 @@ class MealsCard extends FoodCard {
     },
     async "click:really-delete"() {
       const meal = this._panel.meal;
-      await this._write({ type: "fork_and_scale/meal/delete", meal_id: meal.id, version: meal.version });
+      await this._write({ type: "metron/meal/delete", meal_id: meal.id, version: meal.version });
     },
   };
 }
@@ -259,7 +259,7 @@ function setGrams(item, grams) {
   for (const n of NUTRIENTS) item[n] = grams > 0 && item.per100g[n] != null ? (item.per100g[n] * grams) / 100 : null;
 }
 
-// An item as fork_and_scale/meal/add and meal/update take it, or null if it
+// An item as metron/meal/add and meal/update take it, or null if it
 // is not filled in right: a saved food needs grams above 0, fixed values a
 // name and kcal.
 function itemToSave(item) {

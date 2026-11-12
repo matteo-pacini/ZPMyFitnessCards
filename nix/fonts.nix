@@ -4,7 +4,7 @@
 # in the VMs. tests/e2e/conftest.py gives this file to the browser as
 # FONTCONFIG_FILE.
 { pkgs }:
-pkgs.writeText "fork-and-scale-fonts.conf" ''
+pkgs.writeText "metron-fonts.conf" ''
   <?xml version="1.0"?>
   <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
   <fontconfig>

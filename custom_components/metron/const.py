@@ -1,9 +1,9 @@
-"""Constants for Fork & Scale."""
+"""Constants for Metron."""
 
-DOMAIN = "fork_and_scale"
+DOMAIN = "metron"
 
 DB_FILE = f"{DOMAIN}.db"
-CARDS_URL = f"/{DOMAIN}/fork-and-scale-cards.js"
+CARDS_URL = f"/{DOMAIN}/metron-cards.js"
 
 # Where the data lives, chosen when adding the integration: an SQLite file in
 # the config folder, or a Postgres database at CONF_DB_URL.

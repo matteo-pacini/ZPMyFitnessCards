@@ -65,7 +65,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   }
 
   _fetch() {
-    return this._call({ type: "fork_and_scale/day", person: this._person.id, day: this._day });
+    return this._call({ type: "metron/day", person: this._person.id, day: this._day });
   }
 
   _changed(event) {
@@ -205,9 +205,9 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     try {
       const [results, meals] = await Promise.all([
         query
-          ? this._call({ type: "fork_and_scale/food/search", query })
-          : this._call({ type: "fork_and_scale/food/recent", person: this._person.id }),
-        p.meals ?? this._call({ type: "fork_and_scale/meals", person: this._person.id }),
+          ? this._call({ type: "metron/food/search", query })
+          : this._call({ type: "metron/food/recent", person: this._person.id }),
+        p.meals ?? this._call({ type: "metron/meals", person: this._person.id }),
       ]);
       if (this._panel === p && p.query.trim() === query) {
         p.results = results;
@@ -305,7 +305,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
   async _saveNewFood(p, food, anyway = false) {
     const t = this._t;
     try {
-      const message = { type: "fork_and_scale/food/add", ...food, person: this._person.id, ...(anyway && { anyway }) };
+      const message = { type: "metron/food/add", ...food, person: this._person.id, ...(anyway && { anyway }) };
       const saved = await this._call(message);
       if (this._panel !== p) return;
       showSavedFood(p, saved);
@@ -314,7 +314,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       if (this._panel !== p) return;
       const taken = err?.translation_placeholders;
       if (err?.code === "barcode_taken" && taken) {
-        const existing = await this._call({ type: "fork_and_scale/food/barcode", barcode: food.barcode }).catch(() => null);
+        const existing = await this._call({ type: "metron/food/barcode", barcode: food.barcode }).catch(() => null);
         if (existing && this._panel === p) {
           showSavedFood(p, existing);
           p.warning = takenText(err.code, taken, this._people, t);
@@ -393,7 +393,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         e.food_id != null ? { food_id: e.food_id, grams: e.grams } : { name: e.name, grams: e.grams, ...Object.fromEntries(NUTRIENTS.map((n) => [n, e[n]])) },
       );
       try {
-        await this._call({ type: "fork_and_scale/meal/add", name, owner: p.share ? null : this._person.id, items });
+        await this._call({ type: "metron/meal/add", name, owner: p.share ? null : this._person.id, items });
         if (this._panel === p) this._closePanel();
       } catch (err) {
         if (err?.code !== "meal_exists") return this._showError(err);
@@ -425,7 +425,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       if (!p.ticks.some(Boolean)) return;
       try {
         await this._call({
-          type: "fork_and_scale/meal/log",
+          type: "metron/meal/log",
           person: this._person.id,
           day: this._day,
           meal: p.meal,
@@ -527,7 +527,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       const p = this._panel;
       if (!(p.grams > 0)) return this._showError(null, "error_amount");
       await this._sendAndClose({
-        type: "fork_and_scale/entry/add",
+        type: "metron/entry/add",
         person: this._person.id,
         day: this._day,
         meal: p.meal,
@@ -542,7 +542,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       if (!name || kcal == null || kcal < 0) return this._showError(null, "error_quick");
       const macros = Object.fromEntries(MACROS.map((m) => [m, numberValue(this._field(m))]));
       await this._sendAndClose({
-        type: "fork_and_scale/entry/add",
+        type: "metron/entry/add",
         person: this._person.id,
         day: this._day,
         meal: this._field("meal").value,
@@ -594,7 +594,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       const p = this._panel;
       const { food_id: id, name } = p.taken;
       try {
-        const found = await this._call({ type: "fork_and_scale/food/search", query: name, limit: 100 });
+        const found = await this._call({ type: "metron/food/search", query: name, limit: 100 });
         const food = found.find((f) => String(f.id) === id);
         if (this._panel !== p) return;
         if (!food) return this._showError(null, "error_failed");
@@ -609,18 +609,18 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
       const field = amountField(p.entry);
       const amount = numberValue(this._field(field));
       if (amount == null || amount <= 0) return this._showError(null, "error_amount");
-      await this._sendAndClose({ type: "fork_and_scale/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
+      await this._sendAndClose({ type: "metron/entry/update", entry_id: p.entry.id, meal: this._field("meal").value, [field]: amount });
     },
     "click:delete-entry"() {
       this._panel.confirming = true;
       this._renderPanel();
     },
     async "click:really-delete"() {
-      await this._sendAndClose({ type: "fork_and_scale/entry/delete", entry_id: this._panel.entry.id });
+      await this._sendAndClose({ type: "metron/entry/delete", entry_id: this._panel.entry.id });
     },
     async "click:do-copy"() {
       const sent = await this._send({
-        type: "fork_and_scale/meal/copy",
+        type: "metron/meal/copy",
         person: this._person.id,
         from_day: this._field("from_day").value,
         from_meal: this._field("from_meal").value,
@@ -655,7 +655,7 @@ function scaled(food, grams) {
 const optionList = (values, labels, selected) =>
   values.map((v) => `<option value="${esc(v)}"${v === selected ? " selected" : ""}>${esc(labels[v] ?? v)}</option>`).join("");
 
-// The summary and meals of one day, from fork_and_scale/day.
+// The summary and meals of one day, from metron/day.
 function diaryBodyHTML(data, t, locale) {
   const meals = MEALS.map((meal) => mealHTML(meal, data.entries.filter((e) => e.meal === meal), t, locale));
   return diarySummaryHTML(totals(data.entries), data.goals, t, locale) + meals.join("");

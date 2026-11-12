@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.fork_and_scale.myfitnesspal import (
+from custom_components.metron.myfitnesspal import (
     Diary,
     Unreadable,
     entries,
