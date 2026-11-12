@@ -135,6 +135,25 @@ async def test_importing_again_replaces_only_myfitnesspal_entries(
     assert matteo["result"]["entries"] == []
 
 
+async def test_importing_a_shorter_file_keeps_the_days_outside_it(
+    hass: HomeAssistant, importer, ws, tmp_path: Path
+) -> None:
+    kilojoules = MYFITNESSPAL / "Nutrition-Summary-kilojoules.csv"
+    await importer(kilojoules)
+    assert [e[1:3] for e in await entries(ws, "2025-10-11")] == [("MyFitnessPal", 200)]
+    # A file of the last day alone, with dates that can only be read one way:
+    # it replaces that day's entries, and no other day's.
+    shorter = tmp_path / "Nutrition-Summary-last-day.csv"
+    shorter.write_text("Date,Meal,Calories\n2025-10-11,Dinner,640\n")
+    done = await importer(shorter)
+    assert done["description_placeholders"]["days"] == "1"
+    assert await entries(ws, "2025-10-10") == [
+        ("breakfast", "MyFitnessPal", 500, "myfitnesspal"),
+        ("lunch", "MyFitnessPal", 1000, "myfitnesspal"),
+    ]
+    assert await entries(ws, "2025-10-11") == [("dinner", "MyFitnessPal", 640, "myfitnesspal")]
+
+
 async def test_imports_the_printable_diary(hass: HomeAssistant, importer, ws) -> None:
     meals = await importer(MYFITNESSPAL / "printable-diary.html")
     assert defaults(meals) == {"Pre-workout": "snacks"}

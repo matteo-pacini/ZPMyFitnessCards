@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from sqlalchemy import insert, inspect
+from sqlalchemy import insert, inspect, update
 from sqlalchemy.exc import DBAPIError
 
 from custom_components.metron import db as db_module
@@ -15,6 +15,7 @@ from custom_components.metron.db import (
     Database,
     NewerSchemaError,
     _schema_v1,
+    _schema_v2,
     make_engine,
     sqlite_url,
 )
@@ -75,6 +76,35 @@ def test_upgrades_a_version_1_database_keeping_everything_in_it(database_url: st
     assert {row.source for row in contents(database_url, {"entries": ["source"]})["entries"]} == {
         None
     }
+
+
+def test_upgrades_a_version_2_database_keeping_everything_in_it(database_url: str) -> None:
+    # Version 2 is what installs that have imported from MyFitnessPal are at.
+    database_at(database_url, 2)
+    add_version_1_sample(database_url)
+    engine = make_engine(database_url)
+    entries = _schema_v2().tables["entries"]
+    with engine.begin() as conn:
+        conn.execute(
+            update(entries).where(entries.c.name == "Old quick add").values(source="myfitnesspal")
+        )
+    engine.dispose()
+    version_2_columns = {name: list(t.c.keys()) for name, t in _schema_v2().tables.items()}
+    before = contents(database_url, version_2_columns)
+
+    db = Database(database_url)
+    db.open()
+    try:
+        assert db.schema_version() == LATEST
+        assert contents(database_url, version_2_columns) == before
+        # Foods saved then were saved by nobody known, and are found in any case.
+        assert [f["saved_by"] for f in db.search_foods("OLD PORRIDGE", 10)] == [None]
+        assert db.meals() == []
+        # Importing again still replaces the entries MyFitnessPal brought, and only those.
+        db.replace_entries("matteo", "myfitnesspal", SAMPLE_DAY, SAMPLE_DAY, [])
+        assert [e["name"] for e in db.day_entries("matteo", SAMPLE_DAY)] == ["Old porridge oats"]
+    finally:
+        db.close()
 
 
 def test_foods_saved_before_an_upgrade_are_found_in_any_case(database_url: str) -> None:
