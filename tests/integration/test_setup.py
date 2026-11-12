@@ -54,7 +54,7 @@ async def test_registers_the_cards_with_the_frontend_when_it_runs(hass: HomeAssi
     entry.add_to_hass(hass)
     with patch("custom_components.metron.add_extra_js_url") as add:
         assert await hass.config_entries.async_setup(entry.entry_id)
-    add.assert_called_once_with(hass, f"{CARDS_URL}?v=0.4.1")
+    add.assert_called_once_with(hass, f"{CARDS_URL}?v=0.5.0")
 
 
 async def test_leaves_the_frontend_alone_when_it_does_not_run(hass: HomeAssistant) -> None:

@@ -46,7 +46,7 @@ services.home-assistant.customComponents = [
   (pkgs.buildHomeAssistantComponent rec {
     owner = "matteo-pacini";
     domain = "metron";
-    version = "0.4.1";
+    version = "0.5.0";
 
     src = pkgs.fetchFromGitHub {
       inherit owner;
@@ -61,7 +61,7 @@ services.home-assistant.customComponents = [
 To fill in `hash`, either run this and use the hash it prints:
 
 ```sh
-nix flake prefetch github:matteo-pacini/metron/v0.4.1
+nix flake prefetch github:matteo-pacini/metron/v0.5.0
 ```
 
 or rebuild with `lib.fakeHash` and copy the hash from the `got:` line of the error. Change `version` and `hash` together for each new release.
