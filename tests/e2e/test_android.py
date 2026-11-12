@@ -8,6 +8,7 @@ METRON_SCREENSHOTS when it is set.
 from __future__ import annotations
 
 import contextlib
+import io
 import os
 import shutil
 import subprocess
@@ -16,9 +17,12 @@ import time
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
+from PIL import Image
 from playwright.sync_api import Browser, Locator, Page, expect
 from playwright.sync_api import Error as PlaywrightError
 
@@ -81,31 +85,63 @@ class Device:
             raise AdbError(done.returncode, command, done.stdout, done.stderr)
         return done.stdout
 
-    def nodes(self) -> list[tuple[str, tuple[int, int]]]:
-        """Each node's text (or description) and centre on screen."""
+    def _screen(self) -> ET.Element:
+        """What uiautomator sees on screen."""
         for _ in range(5):
             # uiautomator fails now and then while the screen animates.
             try:
                 self.adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
-                root = ET.fromstring(self.adb("exec-out", "cat", "/sdcard/ui.xml"))
-                break
+                return ET.fromstring(self.adb("exec-out", "cat", "/sdcard/ui.xml"))
             except subprocess.CalledProcessError, ET.ParseError:
                 time.sleep(1)
-        else:
-            raise RuntimeError("uiautomator could not read the screen")
+        raise RuntimeError("uiautomator could not read the screen")
+
+    @staticmethod
+    def _bounds(node: ET.Element) -> tuple[int, int, int, int]:
+        return tuple(  # type: ignore[return-value]
+            map(int, node.get("bounds", "[0,0][0,0]").replace("][", ",").strip("[]").split(","))
+        )
+
+    def nodes(self) -> list[tuple[str, tuple[int, int]]]:
+        """Each node's text (or description) and centre on screen."""
         found = []
-        for node in root.iter("node"):
+        for node in self._screen().iter("node"):
             # Collapsed: the app's labels mix in non-breaking spaces.
             label = " ".join((node.get("text") or node.get("content-desc") or "").split())
-            left, top, right, bottom = map(
-                int, node.get("bounds", "[0,0][0,0]").replace("][", ",").strip("[]").split(",")
-            )
+            left, top, right, bottom = self._bounds(node)
             if label and right > left and bottom > top:
                 found.append((label, ((left + right) // 2, (top + bottom) // 2)))
         return found
 
-    def find(self, text: str, timeout: float = 30) -> tuple[int, int]:
-        """The centre of the first node whose label contains `text`.
+    def on_screen(self, page: Page, locator: Locator) -> tuple[int, int, int, int]:
+        """Where `locator`, in the app's WebView, is on the screen: left, top, right, bottom."""
+        webview = next(
+            n for n in self._screen().iter("node") if n.get("class") == "android.webkit.WebView"
+        )
+        left, top, _, _ = self._bounds(webview)
+        locator.scroll_into_view_if_needed()
+        box = locator.bounding_box()
+        assert box, "not on the page"
+        scale = page.evaluate("devicePixelRatio")
+        return (
+            round(left + box["x"] * scale),
+            round(top + box["y"] * scale),
+            round(left + (box["x"] + box["width"]) * scale),
+            round(top + (box["y"] + box["height"]) * scale),
+        )
+
+    def pixels(self, area: tuple[int, int, int, int]) -> bytes:
+        """The screen's pixels in `area`."""
+        png = subprocess.run(
+            ["adb", "-s", SERIAL, "exec-out", "screencap", "-p"],
+            env=self.env,
+            check=True,
+            capture_output=True,
+        ).stdout
+        return Image.open(io.BytesIO(png)).convert("RGB").crop(area).tobytes()
+
+    def find(self, text: str, timeout: float = 30, exact: bool = False) -> tuple[int, int]:
+        """The centre of the first node whose label contains `text`, or is it if `exact`.
 
         Brings the Companion app back to the front if something else took
         over the screen meanwhile.
@@ -114,7 +150,7 @@ class Device:
         while True:
             nodes = self.nodes()
             for label, centre in nodes:
-                if text in label:
+                if label == text if exact else text in label:
                     return centre
             # On a new image, system apps' first-run screens and a launcher
             # restart can push the app aside; monkey resumes it as it was.
@@ -142,9 +178,15 @@ class Device:
         self.adb("shell", "am", "broadcast", "-a", "android.intent.action.CLOSE_SYSTEM_DIALOGS")
         self.adb("shell", "monkey", "-p", APP, "1")
 
-    def tap(self, text: str, timeout: float = 30) -> None:
-        x, y = self.find(text, timeout)
+    def tap(self, text: str, timeout: float = 30, exact: bool = False) -> None:
+        x, y = self.find(text, timeout, exact)
         self.adb("shell", "input", "tap", str(x), str(y))
+
+    def set_date(self) -> None:
+        """Close Android's date picker on the day chosen."""
+        self.tap(
+            next(label for label, _ in self.nodes() if label.upper() in ("SET", "OK")), exact=True
+        )
 
     def scroll_to(self, text: str) -> None:
         for _ in range(15):
@@ -225,6 +267,10 @@ def device(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Device]:
                 emulator.wait(timeout=60)
             except Exception:
                 emulator.kill()
+            # adb's server holds this run's key, which the next run's new
+            # emulator would refuse as unauthorized.
+            with contextlib.suppress(Exception):
+                phone.adb("kill-server", timeout=30)
             shutil.copy(log_path, shots / "emulator.log")
             shutil.rmtree(root, ignore_errors=True)
 
@@ -460,6 +506,37 @@ def test_scans_a_barcode_with_the_app(app_home: Home, app: Page, device: Device)
         time.sleep(1)
     card.locator('.panel [data-field="grams"]').scroll_into_view_if_needed()
     device.screenshot("app-scanned")
+
+
+def test_the_diary_s_calendar_shows_and_opens_android_s_date_picker(
+    app_home: Home, app: Page, device: Device
+) -> None:
+    card = _open(app_home, app, {"type": "custom:metron-food-diary-card", "person": "Debora"})
+    expect(card.locator(".meal")).to_have_count(4, timeout=60_000)
+    pick = card.locator('[data-action="pick-day"]')
+    area = device.on_screen(app, pick)
+
+    # The WebView draws no picker icon in a date input: the card must.
+    shown = device.pixels(area)
+    pick.evaluate("el => (el.parentElement.style.visibility = 'hidden')")
+    hidden = device.pixels(area)
+    pick.evaluate("el => (el.parentElement.style.visibility = '')")
+    device.screenshot("app-diary-calendar")
+    assert shown != hidden, "The calendar button shows nothing"
+
+    # A tap opens Android's date picker, on the day the diary shows.
+    card.locator('[data-action="prev"]').dispatch_event("click")
+    yesterday = datetime.now(ZoneInfo("Europe/London")).date() - timedelta(days=1)
+    expect(pick).to_have_value(yesterday.isoformat())
+    left, top, right, bottom = area
+    device.adb("shell", "input", "tap", str((left + right) // 2), str((top + bottom) // 2))
+    # Its days are labelled with their numbers alone.
+    first = date(yesterday.year, yesterday.month, 1)
+    device.tap(str(first.day), exact=True)
+    device.screenshot("app-date-picker")
+    device.set_date()
+    expect(pick).to_have_value(first.isoformat(), timeout=30_000)
+    expect(card.locator(".nav .label")).not_to_have_text("Today")
 
 
 @pytest.fixture

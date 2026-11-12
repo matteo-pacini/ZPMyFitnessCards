@@ -4,8 +4,14 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     .nav .label { min-width: 6.5em; text-align: center; font-weight: var(--ha-font-weight-medium, 500); }
     .icon { width: 32px; height: 32px; font-size: 1.1rem; line-height: 1; }
     .icon:hover:not(:disabled) { background: var(--secondary-background-color); }
-    /* Just the calendar button: the label beside it already shows the day. */
-    .nav input[type=date] { width: 34px; padding: 4px; color: transparent; background: none; border: 0; cursor: pointer; }
+    /* Just a calendar button: the label beside it already shows the day. The
+       card draws the icon, since not every browser draws one in a date input,
+       and lays the input over it unseen, so that a tap anywhere opens the picker. */
+    .calendar { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; }
+    .calendar svg { width: 20px; height: 20px; fill: currentColor; }
+    .calendar:focus-within { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+    .calendar input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+    .calendar input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; cursor: pointer; }
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
     .summary small, .macro small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
@@ -103,7 +109,7 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         <button class="icon" data-action="prev" aria-label="${esc(t.previous_day)}">‹</button>
         <span class="label">${esc(dayLabel(this._day, today, this._locale, t))}</span>
         <button class="icon" data-action="next" aria-label="${esc(t.next_day)}"${this._day >= today ? " disabled" : ""}>›</button>
-        <input type="date" data-action="pick-day" value="${this._day}" max="${today}" aria-label="${esc(t.pick_day)}">
+        <label class="icon calendar">${CALENDAR_SVG}<input type="date" data-action="pick-day" value="${this._day}" max="${today}" aria-label="${esc(t.pick_day)}"></label>
       </div>`;
   }
 
@@ -640,6 +646,9 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     },
   };
 }
+
+// A calendar page with a day marked, drawn in the text's colour.
+const CALENDAR_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h2a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2zM5 9v10h14V9zm2 2h4v4H7z"/></svg>`;
 
 function dayLabel(day, today, locale, t) {
   if (day === today) return t.today;
