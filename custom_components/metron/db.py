@@ -248,6 +248,19 @@ def _schema_v3() -> MetaData:
     return metadata
 
 
+def _schema_v4() -> MetaData:
+    """Version 3, with each food's name casefolded, to find it in any case.
+
+    The databases' own lower() leaves letters outside ASCII as they are on
+    SQLite, and on a Postgres whose locale is C.
+    """
+    metadata = _schema_v3()
+    metadata.tables["foods"].append_column(
+        Column("folded", Text, nullable=False, server_default="")
+    )
+    return metadata
+
+
 def _migrate_to_v1(conn: Connection) -> None:
     _schema_v1().create_all(conn)
 
@@ -269,12 +282,27 @@ def _migrate_to_v3(conn: Connection) -> None:
     schema.tables["meal_items"].create(conn)
 
 
+def _migrate_to_v4(conn: Connection) -> None:
+    foods = _schema_v4().tables["foods"]
+    folded = foods.c.folded
+    conn.execute(
+        DDL(f"ALTER TABLE foods ADD COLUMN {CreateColumn(folded).compile(dialect=conn.dialect)}")
+    )
+    for food_id, name in conn.execute(select(foods.c.id, foods.c.name)).all():
+        conn.execute(update(foods).where(foods.c.id == food_id).values(folded=name.casefold()))
+
+
 # Each entry upgrades the schema by one version; schema_version holds the
 # version a database is at. Never edit a released entry, append a new one.
-MIGRATIONS: list[Callable[[Connection], None]] = [_migrate_to_v1, _migrate_to_v2, _migrate_to_v3]
+MIGRATIONS: list[Callable[[Connection], None]] = [
+    _migrate_to_v1,
+    _migrate_to_v2,
+    _migrate_to_v3,
+    _migrate_to_v4,
+]
 
 # The tables the queries below use: those of the latest version.
-SCHEMA = _schema_v3()
+SCHEMA = _schema_v4()
 PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS, SAVED_MEALS, MEAL_ITEMS = (
     SCHEMA.tables[name]
     for name in ("people", "foods", "entries", "weights", "goals", "meals", "meal_items")
@@ -327,6 +355,7 @@ def _food(row: Any) -> dict[str, Any] | None:
     if row is None:
         return None
     food = dict(row._mapping)
+    del food["folded"]
     food["portions"] = json.loads(food["portions"])
     return food
 
@@ -643,6 +672,7 @@ class Database:
         values = {k: food.get(k) for k in FOOD_FIELDS}
         values["portions"] = json.dumps(food.get("portions") or [])
         values["saved_by"] = food.get("saved_by")
+        values["folded"] = values["name"].casefold()
         with self._db.begin() as conn:
             food_id = conn.execute(
                 insert(FOODS).values(**values, updated_at=_now()).returning(FOODS.c.id)
@@ -654,6 +684,8 @@ class Database:
         values = {k: changes[k] for k in FOOD_FIELDS if k in changes}
         if "portions" in values:
             values["portions"] = json.dumps(values["portions"] or [])
+        if "name" in values:
+            values["folded"] = values["name"].casefold()
         if values:
             with self._db.begin() as conn:
                 conn.execute(
@@ -721,28 +753,23 @@ class Database:
             return _food(conn.execute(select(FOODS).where(FOODS.c.barcode == barcode)).first())
 
     def foods_named(self, name: str) -> list[dict[str, Any]]:
-        """Foods called `name`, ignoring case, oldest first.
-
-        On SQLite, only the case of ASCII letters is ignored.
-        """
-        # The database's lower() on both sides, not Python's on `name`, so that
-        # both go through the same rules.
-        query = select(FOODS).where(func.lower(FOODS.c.name) == func.lower(name))
+        """Foods called `name`, ignoring case, oldest first."""
+        query = select(FOODS).where(FOODS.c.folded == name.casefold())
         with self._db.connect() as conn:
             return [_food(r) for r in conn.execute(query.order_by(FOODS.c.id))]
 
     def search_foods(self, query: str, limit: int) -> list[dict[str, Any]]:
         """Foods whose name contains `query`, ignoring case, or whose barcode is `query`."""
-        escaped = query.lower().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        escaped = query.casefold().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         found = (
             select(FOODS)
             .where(
                 or_(
-                    func.lower(FOODS.c.name).like(f"%{escaped}%", escape="\\"),
+                    FOODS.c.folded.like(f"%{escaped}%", escape="\\"),
                     FOODS.c.barcode == query,
                 )
             )
-            .order_by(func.lower(FOODS.c.name))
+            .order_by(FOODS.c.folded)
             .limit(limit)
         )
         with self._db.connect() as conn:

@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from sqlalchemy import inspect
+from sqlalchemy import insert, inspect
 from sqlalchemy.exc import DBAPIError
 
 from custom_components.metron import db as db_module
@@ -75,6 +75,31 @@ def test_upgrades_a_version_1_database_keeping_everything_in_it(database_url: st
     assert {row.source for row in contents(database_url, {"entries": ["source"]})["entries"]} == {
         None
     }
+
+
+def test_foods_saved_before_an_upgrade_are_found_in_any_case(database_url: str) -> None:
+    database_at(database_url, 3)
+    engine = make_engine(database_url)
+    with engine.begin() as conn:
+        conn.execute(
+            insert(_schema_v1().tables["foods"]).values(
+                name="Ölsardinen",
+                kcal=210,
+                protein=24,
+                carbs=0,
+                fat=13,
+                portions="[]",
+                updated_at="2026-11-01T08:00:00+00:00",
+            )
+        )
+    engine.dispose()
+    db = Database(database_url)
+    db.open()
+    try:
+        assert [f["name"] for f in db.search_foods("öl", 10)] == ["Ölsardinen"]
+        assert [f["name"] for f in db.foods_named("ÖLSARDINEN")] == ["Ölsardinen"]
+    finally:
+        db.close()
 
 
 @pytest.mark.parametrize("number", range(1, LATEST + 1))

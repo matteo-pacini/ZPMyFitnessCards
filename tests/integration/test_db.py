@@ -85,6 +85,21 @@ def test_foods_search_by_name_or_barcode(db: Database) -> None:
     assert db.food_by_barcode("123")["portions"] == [{"name": "Bowl", "grams": 40}]
 
 
+def test_foods_are_found_by_name_in_any_case_of_any_alphabet(db: Database) -> None:
+    for name in ("Éclair au chocolat", "Ägg, kokta", "Weißbrot"):
+        db.add_food({**OATS, "name": name})
+    assert [f["name"] for f in db.search_foods("éclair", 10)] == ["Éclair au chocolat"]
+    assert [f["name"] for f in db.search_foods("ÄGG", 10)] == ["Ägg, kokta"]
+    # Casefolded, ß is ss.
+    assert [f["name"] for f in db.search_foods("WEISS", 10)] == ["Weißbrot"]
+    assert [f["name"] for f in db.foods_named("éCLAIR AU CHOCOLAT")] == ["Éclair au chocolat"]
+    # Renamed, a food is found by its new name.
+    eggs = db.search_foods("ägg", 10)[0]
+    db.update_food(eggs["id"], {"name": "Œufs durs"})
+    assert [f["name"] for f in db.search_foods("ŒUFS", 10)] == ["Œufs durs"]
+    assert db.search_foods("ägg", 10) == []
+
+
 def test_a_barcode_belongs_to_one_food(db: Database) -> None:
     db.add_food({**OATS, "barcode": "123"})
     with pytest.raises(IntegrityError):
@@ -231,7 +246,7 @@ def test_upgrades_a_version_1_database_keeping_its_entries(database_url: str) ->
     engine.dispose()
     db = Database(database_url)
     db.open()
-    assert db.schema_version() == len(MIGRATIONS) == 3
+    assert db.schema_version() == len(MIGRATIONS) == 4
     [soup] = db.day_entries("p", "2026-11-09")
     assert (soup["name"], soup["source"]) == ("Soup", None)
     assert db.meals() == []
