@@ -510,6 +510,76 @@ def test_scans_a_barcode_with_the_app(app_home: Home, app: Page, device: Device)
     device.screenshot("app-scanned")
 
 
+def test_back_leaves_the_app_s_scanner_and_a_second_scan_works(
+    app_home: Home, app: Page, device: Device
+) -> None:
+    code = "5000159459228"
+    app_home.ws(
+        {
+            "type": "metron/food/add",
+            "name": "Back granola",
+            "kcal": 450,
+            "protein": 10,
+            "carbs": 60,
+            "fat": 18,
+            "barcode": code,
+        }
+    )
+    card = _open(app_home, app, {"type": "custom:metron-food-diary-card", "person": "Debora"})
+    # What the card asks of the app, and the app's handler it starts from.
+    app.evaluate(
+        """() => {
+          const external = document.querySelector("home-assistant").hass.auth.external;
+          window.handler = external.receiveMessage;
+          window.closes = 0;
+          const fire = external.fireMessage.bind(external);
+          external.fireMessage = (m) => (m.type === "bar_code/close" && window.closes++, fire(m));
+        }"""
+    )
+    restored = (
+        "document.querySelector('home-assistant').hass.auth.external.receiveMessage"
+        " === window.handler"
+    )
+
+    def scanner_shown() -> bool:
+        return any("Scan a barcode" in label for label, _ in device.nodes())
+
+    card.locator('.meal[data-meal="lunch"] [data-action="add"]').dispatch_event("click")
+    query = card.locator('.panel [data-action="query"]')
+    query.fill("half typed")
+    scan = card.locator('.panel .headactions [data-action="scan"]')
+    scan.dispatch_event("click")
+    device.find("Scan a barcode", timeout=60)
+    device.screenshot("app-scanner-before-back")
+
+    # Back, as a person leaves the scanner: the card stops waiting, keeping what was typed.
+    device.adb("shell", "input", "keyevent", "KEYCODE_BACK")
+    deadline = time.monotonic() + 30
+    while scanner_shown():
+        assert time.monotonic() < deadline, "Back did not close the app's scanner"
+        time.sleep(1)
+    app.wait_for_function(restored, timeout=30_000)
+    expect(query).to_have_value("half typed")
+
+    # A second scan works, and is handled once.
+    scan.dispatch_event("click")
+    device.find("Scan a barcode", timeout=60)
+    app.evaluate(
+        """code => document.querySelector("home-assistant").hass.auth.external.receiveMessage({
+          id: 1, type: "command", command: "bar_code/scan_result",
+          payload: { rawValue: code, format: "ean_13" },
+        })""",
+        code,
+    )
+    expect(card.locator(".panel")).to_contain_text("Back granola", timeout=60_000)
+    deadline = time.monotonic() + 30
+    while scanner_shown():
+        assert time.monotonic() < deadline, "The app's scanner did not close"
+        time.sleep(1)
+    app.wait_for_function(restored, timeout=30_000)
+    assert app.evaluate("window.closes") == 1
+
+
 def test_the_diary_s_calendar_shows_and_opens_android_s_date_picker(
     app_home: Home, app: Page, device: Device
 ) -> None:
