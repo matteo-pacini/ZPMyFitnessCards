@@ -47,6 +47,12 @@
       },
       "entry_type": "Personne",
       "error": {
+        "active_calories_missing": "Ce capteur n’existe pas dans Home Assistant. Choisissez-en un autre ou videz le champ.",
+        "active_calories_no_unit": "Ce capteur n’a pas d’unité, il ne peut donc pas être lu en kcal ou en kJ. Choisissez-en un en kcal ou kJ, donnez-lui une unité avec un capteur de modèle (template), ou enregistrez-le depuis une automatisation avec l’action « Enregistrer les calories actives ».",
+        "active_calories_running_total": "Ce capteur indique {reading} kcal, plus que l’activité d’une journée : il ressemble à un total qui ne se remet jamais à zéro. Créez-en un compteur de consommation (utility meter) à cycle quotidien, ou enregistrez le total de chaque jour depuis une automatisation avec l’action « Enregistrer les calories actives ». Le README montre les deux.",
+        "active_calories_sensor_disabled": "Un capteur n’est lu que si les calories actives sont autorisées. Cochez « Autoriser les calories actives » ou videz le capteur.",
+        "active_calories_unit": "Ce capteur mesure en {unit}, pas en kcal ni en kJ. Convertissez-le avec un capteur de modèle (template), ou enregistrez-le depuis une automatisation avec l’action « Enregistrer les calories actives ». Le README montre les deux.",
+        "active_calories_unit_setting": "Ce capteur est affiché en {unit}. Réglez son unité sur kcal ou kJ dans ses paramètres, puis validez de nouveau.",
         "bad_line": "La ligne {line} de {file} est illisible.",
         "bad_row": "La ligne {row} du {day} est illisible.",
         "birth_date_future": "La date de naissance doit être dans le passé.",
@@ -97,13 +103,32 @@
             "start_weight_lb": "Poids de départ"
           },
           "data_description": {
-            "calorie_goal": "Laissez vide pour utiliser l’objectif calculé à partir des informations ci-dessus. Il suit chaque nouveau poids.",
+            "activity": "L’activité d’une journée ordinaire. Avec les calories actives autorisées, l’objectif ne descend jamais sous celui de ce niveau, et seule l’activité au-delà est ajoutée.",
+            "calorie_goal": "Laissez vide pour utiliser l’objectif calculé à partir des informations ci-dessus. Il suit chaque nouveau poids. Avec les calories actives autorisées, l’activité au-delà du niveau d’activité s’ajoute à l’objectif, saisi ou calculé.",
             "carbs_pct": "Part de l’objectif calorique apportée par les glucides.",
             "fat_pct": "Part de l’objectif calorique apportée par les lipides.",
             "name": "Affiché sur les cartes et dans le nom des capteurs. Il doit être différent du nom de toutes les autres personnes.",
             "person_entity": "Facultatif. Les cartes sans personne définie affichent la personne liée à l’utilisateur connecté.",
             "protein_pct": "Part de l’objectif calorique apportée par les protéines. Protéines, glucides et lipides doivent totaliser 100 %.",
             "sex": "Utilisé avec l’âge, la taille et le poids pour estimer les calories brûlées par jour."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Maximum compté par jour",
+                "active_calories_enabled": "Autoriser les calories actives",
+                "active_calories_entity": "Capteur (facultatif)",
+                "active_calories_share": "Part comptée"
+              },
+              "data_description": {
+                "active_calories_cap": "Un chiffre plus élevé compte pour ce maximum, et le journal alimentaire l’indique. Ne s’applique que si les calories actives sont autorisées.",
+                "active_calories_enabled": "Ajoute à l’objectif calorique l’activité qu’une montre ou un téléphone mesure au-delà du niveau d’activité. Part comptée, Maximum compté par jour et Capteur ne s’appliquent que si cette case est cochée.",
+                "active_calories_entity": "Les calories actives du jour en kcal ou kJ, repartant de 0 chaque jour, comme « Active calories » de Garmin Connect, et non « Calories », qui inclut les calories brûlées au repos. Une valeur en kJ est convertie en kcal. Laissez vide pour les enregistrer plutôt depuis une automatisation avec l’action « Enregistrer les calories actives ».",
+                "active_calories_share": "La part du chiffre mesuré qui compte. Les montres ont tendance à surestimer, 75 % est donc un début prudent. Ne s’applique que si les calories actives sont autorisées."
+              },
+              "description": "Facultatif. Augmente l’objectif calorique les jours actifs, à partir d’un capteur ou d’une automatisation.",
+              "name": "Calories actives"
+            }
           },
           "title": "Modifier la personne"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "Poids de départ"
           },
           "data_description": {
-            "calorie_goal": "Laissez vide pour utiliser l’objectif calculé à partir des informations ci-dessus. Il suit chaque nouveau poids.",
+            "activity": "L’activité d’une journée ordinaire. Avec les calories actives autorisées, l’objectif ne descend jamais sous celui de ce niveau, et seule l’activité au-delà est ajoutée.",
+            "calorie_goal": "Laissez vide pour utiliser l’objectif calculé à partir des informations ci-dessus. Il suit chaque nouveau poids. Avec les calories actives autorisées, l’activité au-delà du niveau d’activité s’ajoute à l’objectif, saisi ou calculé.",
             "carbs_pct": "Part de l’objectif calorique apportée par les glucides.",
             "fat_pct": "Part de l’objectif calorique apportée par les lipides.",
             "name": "Affiché sur les cartes et dans le nom des capteurs. Il doit être différent du nom de toutes les autres personnes.",
             "person_entity": "Facultatif. Les cartes sans personne définie affichent la personne liée à l’utilisateur connecté.",
             "protein_pct": "Part de l’objectif calorique apportée par les protéines. Protéines, glucides et lipides doivent totaliser 100 %.",
             "sex": "Utilisé avec l’âge, la taille et le poids pour estimer les calories brûlées par jour."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Maximum compté par jour",
+                "active_calories_enabled": "Autoriser les calories actives",
+                "active_calories_entity": "Capteur (facultatif)",
+                "active_calories_share": "Part comptée"
+              },
+              "data_description": {
+                "active_calories_cap": "Un chiffre plus élevé compte pour ce maximum, et le journal alimentaire l’indique. Ne s’applique que si les calories actives sont autorisées.",
+                "active_calories_enabled": "Ajoute à l’objectif calorique l’activité qu’une montre ou un téléphone mesure au-delà du niveau d’activité. Part comptée, Maximum compté par jour et Capteur ne s’appliquent que si cette case est cochée.",
+                "active_calories_entity": "Les calories actives du jour en kcal ou kJ, repartant de 0 chaque jour, comme « Active calories » de Garmin Connect, et non « Calories », qui inclut les calories brûlées au repos. Une valeur en kJ est convertie en kcal. Laissez vide pour les enregistrer plutôt depuis une automatisation avec l’action « Enregistrer les calories actives ».",
+                "active_calories_share": "La part du chiffre mesuré qui compte. Les montres ont tendance à surestimer, 75 % est donc un début prudent. Ne s’applique que si les calories actives sont autorisées."
+              },
+              "description": "Facultatif. Augmente l’objectif calorique les jours actifs, à partir d’un capteur ou d’une automatisation.",
+              "name": "Calories actives"
+            }
           },
           "title": "Ajouter une personne"
         }

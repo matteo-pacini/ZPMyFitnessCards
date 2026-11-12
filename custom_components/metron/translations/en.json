@@ -47,6 +47,12 @@
       },
       "entry_type": "Person",
       "error": {
+        "active_calories_missing": "This sensor doesn't exist in Home Assistant. Choose another, or clear the field.",
+        "active_calories_no_unit": "This sensor has no unit, so it can't be read as kcal or kJ. Choose one in kcal or kJ, give it a unit with a template sensor, or log it from an automation with the Log active calories action.",
+        "active_calories_running_total": "This sensor reads {reading} kcal, more than a day's activity: it looks like a total that never resets. Make a utility meter from it with a daily cycle, or log each day's total from an automation with the Log active calories action. The README shows both.",
+        "active_calories_sensor_disabled": "A sensor is read only while active calories are allowed. Tick Allow active calories, or clear the sensor.",
+        "active_calories_unit": "This sensor reports {unit}, not kcal or kJ. Convert it with a template sensor, or log it from an automation with the Log active calories action. The README shows both.",
+        "active_calories_unit_setting": "This sensor is shown in {unit}. Set its unit to kcal or kJ in its settings, then submit again.",
         "bad_line": "Line {line} of {file} could not be read.",
         "bad_row": "Row {row} on {day} could not be read.",
         "birth_date_future": "The birth date must be in the past.",
@@ -97,13 +103,32 @@
             "start_weight_lb": "Starting weight"
           },
           "data_description": {
-            "calorie_goal": "Leave empty to use the goal worked out from the details above. It follows each new weight.",
+            "activity": "How active an ordinary day is. With active calories allowed, the goal never drops below this level's, and only the activity beyond it is added.",
+            "calorie_goal": "Leave empty to use the goal worked out from the details above. It follows each new weight. With active calories allowed, activity beyond the activity level is added to either goal.",
             "carbs_pct": "Share of the calorie goal from carbs.",
             "fat_pct": "Share of the calorie goal from fat.",
             "name": "Shown on the cards and in the sensors' names. It must differ from every other person's name.",
             "person_entity": "Optional. Cards with no person set show the person linked to whoever is logged in.",
             "protein_pct": "Share of the calorie goal from protein. Protein, carbs and fat must add up to 100%.",
             "sex": "Used with age, height and weight to estimate the calories burnt a day."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Most counted a day",
+                "active_calories_enabled": "Allow active calories",
+                "active_calories_entity": "Sensor (optional)",
+                "active_calories_share": "Share counted"
+              },
+              "data_description": {
+                "active_calories_cap": "A figure above this counts as this much, and the food diary says so. Applies only while active calories are allowed.",
+                "active_calories_enabled": "Adds the activity a watch or phone measures, beyond the activity level, to the calorie goal. Share counted, Most counted a day and Sensor apply only while this is ticked.",
+                "active_calories_entity": "Today's active calories in kcal or kJ, from 0 each day, such as Garmin Connect's “Active calories”, not “Calories”, which includes the calories burnt at rest. A reading in kJ is converted to kcal. Leave it empty to log them from an automation with the Log active calories action instead.",
+                "active_calories_share": "How much of the measured figure counts. Watches tend to overestimate, so 75% is a careful start. Applies only while active calories are allowed."
+              },
+              "description": "Optional. Raise the calorie goal on active days, from a sensor or from an automation.",
+              "name": "Active calories"
+            }
           },
           "title": "Change person"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "Starting weight"
           },
           "data_description": {
-            "calorie_goal": "Leave empty to use the goal worked out from the details above. It follows each new weight.",
+            "activity": "How active an ordinary day is. With active calories allowed, the goal never drops below this level's, and only the activity beyond it is added.",
+            "calorie_goal": "Leave empty to use the goal worked out from the details above. It follows each new weight. With active calories allowed, activity beyond the activity level is added to either goal.",
             "carbs_pct": "Share of the calorie goal from carbs.",
             "fat_pct": "Share of the calorie goal from fat.",
             "name": "Shown on the cards and in the sensors' names. It must differ from every other person's name.",
             "person_entity": "Optional. Cards with no person set show the person linked to whoever is logged in.",
             "protein_pct": "Share of the calorie goal from protein. Protein, carbs and fat must add up to 100%.",
             "sex": "Used with age, height and weight to estimate the calories burnt a day."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Most counted a day",
+                "active_calories_enabled": "Allow active calories",
+                "active_calories_entity": "Sensor (optional)",
+                "active_calories_share": "Share counted"
+              },
+              "data_description": {
+                "active_calories_cap": "A figure above this counts as this much, and the food diary says so. Applies only while active calories are allowed.",
+                "active_calories_enabled": "Adds the activity a watch or phone measures, beyond the activity level, to the calorie goal. Share counted, Most counted a day and Sensor apply only while this is ticked.",
+                "active_calories_entity": "Today's active calories in kcal or kJ, from 0 each day, such as Garmin Connect's “Active calories”, not “Calories”, which includes the calories burnt at rest. A reading in kJ is converted to kcal. Leave it empty to log them from an automation with the Log active calories action instead.",
+                "active_calories_share": "How much of the measured figure counts. Watches tend to overestimate, so 75% is a careful start. Applies only while active calories are allowed."
+              },
+              "description": "Optional. Raise the calorie goal on active days, from a sensor or from an automation.",
+              "name": "Active calories"
+            }
           },
           "title": "Add person"
         }

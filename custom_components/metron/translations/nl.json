@@ -47,6 +47,12 @@
       },
       "entry_type": "Persoon",
       "error": {
+        "active_calories_missing": "Deze sensor bestaat niet in Home Assistant. Kies een andere of maak het veld leeg.",
+        "active_calories_no_unit": "Deze sensor heeft geen eenheid, dus hij kan niet als kcal of kJ worden gelezen. Kies er een in kcal of kJ, geef hem een eenheid met een templatesensor, of leg hem vast vanuit een automatisering met de actie ‘Actieve calorieën vastleggen’.",
+        "active_calories_running_total": "Deze sensor staat op {reading} kcal, meer dan de activiteit van een dag: hij lijkt een totaal dat nooit terugspringt. Maak er een verbruiksmeter (utility meter) met een dagelijkse cyclus van, of leg het dagtotaal vast vanuit een automatisering met de actie ‘Actieve calorieën vastleggen’. De README laat beide zien.",
+        "active_calories_sensor_disabled": "Een sensor wordt alleen gelezen zolang actieve calorieën zijn toegestaan. Vink ‘Actieve calorieën toestaan’ aan of maak de sensor leeg.",
+        "active_calories_unit": "Deze sensor meet in {unit}, niet in kcal of kJ. Reken hem om met een templatesensor, of leg hem vast vanuit een automatisering met de actie ‘Actieve calorieën vastleggen’. De README laat beide zien.",
+        "active_calories_unit_setting": "Deze sensor wordt getoond in {unit}. Zet zijn eenheid in zijn instellingen op kcal of kJ en verstuur opnieuw.",
         "bad_line": "Regel {line} van {file} kon niet worden gelezen.",
         "bad_row": "Rij {row} op {day} kon niet worden gelezen.",
         "birth_date_future": "De geboortedatum moet in het verleden liggen.",
@@ -97,13 +103,32 @@
             "start_weight_lb": "Startgewicht"
           },
           "data_description": {
-            "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan.",
+            "activity": "Hoe actief een gewone dag is. Met actieve calorieën toegestaan zakt het doel nooit onder dat van dit niveau, en komt alleen de activiteit daarboven erbij.",
+            "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan. Met actieve calorieën toegestaan komt activiteit boven het activiteitsniveau bij het doel, ingevuld of berekend.",
             "carbs_pct": "Deel van het caloriedoel uit koolhydraten.",
             "fat_pct": "Deel van het caloriedoel uit vet.",
             "name": "Staat op de kaarten en in de namen van de sensoren. Moet verschillen van de naam van ieder ander.",
             "person_entity": "Optioneel. Kaarten zonder ingestelde persoon tonen de persoon die gekoppeld is aan wie is ingelogd.",
             "protein_pct": "Deel van het caloriedoel uit eiwit. Eiwit, koolhydraten en vet moeten samen 100% zijn.",
             "sex": "Wordt samen met leeftijd, lengte en gewicht gebruikt om het dagelijkse verbruik te schatten."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Maximaal per dag",
+                "active_calories_enabled": "Actieve calorieën toestaan",
+                "active_calories_entity": "Sensor (optioneel)",
+                "active_calories_share": "Getelde deel"
+              },
+              "data_description": {
+                "active_calories_cap": "Een hoger getal telt als dit maximum, en het voedingsdagboek meldt dat. Geldt alleen zolang actieve calorieën zijn toegestaan.",
+                "active_calories_enabled": "Telt de activiteit die een horloge of telefoon boven het activiteitsniveau meet op bij het caloriedoel. Getelde deel, Maximaal per dag en Sensor gelden alleen zolang dit is aangevinkt.",
+                "active_calories_entity": "De actieve calorieën van vandaag in kcal of kJ, elke dag vanaf 0, zoals ‘Active calories’ van Garmin Connect, niet ‘Calories’, waarin ook de calorieën in rust zitten. Een waarde in kJ wordt omgerekend naar kcal. Laat leeg om ze in plaats daarvan vanuit een automatisering vast te leggen met de actie ‘Actieve calorieën vastleggen’.",
+                "active_calories_share": "Hoeveel van het gemeten getal telt. Horloges schatten vaak te hoog, dus 75% is een voorzichtig begin. Geldt alleen zolang actieve calorieën zijn toegestaan."
+              },
+              "description": "Optioneel. Verhoog het caloriedoel op actieve dagen, via een sensor of een automatisering.",
+              "name": "Actieve calorieën"
+            }
           },
           "title": "Persoon wijzigen"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "Startgewicht"
           },
           "data_description": {
-            "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan.",
+            "activity": "Hoe actief een gewone dag is. Met actieve calorieën toegestaan zakt het doel nooit onder dat van dit niveau, en komt alleen de activiteit daarboven erbij.",
+            "calorie_goal": "Laat leeg om het doel te gebruiken dat uit de gegevens hierboven volgt. Het past zich aan elk nieuw gewicht aan. Met actieve calorieën toegestaan komt activiteit boven het activiteitsniveau bij het doel, ingevuld of berekend.",
             "carbs_pct": "Deel van het caloriedoel uit koolhydraten.",
             "fat_pct": "Deel van het caloriedoel uit vet.",
             "name": "Staat op de kaarten en in de namen van de sensoren. Moet verschillen van de naam van ieder ander.",
             "person_entity": "Optioneel. Kaarten zonder ingestelde persoon tonen de persoon die gekoppeld is aan wie is ingelogd.",
             "protein_pct": "Deel van het caloriedoel uit eiwit. Eiwit, koolhydraten en vet moeten samen 100% zijn.",
             "sex": "Wordt samen met leeftijd, lengte en gewicht gebruikt om het dagelijkse verbruik te schatten."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Maximaal per dag",
+                "active_calories_enabled": "Actieve calorieën toestaan",
+                "active_calories_entity": "Sensor (optioneel)",
+                "active_calories_share": "Getelde deel"
+              },
+              "data_description": {
+                "active_calories_cap": "Een hoger getal telt als dit maximum, en het voedingsdagboek meldt dat. Geldt alleen zolang actieve calorieën zijn toegestaan.",
+                "active_calories_enabled": "Telt de activiteit die een horloge of telefoon boven het activiteitsniveau meet op bij het caloriedoel. Getelde deel, Maximaal per dag en Sensor gelden alleen zolang dit is aangevinkt.",
+                "active_calories_entity": "De actieve calorieën van vandaag in kcal of kJ, elke dag vanaf 0, zoals ‘Active calories’ van Garmin Connect, niet ‘Calories’, waarin ook de calorieën in rust zitten. Een waarde in kJ wordt omgerekend naar kcal. Laat leeg om ze in plaats daarvan vanuit een automatisering vast te leggen met de actie ‘Actieve calorieën vastleggen’.",
+                "active_calories_share": "Hoeveel van het gemeten getal telt. Horloges schatten vaak te hoog, dus 75% is een voorzichtig begin. Geldt alleen zolang actieve calorieën zijn toegestaan."
+              },
+              "description": "Optioneel. Verhoog het caloriedoel op actieve dagen, via een sensor of een automatisering.",
+              "name": "Actieve calorieën"
+            }
           },
           "title": "Persoon toevoegen"
         }

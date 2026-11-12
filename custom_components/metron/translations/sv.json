@@ -47,6 +47,12 @@
       },
       "entry_type": "Person",
       "error": {
+        "active_calories_missing": "Den här sensorn finns inte i Home Assistant. Välj en annan eller töm fältet.",
+        "active_calories_no_unit": "Den här sensorn har ingen enhet, så den kan inte läsas som kcal eller kJ. Välj en i kcal eller kJ, ge den en enhet med en mallsensor, eller logga den från en automation med åtgärden ”Logga aktiva kalorier”.",
+        "active_calories_running_total": "Den här sensorn visar {reading} kcal, mer än en dags aktivitet: den ser ut som en summa som aldrig nollställs. Gör en förbrukningsmätare (utility meter) av den med daglig cykel, eller logga varje dags summa från en automation med åtgärden ”Logga aktiva kalorier”. README visar båda.",
+        "active_calories_sensor_disabled": "En sensor läses bara medan aktiva kalorier är tillåtna. Kryssa i ”Tillåt aktiva kalorier” eller töm sensorn.",
+        "active_calories_unit": "Den här sensorn rapporterar {unit}, inte kcal eller kJ. Räkna om den med en mallsensor, eller logga den från en automation med åtgärden ”Logga aktiva kalorier”. README visar båda.",
+        "active_calories_unit_setting": "Den här sensorn visas i {unit}. Ändra dess enhet till kcal eller kJ i dess inställningar och skicka sedan igen.",
         "bad_line": "Rad {line} i {file} kunde inte läsas.",
         "bad_row": "Rad {row} den {day} kunde inte läsas.",
         "birth_date_future": "Födelsedatumet måste ligga bakåt i tiden.",
@@ -97,13 +103,32 @@
             "start_weight_lb": "Startvikt"
           },
           "data_description": {
-            "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt.",
+            "activity": "Hur aktiv en vanlig dag är. Med aktiva kalorier tillåtna sjunker målet aldrig under den här nivåns, och bara aktivitet utöver den läggs till.",
+            "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt. Med aktiva kalorier tillåtna läggs aktivitet utöver aktivitetsnivån till målet, vare sig det är inskrivet eller framräknat.",
             "carbs_pct": "Andel av kalorimålet från kolhydrater.",
             "fat_pct": "Andel av kalorimålet från fett.",
             "name": "Visas på korten och i sensorernas namn. Måste skilja sig från alla andra personers namn.",
             "person_entity": "Valfritt. Kort utan angiven person visar personen som är kopplad till den som är inloggad.",
             "protein_pct": "Andel av kalorimålet från protein. Protein, kolhydrater och fett måste bli 100 % tillsammans.",
             "sex": "Används med ålder, längd och vikt för att uppskatta hur många kalorier som förbrukas per dag."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Högst per dag",
+                "active_calories_enabled": "Tillåt aktiva kalorier",
+                "active_calories_entity": "Sensor (valfritt)",
+                "active_calories_share": "Räknad andel"
+              },
+              "data_description": {
+                "active_calories_cap": "Ett högre värde räknas bara upp till detta, och matdagboken säger det. Gäller bara medan aktiva kalorier är tillåtna.",
+                "active_calories_enabled": "Lägger till den aktivitet som en klocka eller telefon mäter utöver aktivitetsnivån till kalorimålet. Räknad andel, Högst per dag och Sensor gäller bara medan detta är ikryssat.",
+                "active_calories_entity": "Dagens aktiva kalorier i kcal eller kJ, från 0 varje dag, som ”Active calories” från Garmin Connect, inte ”Calories”, som även tar med kalorier som förbränns i vila. Ett värde i kJ räknas om till kcal. Lämna tomt för att i stället logga dem från en automation med åtgärden ”Logga aktiva kalorier”.",
+                "active_calories_share": "Hur mycket av det uppmätta värdet som räknas. Klockor brukar överskatta, så 75 % är en försiktig början. Gäller bara medan aktiva kalorier är tillåtna."
+              },
+              "description": "Valfritt. Höj kalorimålet på aktiva dagar, från en sensor eller en automation.",
+              "name": "Aktiva kalorier"
+            }
           },
           "title": "Ändra person"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "Startvikt"
           },
           "data_description": {
-            "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt.",
+            "activity": "Hur aktiv en vanlig dag är. Med aktiva kalorier tillåtna sjunker målet aldrig under den här nivåns, och bara aktivitet utöver den läggs till.",
+            "calorie_goal": "Lämna tomt för att använda målet som räknas fram ur uppgifterna ovan. Det följer varje ny vikt. Med aktiva kalorier tillåtna läggs aktivitet utöver aktivitetsnivån till målet, vare sig det är inskrivet eller framräknat.",
             "carbs_pct": "Andel av kalorimålet från kolhydrater.",
             "fat_pct": "Andel av kalorimålet från fett.",
             "name": "Visas på korten och i sensorernas namn. Måste skilja sig från alla andra personers namn.",
             "person_entity": "Valfritt. Kort utan angiven person visar personen som är kopplad till den som är inloggad.",
             "protein_pct": "Andel av kalorimålet från protein. Protein, kolhydrater och fett måste bli 100 % tillsammans.",
             "sex": "Används med ålder, längd och vikt för att uppskatta hur många kalorier som förbrukas per dag."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Högst per dag",
+                "active_calories_enabled": "Tillåt aktiva kalorier",
+                "active_calories_entity": "Sensor (valfritt)",
+                "active_calories_share": "Räknad andel"
+              },
+              "data_description": {
+                "active_calories_cap": "Ett högre värde räknas bara upp till detta, och matdagboken säger det. Gäller bara medan aktiva kalorier är tillåtna.",
+                "active_calories_enabled": "Lägger till den aktivitet som en klocka eller telefon mäter utöver aktivitetsnivån till kalorimålet. Räknad andel, Högst per dag och Sensor gäller bara medan detta är ikryssat.",
+                "active_calories_entity": "Dagens aktiva kalorier i kcal eller kJ, från 0 varje dag, som ”Active calories” från Garmin Connect, inte ”Calories”, som även tar med kalorier som förbränns i vila. Ett värde i kJ räknas om till kcal. Lämna tomt för att i stället logga dem från en automation med åtgärden ”Logga aktiva kalorier”.",
+                "active_calories_share": "Hur mycket av det uppmätta värdet som räknas. Klockor brukar överskatta, så 75 % är en försiktig början. Gäller bara medan aktiva kalorier är tillåtna."
+              },
+              "description": "Valfritt. Höj kalorimålet på aktiva dagar, från en sensor eller en automation.",
+              "name": "Aktiva kalorier"
+            }
           },
           "title": "Lägg till person"
         }
