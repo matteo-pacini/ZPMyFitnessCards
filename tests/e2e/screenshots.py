@@ -236,9 +236,9 @@ def shoot_dashboard(home: Home, browser: Browser, name: str) -> None:
     whole window: sections in three columns, on the sample data."""
     home.dashboard([])
     sections = [
-        [SUMMARY, TRENDS],
+        [SUMMARY, TRENDS, MEALS_CARD],
         [DIARY],
-        [WEIGHT, MEALS_CARD],
+        [WEIGHT, STREAK],
     ]
     view = {
         "title": "Food and weight",
@@ -251,7 +251,7 @@ def shoot_dashboard(home: Home, browser: Browser, name: str) -> None:
     page = signed_in(home, browser, width=1600, height=1240)
     page.add_init_script(SCANNER)
     page.goto(home.url + "/" + home.DASHBOARD + "/0")
-    for tag in ("summary", "trends", "food-diary", "weight", "meals"):
+    for tag in ("summary", "trends", "food-diary", "weight", "streak", "meals"):
         expect(page.locator(f"metron-{tag}-card .title").first).to_be_visible(timeout=30_000)
     page.locator('metron-trends-card [data-action="range"][data-range="30"]').click()
     page.locator('metron-weight-card [data-action="range"][data-range="365"]').click()
@@ -414,6 +414,7 @@ def search_open_food_facts(search: FakeSearch):
 
 
 def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None:
+    add_streak_data(sample)
     shoot_dashboard(sample, browser, "dashboard")
     shoot_editor(sample, browser, "card-editor")
     shoot(sample, browser, DIARY, "food-diary")
@@ -442,8 +443,6 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     shoot(sample, browser, DIARY, "food-diary-activity")
     shoot(sample, browser, SUMMARY, "summary-activity")
     shoot_person_form(sample, browser, "person-form-active-calories")
-    # Last too, so that the images before show Matteo with goals from today only.
-    add_streak_data(sample)
     shoot(sample, browser, STREAK, "streak")
     # The phone-*.png images come from scripts/phone-screenshots.
     taken = (p.name for p in IMAGES.glob("*.png") if not p.name.startswith("phone-"))
