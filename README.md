@@ -6,7 +6,7 @@
 
 A food diary and weight tracking for everyone in your home, inside Home Assistant.
 
-<img src="images/dashboard.png" alt="A Home Assistant dashboard with Metron's cards: today's summary and trends for Debora, her food diary, and Matteo's weight beside the saved meals">
+<img src="images/dashboard.png" alt="A Home Assistant dashboard with Metron's cards: today's summary and trends for Debora above the saved meals, her food diary, and Matteo's weight and streak">
 
 The name is Greek: **μέτρον** (*métron*), "measure", both what a thing is measured by and the right amount of it. *Μέτρον ἄριστον*, "measure is best", is a saying of Cleobulus of Lindos, one of the Seven Sages.
 
