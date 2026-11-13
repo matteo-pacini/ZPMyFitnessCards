@@ -11,7 +11,7 @@ from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 from custom_components.metron.goals import Goals
 
 from .conftest import mock_entry
-from .test_activity import anna
+from .test_activity import GARMIN, KCAL, anna
 from .test_services import added_on
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
@@ -400,6 +400,37 @@ async def test_answers_not_loaded_while_the_integration_is_unloaded(
     entry = hass.config_entries.async_entries("metron")[0]
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert await error(ws, "people") == "not_loaded"
+
+
+async def test_a_day_without_goals_of_its_own_has_the_last_day_s_base(
+    hass: HomeAssistant,
+    entry_data: dict[str, Any],
+    hass_ws_client: WebSocketGenerator,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    # A marathon on the 7th, then Home Assistant off for all of the 8th.
+    freezer.move_to("2026-11-07T12:00:00+00:00")
+    hass.states.async_set(GARMIN, "2400", KCAL)
+    entry = mock_entry(anna(), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    freezer.move_to("2026-11-09T12:00:00+00:00")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    client = await hass_ws_client(hass)
+
+    async def ask(type_: str, **fields: Any) -> Any:
+        await client.send_json_auto_id({"type": f"metron/{type_}", "person": "anna", **fields})
+        return (await client.receive_json())["result"]
+
+    marathon = {"kcal": 2624, "protein": 131.2, "carbs": 328.0, "fat": 87.5}
+    # 2,624 less the 1,255.83 activity added: the base, its macros scaled to it.
+    base = {"kcal": 1368, "protein": 68.4, "carbs": 171.0, "fat": 45.6}
+    assert (await ask("day", day="2026-11-08"))["goals"] == base
+    days = (await ask("days", start="2026-11-07", end="2026-11-09"))["days"]
+    assert [d["goals"] for d in days] == [marathon, base, base]
 
 
 async def test_a_day_has_activity_with_today_s_status_only(

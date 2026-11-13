@@ -193,6 +193,26 @@ def _shown(row: Mapping[str, Any], status: str | None) -> dict[str, Any]:
     return {**_unseen(row), **figures, "status": status}
 
 
+def _scaled(goals: g.Goals, kcal: float) -> g.Goals:
+    """`goals` for `kcal` instead, to the whole kcal, each macro scaled to match to 0.1 g."""
+    total = round(kcal)
+    macros = (goals.protein, goals.carbs, goals.fat)
+    return g.Goals(total, *(round(grams * total / goals.kcal, 1) for grams in macros))
+
+
+def _goals_shown(day: str, set_on: str, goals: g.Goals, added: float) -> g.Goals:
+    """The goals `day` shows, from `goals`, in force on it since `set_on`.
+
+    `added` is what activity added on `set_on`. A day with goals of its own
+    shows them. One without, such as a day Home Assistant didn't run on,
+    shows the base of `set_on`: its goals without that day's activity, which
+    isn't this day's.
+    """
+    if set_on == day or not added:
+        return goals
+    return _scaled(goals, goals.kcal - added)
+
+
 def _unseen(row: Mapping[str, Any] | None) -> dict[str, Any] | None:
     """An activity row without what nothing shows: the sensor's last reading."""
     return row and {key: value for key, value in row.items() if key != "last_reading"}
@@ -276,6 +296,43 @@ class FitnessData:
             return person.calorie_goal
         return g.suggested_calories(await self.async_burn(person, day), person.pace)
 
+    async def _in_force(self, person: Person, day: str) -> tuple[str, g.Goals, float] | None:
+        """The day the goals in force on `day` were set, those goals, and what activity added then.
+
+        None before the person's goals were first set.
+        """
+        found = await self._read(self.db.goal_in_force, person.key, day)
+        if found is None:
+            return None
+        set_on, goals = found
+        row = await self._read(self.db.activity, person.key, set_on)
+        return set_on, goals, row["added"] if row else 0.0
+
+    async def async_goal_on(self, person: Person, day: str) -> g.Goals | None:
+        """The goals `day` shows, as `_goals_shown` has them, or None before any were set."""
+        found = await self._in_force(person, day)
+        return None if found is None else _goals_shown(day, *found)
+
+    async def async_goals(
+        self, person: Person, start: date, end: date
+    ) -> dict[str, g.Goals | None]:
+        """The goals each day from `start` to `end` shows, by ISO day, as `async_goal_on`'s."""
+        changes = await self._read(self.db.goal_changes, person.key, end.isoformat())
+        first = max((d for d, _ in changes if d <= start.isoformat()), default=start.isoformat())
+        added = await self._read(self.db.activity_added, person.key, first, end.isoformat())
+        shown: dict[str, g.Goals | None] = {}
+        set_on, goals = "", None
+        pending = iter(changes)
+        upcoming = next(pending, None)
+        day = start
+        while day <= end:
+            key = day.isoformat()
+            while upcoming and upcoming[0] <= key:
+                (set_on, goals), upcoming = upcoming, next(pending, None)
+            shown[key] = goals and _goals_shown(key, set_on, goals, added.get(set_on, 0.0))
+            day += timedelta(days=1)
+        return shown
+
     @staticmethod
     def _goals(person: Person, kcal: float) -> g.Goals:
         """`kcal` to the whole kcal, split into grams of each macro to 0.1 g."""
@@ -330,7 +387,7 @@ class FitnessData:
             new = None if kept is None else await self._activity_row(person, day, kept)
             added = new["added"] if new else 0
             goals = self._goals(person, await self._base(person, day) + added)
-            current = await self._read(self.db.goal_on, key, iso)
+            current = await self.async_goal_on(person, iso)
             if new != row or goals != current:
                 await self.hass.async_add_executor_job(
                     self.db.set_day, key, iso, new, None if goals == current else goals
@@ -428,7 +485,8 @@ class FitnessData:
         force: it is on or after the first day the person's goals were set.
         Its goal keeps its base, the goals in force less what activity added
         on the day they were set, which may be an earlier day's. The next day
-        first gets a goals row of its own, so the change stops there.
+        first gets a goals row of its own with the goals it showed, so the
+        change stops there.
         """
         if day == today().isoformat():
 
@@ -449,11 +507,10 @@ class FitnessData:
             if new == old:
                 return
             old_added = old["added"] if old else 0.0
-            set_on, kept = await self._read(self.db.goal_in_force, person.key, day)
-            carried = await self._read(self.db.activity, person.key, set_on)
-            base = kept.kcal - (carried["added"] if carried else 0.0)
-            goals = self._goals(person, base + new["added"])
-            pin = (the_day + timedelta(days=1)).isoformat()
+            _set_on, kept, added = await self._in_force(person, day)
+            goals = self._goals(person, kept.kcal - added + new["added"])
+            next_day = (the_day + timedelta(days=1)).isoformat()
+            pin = next_day, await self.async_goal_on(person, next_day)
             await self.hass.async_add_executor_job(
                 self.db.set_day, person.key, day, new, goals, pin
             )

@@ -1126,11 +1126,6 @@ class Database:
 
     # Goals
 
-    def goal_on(self, person: str, day: str) -> Goals | None:
-        """The goals in force on `day`: the last ones set on or before it."""
-        found = self.goal_in_force(person, day)
-        return found and found[1]
-
     def goal_in_force(self, person: str, day: str) -> tuple[str, Goals] | None:
         """The day the goals in force on `day` were set, and those goals; or None."""
         row = self._one(
@@ -1146,6 +1141,18 @@ class Database:
         with self._db.connect() as conn:
             query = select(func.min(GOALS.c.day)).where(GOALS.c.person == person)
             return conn.execute(query).scalar()
+
+    def activity_added(self, person: str, start: str, end: str) -> dict[str, float]:
+        """What activity added to a person's goal, by day, from `start` to `end`.
+
+        Only days with activity are there.
+        """
+        rows = self._all(
+            select(ACTIVITY.c.day, ACTIVITY.c.added).where(
+                ACTIVITY.c.person == person, ACTIVITY.c.day.between(start, end)
+            )
+        )
+        return {row["day"]: row["added"] for row in rows}
 
     def goal_changes(self, person: str, end: str) -> list[tuple[str, Goals]]:
         """Each day up to `end` on which a person's goals were set, oldest first."""
@@ -1182,25 +1189,26 @@ class Database:
         day: str,
         activity: dict[str, Any] | None,
         goals: Goals | None = None,
-        pin: str | None = None,
+        pin: tuple[str, Goals] | None = None,
     ) -> None:
         """Set a person's activity on `day`, or delete it if None, and the day's goals if given.
 
-        All or nothing. With `pin`, a day after `day` that has goals in
-        force, `pin` first gets its own goals row if it has none: a copy of
-        those in force, so that `goals` stop before it.
+        All or nothing. `pin`, a later day and its goals, first gives that
+        day a goals row of its own with them, unless it has one, so that
+        `goals` stop before it.
         """
         with self._db.begin() as conn:
             if pin is not None:
-                in_force = conn.execute(
-                    select(GOALS)
-                    .where(GOALS.c.person == person, GOALS.c.day <= pin)
-                    .order_by(GOALS.c.day.desc())
-                    .limit(1)
-                ).one()
-                if in_force.day != pin:
-                    kept = Goals(in_force.kcal, in_force.protein, in_force.carbs, in_force.fat)
-                    self._set_goal(conn, person, pin, kept)
+                pin_day, kept = pin
+                insert_new = self._insert(GOALS).values(
+                    person=person,
+                    day=pin_day,
+                    kcal=kept.kcal,
+                    protein=kept.protein,
+                    carbs=kept.carbs,
+                    fat=kept.fat,
+                )
+                conn.execute(insert_new.on_conflict_do_nothing(index_elements=["person", "day"]))
             if activity is None:
                 conn.execute(
                     delete(ACTIVITY).where(ACTIVITY.c.person == person, ACTIVITY.c.day == day)

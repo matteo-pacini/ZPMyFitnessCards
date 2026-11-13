@@ -12,7 +12,7 @@ import math
 import re
 from collections.abc import Callable
 from dataclasses import asdict
-from datetime import date, timedelta
+from datetime import date
 from typing import Any
 
 from homeassistant.components import websocket_api
@@ -256,11 +256,12 @@ def ws_subscribe(
 async def ws_day(data: FitnessData, person: Person, msg: dict) -> dict:
     """A person's day: entries, goals, weight and activity.
 
-    `goals` include what activity added. `activity` is FitnessData.async_activity's.
+    `goals` are FitnessData.async_goal_on's: with what activity added that
+    day. `activity` is FitnessData.async_activity's.
     """
     day = msg["day"]
     entries = await data.async_read(data.db.day_entries, person.key, day)
-    goals = await data.async_read(data.db.goal_on, person.key, day)
+    goals = await data.async_goal_on(person, day)
     weight = await data.async_read(data.db.weights, person.key, day, day)
     return {
         "day": day,
@@ -280,33 +281,26 @@ async def ws_day(data: FitnessData, person: Person, msg: dict) -> dict:
     }
 )
 async def ws_days(data: FitnessData, person: Person, msg: dict) -> dict | _Error:
-    """Totals by meal, goals and weight for each day from start to end."""
+    """Totals by meal, goals and weight for each day from start to end.
+
+    Each day's goals are as metron/day gives them.
+    """
     start, end = date.fromisoformat(msg["start"]), date.fromisoformat(msg["end"])
     if not 0 <= (end - start).days < MAX_RANGE:
         return _Error("invalid_range", f"end must be on or after start, within {MAX_RANGE} days")
     meals = await data.async_read(data.db.meal_totals, person.key, msg["start"], msg["end"])
     weights = await data.async_read(data.db.weights, person.key, msg["start"], msg["end"])
-    changes = await data.async_read(data.db.goal_changes, person.key, msg["end"])
-    days = []
-    goals = None
-    pending = iter(changes)
-    upcoming = next(pending, None)
+    goals = await data.async_goals(person, start, end)
     weight_by_day = {w["day"]: w["kg"] for w in weights}
-    day = start
-    while day <= end:
-        key = day.isoformat()
-        while upcoming and upcoming[0] <= key:
-            goals = upcoming[1]
-            upcoming = next(pending, None)
-        days.append(
-            {
-                "day": key,
-                "meals": meals.get(key, {}),
-                "goals": asdict(goals) if goals else None,
-                "weight_kg": weight_by_day.get(key),
-            }
-        )
-        day += timedelta(days=1)
+    days = [
+        {
+            "day": key,
+            "meals": meals.get(key, {}),
+            "goals": asdict(day_goals) if day_goals else None,
+            "weight_kg": weight_by_day.get(key),
+        }
+        for key, day_goals in goals.items()
+    ]
     return {"days": days}
 
 

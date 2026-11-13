@@ -132,6 +132,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
             state = hass.states.get(sensor)
             await data.async_sensor_reading(coordinator.person, state, state)
         await coordinator.async_refresh()
+        # Today shows yesterday's base until something changes it, so its goals
+        # may need no write: tell the cards all the same.
+        async_dispatcher_send(hass, SIGNAL_CHANGED, coordinator.person.key, set())
 
     @callback
     def midnight(_now: datetime) -> None:

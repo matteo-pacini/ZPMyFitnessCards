@@ -163,9 +163,9 @@ def test_goals_hold_until_the_next_change(db: Database) -> None:
     first, second = Goals(1800, 90, 225, 60), Goals(1700, 85, 212.5, 56.7)
     db.set_day("p", "2026-11-01", None, first)
     db.set_day("p", "2026-11-05", None, second)
-    assert db.goal_on("p", "2026-10-31") is None
-    assert db.goal_on("p", "2026-11-04") == first
-    assert db.goal_on("p", "2026-11-09") == second
+    assert db.goal_in_force("p", "2026-10-31") is None
+    assert db.goal_in_force("p", "2026-11-04") == ("2026-11-01", first)
+    assert db.goal_in_force("p", "2026-11-09") == ("2026-11-05", second)
     assert db.goal_changes("p", "2026-11-04") == [("2026-11-01", first)]
 
 
@@ -185,20 +185,21 @@ ROW = {
 def test_sets_a_day_s_activity_with_its_goals_all_at_once(db: Database) -> None:
     before, after = Goals(1368, 68.4, 171, 45.6), Goals(1804, 90.2, 225.5, 60.1)
     db.set_day("p", "2026-11-01", None, before)
-    db.set_day("p", "2026-11-05", ROW, after, pin="2026-11-06")
+    db.set_day("p", "2026-11-05", ROW, after, pin=("2026-11-06", before))
     assert db.activity("p", "2026-11-05") == ROW
     assert db.activity("q", "2026-11-05") is None
-    # The next day was pinned to the goals in force on it, so the change
-    # stops there.
+    # The next day was pinned to the goals it showed, so the change stops there.
     assert db.goal_changes("p", "2026-11-09") == [
         ("2026-11-01", before),
         ("2026-11-05", after),
         ("2026-11-06", before),
     ]
+    assert db.activity_added("p", "2026-11-01", "2026-11-09") == {"2026-11-05": 435.8}
+    assert db.activity_added("p", "2026-11-06", "2026-11-09") == {}
 
     # Again, with a day that already has goals of its own to pin: it keeps them.
     lower = Goals(1504, 75.2, 188, 50.1)
-    db.set_day("p", "2026-11-05", ROW | {"measured": 500}, lower, pin="2026-11-06")
+    db.set_day("p", "2026-11-05", ROW | {"measured": 500}, lower, pin=("2026-11-06", lower))
     assert db.activity("p", "2026-11-05")["measured"] == 500
     assert db.goal_changes("p", "2026-11-09")[1:] == [
         ("2026-11-05", lower),
@@ -208,7 +209,7 @@ def test_sets_a_day_s_activity_with_its_goals_all_at_once(db: Database) -> None:
     # Without goals, only the activity; None deletes it.
     db.set_day("p", "2026-11-05", None)
     assert db.activity("p", "2026-11-05") is None
-    assert db.goal_on("p", "2026-11-05") == lower
+    assert db.goal_in_force("p", "2026-11-05") == ("2026-11-05", lower)
 
 
 def test_remembers_removed_people_by_name(db: Database) -> None:
@@ -247,7 +248,7 @@ def test_deletes_everything_for_one_person(db: Database) -> None:
     db.delete_person("p")
     assert db.day_entries("p", "2026-11-09") == []
     assert db.latest_weight("p", "2026-11-09") is None
-    assert db.goal_on("p", "2026-11-09") is None
+    assert db.goal_in_force("p", "2026-11-09") is None
     assert db.activity("p", "2026-11-09") is None
     assert db.activity("q", "2026-11-09") == ROW
     assert key_for_name(db.url, "P", exclude=[]) is None

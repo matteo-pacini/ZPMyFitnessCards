@@ -513,7 +513,8 @@ async def test_h6_a_past_day_with_goals_carried_from_an_earlier_day_keeps_its_ba
     data = entry.runtime_data.data
     set_on = [d for d, _ in await data.async_read(data.db.goal_changes, "anna", "2026-11-09")]
     assert "2026-11-08" not in set_on
-    assert (await anna_s_day(hass, "2026-11-08"))["goals"]["kcal"] == seventh
+    # Not the 7th's activity: the 7th's base.
+    assert (await anna_s_day(hass, "2026-11-08"))["goals"]["kcal"] == BASE
 
     await log_active(hass, 500, day="2026-11-08")
     day = await anna_s_day(hass, "2026-11-08")

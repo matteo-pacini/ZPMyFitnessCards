@@ -240,7 +240,7 @@ async def _get_day(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     """
     data, person, day = _target(hass, call)
     entries = await data.async_read(data.db.day_entries, person.key, day)
-    goals = await data.async_read(data.db.goal_on, person.key, day)
+    goals = await data.async_goal_on(person, day)
     weight = await data.async_read(data.db.weights, person.key, day, day)
     kg = weight[0]["kg"] if weight else None
     unit = _weight_unit(hass)
