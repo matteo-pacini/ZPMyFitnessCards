@@ -365,7 +365,8 @@ def test_the_streak_card_keeps_its_calendar_through_a_failed_refresh(
                 "kcal": 300,
             }
         )
-        page.wait_for_timeout(500)
+        # The change's refresh failed, and so did the reload it falls back to.
+        page.wait_for_function("document.getElementById('mounted')._failure", timeout=TIMEOUT)
         # It keeps what it showed, and keeps trying.
         expect(card.locator(".cal")).to_be_visible()
         expect(card.locator(".error")).to_have_count(0)
