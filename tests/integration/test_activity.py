@@ -210,6 +210,20 @@ async def test_e1_after_midnight_a_reading_from_before_does_not_count(
     assert (await day(TOMORROW))["activity"] == figures(50, 40, 0, "level")
 
 
+async def test_e1_a_reading_that_last_changed_before_midnight_does_not_count(
+    hass: HomeAssistant, set_up, day, freezer: FrozenDateTimeFactory
+) -> None:
+    # Before Metron ran, so there is no figure from yesterday to equal.
+    freezer.move_to(f"{YESTERDAY}T23:00:00+00:00")
+    await reading(hass, 906)
+    freezer.move_to(f"{TODAY}T12:00:00+00:00")
+    await set_up(anna())
+    assert (await day())["activity"] == figures(None, 0, 0, "waiting")
+    # Its attributes change, but not its state: still yesterday's reading.
+    await reading(hass, 906, friendly_name="Garmin Connect Active calories")
+    assert (await day())["activity"] == figures(None, 0, 0, "waiting")
+
+
 async def test_e2_after_a_restart_past_midnight_yesterday_s_figure_does_not_count(
     hass: HomeAssistant, set_up, day, freezer: FrozenDateTimeFactory
 ) -> None:

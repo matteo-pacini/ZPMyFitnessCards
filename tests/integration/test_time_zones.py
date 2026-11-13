@@ -175,6 +175,26 @@ async def test_history_is_imported_on_the_local_day_it_was_recorded(
     }
 
 
+async def test_e1_a_reading_from_before_local_midnight_does_not_count(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    entry_data: dict,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    # 20:00 on the 8th here, though already the 9th in UTC.
+    freezer.move_to("2026-11-09T04:00:00+00:00")
+    hass.states.async_set(GARMIN, "906", KCAL)
+    freezer.move_to(EVENING)
+    entry = mock_entry(anna(), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "metron/day", "person": "anna", "day": "2026-11-09"})
+    activity = (await client.receive_json())["result"]["activity"]
+    assert (activity["measured"], activity["status"]) == (None, "waiting")
+
+
 async def test_e1_active_calories_count_from_local_midnight(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,
