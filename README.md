@@ -12,7 +12,7 @@ The name is Greek: **μέτρον** (*métron*), "measure", both what a thing is
 
 Metron is a Home Assistant integration with its own dashboard cards. You log each food you eat by weight and meal, and your weight once a day. The integration keeps every entry in an SQLite database in your configuration folder, and exposes daily calories, macros and weight as sensors.
 
-It is in early development. The integration, its sensors, all six cards and barcodes work.
+It is in early development. The integration, its sensors, all seven cards and barcodes work.
 
 ## Install
 
@@ -457,9 +457,25 @@ navigation_path: /dashboard-meds/debora
 | --- | --- |
 | `navigation_path` | Optional. A dashboard path to open when the card is tapped, such as the dashboard with the full diary. |
 
-The weight, trends and summary cards take the same `person`, `title` and `locale` options as the food diary card.
+### Streak card
 
-All five cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
+One person's days in a row on their calorie goal. The head gives today's calories left or over, the current streak, and the best run in the last 30 days. Below it, a calendar of the last 30 days, Monday first, joins each run of good days into a bar, and rings today. The foot counts the good days in those 30.
+
+- A good day has food logged, and calories at or under that day's goal, [active calories](#active-calories) included. It is the rule the trends card's days on goal use.
+- A past day over its goal breaks the streak, and so does a past day with nothing logged. The calendar marks over days apart from days with nothing logged; each day's title, and the calendar's label for screen readers, say which.
+- Today does not break the streak while it is at or under goal, logged or not. It joins the streak after midnight. Once today is over its goal, the streak is 0.
+- The streak counts back as far as 400 days. Days before the person's goals were first recorded end it, and show faded.
+
+<img src="images/streak.png" alt="Streak: an 8-day streak, with days over goal and days with nothing logged in the calendar" width="400">
+
+```yaml
+type: custom:metron-streak-card
+person: Matteo
+```
+
+The weight, trends, summary and streak cards take the same `person`, `title` and `locale` options as the food diary card.
+
+All seven cards come in English, German, Spanish, French, Italian, Dutch, Polish, Portuguese, Brazilian Portuguese, Swedish and Simplified Chinese.
 
 ### In the Home Assistant app
 

@@ -12,8 +12,11 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from playwright.sync_api import Browser, Page, expect
+from sqlalchemy import MetaData, Table, update
 
-from .active_calories import WATCH, change_person, settled
+from custom_components.metron.db import make_engine
+
+from .active_calories import WATCH, change_person, person_key, settled
 from .conftest import REPO, FakeSearch, Home
 from .test_editor import choose, pick_card
 
@@ -148,6 +151,50 @@ def allow_active_calories(home: Home) -> None:
     settled(home, "Debora", lambda activity: activity is not None and activity["measured"] == 906)
 
 
+# Matteo's days for the streak card, counted back from today: dinner on goal,
+# but for two days over and two with nothing logged, so the card has a live
+# streak, and breakfast today.
+STREAK_DAYS = 35
+STREAK_OVER = (9, 17)
+STREAK_UNLOGGED = (12, 24)
+
+
+def add_streak_data(home: Home) -> None:
+    """Give Matteo goals since before the streak card's window, and his meals.
+
+    The integration only ever sets today's goals, so his past days get goals
+    by moving his one goals row back, in the database itself.
+    """
+    matteo = person_key(home, "Matteo")
+    today = datetime.now(ZoneInfo("Europe/London")).date()
+    engine = make_engine(home.db_url)
+    try:
+        goals = Table("goals", MetaData(), autoload_with=engine)
+        since = (today - timedelta(days=STREAK_DAYS + 5)).isoformat()
+        with engine.begin() as conn:
+            moved = conn.execute(update(goals).where(goals.c.person == matteo).values(day=since))
+            assert moved.rowcount == 1
+    finally:
+        engine.dispose()
+    for n in range(STREAK_DAYS + 1):
+        if n in STREAK_UNLOGGED:
+            continue
+        kcal = 650 if n == 0 else 2900 if n in STREAK_OVER else 1500 + (n * 53) % 300
+        home.ws(
+            {
+                "type": "metron/entry/add",
+                "person": matteo,
+                "day": (today - timedelta(days=n)).isoformat(),
+                "meal": "breakfast" if n == 0 else "dinner",
+                "name": "Sample",
+                "kcal": kcal,
+                "protein": kcal * 0.05,
+                "carbs": kcal * 0.12,
+                "fat": kcal * 0.035,
+            }
+        )
+
+
 def signed_in(home: Home, browser: Browser, *, dark=False, width=480, height=1400) -> Page:
     """A page in a new context, signed in to `home`. Close its context when done."""
     context = browser.new_context(
@@ -266,6 +313,7 @@ MEALS_CARD = {"type": "custom:metron-meals-card"}
 WEIGHT = {"type": "custom:metron-weight-card", "person": "Matteo"}
 TRENDS = {"type": "custom:metron-trends-card", "person": "Debora"}
 SUMMARY = {"type": "custom:metron-summary-card", "person": "Debora"}
+STREAK = {"type": "custom:metron-streak-card", "person": "Matteo"}
 
 
 def look_up_barcode(card) -> None:
@@ -404,6 +452,9 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     shoot(sample, browser, DIARY, "food-diary-activity")
     shoot(sample, browser, SUMMARY, "summary-activity")
     shoot_person_form(sample, browser, "person-form-active-calories")
+    # Last too, so that the images before show Matteo with goals from today only.
+    add_streak_data(sample)
+    shoot(sample, browser, STREAK, "streak")
     # The phone-*.png images come from scripts/phone-screenshots.
     taken = (p.name for p in IMAGES.glob("*.png") if not p.name.startswith("phone-"))
     assert sorted(taken) == sorted(
@@ -430,5 +481,6 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
             "food-diary-activity",
             "summary-activity",
             "person-form-active-calories",
+            "streak",
         )
     )
