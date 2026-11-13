@@ -21,9 +21,11 @@ from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
+from time import monotonic
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Locator, Page, expect
 from sqlalchemy import MetaData, Table, update
 
@@ -363,14 +365,39 @@ def section_settled(dialog: Locator) -> None:
 
     It opens over 0.3 s, and clips what it holds until then.
     """
-    panel = dialog.locator("ha-form-expandable ha-expansion-panel").element_handle()
-    dialog.page.wait_for_function(
-        """(panel) => {
-          const box = panel.shadowRoot.querySelector(".container");
-          return panel.expanded && !box.style.height && getComputedStyle(box).overflow !== "hidden";
-        }""",
-        arg=panel,
+    panel = dialog.locator("ha-form-expandable ha-expansion-panel")
+    settled = """(panel) => {
+      const box = panel.shadowRoot.querySelector(".container");
+      return panel.isConnected && panel.expanded && !box.style.height
+        && getComputedStyle(box).overflow !== "hidden";
+    }"""
+    until_right(
+        dialog.page,
+        lambda: [] if panel.evaluate(settled, timeout=1000) else ["still opening"],
+        "The Active calories section didn't finish opening",
     )
+
+
+def until_right(page: Page, check: Callable[[], list[str]], what: str) -> None:
+    """Try `check`, which lists what is wrong, until it lists nothing, for TIMEOUT.
+
+    A card or form can draw again at any moment, as a push or a new hass
+    arrives, so an element found a moment ago may be detached by the time
+    it is read. Each try finds its elements again, and one that fails that
+    way is tried again. If the time runs out, the failure gives the last
+    try's problems.
+    """
+    deadline = monotonic() + TIMEOUT / 1000
+    while True:
+        try:
+            problems = check()
+        except PlaywrightError as err:
+            problems = [err.message.splitlines()[0]]
+        if not problems:
+            return
+        if monotonic() > deadline:
+            raise AssertionError(f"{what}: {problems}")
+        page.wait_for_timeout(100)
 
 
 def tick(s: Screen, dialog: Locator) -> None:
@@ -386,7 +413,11 @@ def pick(s: Screen, dialog: Locator, chosen: Sensor) -> None:
     try:
         expect(search).to_be_visible(timeout=TIMEOUT)
     except AssertionError as err:
-        raise AssertionError(f"The sensor picker did not open: {field.evaluate(PICKER)}") from err
+        try:
+            state = field.evaluate(PICKER, timeout=1000)
+        except PlaywrightError as unread:
+            state = unread.message.splitlines()[0]
+        raise AssertionError(f"The sensor picker did not open: {state}") from err
     s.type(search, chosen.name)
     s.tap(dialog.locator("ha-picker-combo-box ha-combo-box-item", has_text=chosen.name))
 
@@ -419,7 +450,15 @@ def expect_refused(dialog: Locator, error: str) -> None:
     alert = dialog.locator("ha-alert")
     expect(alert).to_have_text(error, timeout=TIMEOUT)
     section = dialog.locator("ha-form-expandable")
-    assert alert.bounding_box()["y"] < section.bounding_box()["y"]
+
+    def above() -> list[str]:
+        error_box = alert.bounding_box(timeout=1000)
+        section_box = section.bounding_box(timeout=1000)
+        if error_box and section_box and error_box["y"] < section_box["y"]:
+            return []
+        return [f"the error at {error_box}, the section at {section_box}"]
+
+    until_right(dialog.page, above, "The error isn't above the Active calories section")
 
 
 # Errors, as the person form and the action word them
@@ -761,9 +800,12 @@ def e7_a_typed_goal(s: Screen) -> None:
     expect_summary(summary, "325", "2,036", "436", "1,711")
 
 
-# What must stay on one line and inside a 300 px card, in German.
+# What must stay on one line and inside a 300 px card, in German, read from
+# the card's element in one go: the card may draw its body again meanwhile.
 FITS = """
-(sum) => {
+(host) => {
+  const sum = host.shadowRoot.querySelector(".summary");
+  if (!host.isConnected || !sum) return ["no sum"];
   const card = sum.closest("ha-card");
   const line = card.querySelector(".body > .activity");
   const lines = (el) => {
@@ -807,7 +849,7 @@ def e8_german_on_a_narrow_card(s: Screen) -> None:
         card.evaluate("el => { el.style.display = 'block'; el.style.width = '300px'; }")
         expect_line(card, line)
         expect_sum(card, *figures)
-        assert card.locator(".summary").evaluate(FITS) == []
+        until_right(s.page, lambda: card.evaluate(FITS, timeout=1000), "Doesn't fit 300 px")
 
     def measured(name: str, kcal: str) -> str:
         return f"{name} hat {kcal} kcal gemessen."
