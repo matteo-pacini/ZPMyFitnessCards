@@ -24,7 +24,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from playwright.sync_api import Locator, expect
+from playwright.sync_api import Locator, Page, expect
 from sqlalchemy import MetaData, Table, update
 
 from custom_components.metron.db import make_engine
@@ -236,21 +236,41 @@ class Sensor:
     entity_id: str
     name: str
     attributes: dict[str, Any]
+    # The state last posted, or None once deleted.
+    state: str | None = None
 
     def post(self, state: float | str, **attributes: Any) -> None:
         """Set its state, as its integration would."""
         body = {"friendly_name": self.name, **self.attributes, **attributes}
+        self.state = str(state)
         self.home.api(
-            "POST", f"/api/states/{self.entity_id}", {"state": str(state), "attributes": body}
+            "POST", f"/api/states/{self.entity_id}", {"state": self.state, "attributes": body}
         )
 
     def delete(self) -> None:
         """Remove it from Home Assistant, as deleting or renaming it would."""
+        self.state = None
         try:
             self.home.api("DELETE", f"/api/states/{self.entity_id}")
         except urllib.error.HTTPError as err:
             if err.code != 404:
                 raise
+
+
+def in_page(page: Page, *sensors: Sensor) -> None:
+    """Wait until the page's Home Assistant has each of `sensors` as last posted or deleted.
+
+    A change through the REST API reaches the frontend over its websocket a
+    moment after the call returns. A card mounted with mount() keeps the
+    states it was given, and names a sensor it can't find by its entity ID.
+    """
+    page.wait_for_function(
+        """(expected) => {
+          const states = document.querySelector("home-assistant").hass.states;
+          return expected.every(([id, state]) => (states[id]?.state ?? null) === state);
+        }""",
+        arg=[[x.entity_id, x.state] for x in sensors],
+    )
 
 
 def sensor(
@@ -335,7 +355,22 @@ def change_details(s: Screen, name: str) -> Locator:
 def open_section(s: Screen, dialog: Locator) -> None:
     """Open the Active calories section, which starts closed while the box is unticked."""
     s.tap(dialog.get_by_text("Active calories", exact=True))
-    expect(dialog.get_by_label("Allow active calories")).to_be_visible()
+    section_settled(dialog)
+
+
+def section_settled(dialog: Locator) -> None:
+    """Wait until the Active calories section is open and done opening.
+
+    It opens over 0.3 s, and clips what it holds until then.
+    """
+    panel = dialog.locator("ha-form-expandable ha-expansion-panel").element_handle()
+    dialog.page.wait_for_function(
+        """(panel) => {
+          const box = panel.shadowRoot.querySelector(".container");
+          return panel.expanded && !box.style.height && getComputedStyle(box).overflow !== "hidden";
+        }""",
+        arg=panel,
+    )
 
 
 def tick(s: Screen, dialog: Locator) -> None:
@@ -344,9 +379,31 @@ def tick(s: Screen, dialog: Locator) -> None:
 
 def pick(s: Screen, dialog: Locator, chosen: Sensor) -> None:
     """Choose `chosen` in the Sensor field, searching for it by name."""
-    s.tap(dialog.locator('ha-picker-field[aria-label="Sensor (optional)"]'))
-    s.type(dialog.locator("ha-picker-combo-box ha-input-search input"), chosen.name)
+    section_settled(dialog)
+    field = dialog.locator('ha-picker-field[aria-label="Sensor (optional)"]')
+    search = dialog.locator("ha-picker-combo-box ha-input-search input")
+    s.tap(field)
+    try:
+        expect(search).to_be_visible(timeout=TIMEOUT)
+    except AssertionError as err:
+        raise AssertionError(f"The sensor picker did not open: {field.evaluate(PICKER)}") from err
+    s.type(search, chosen.name)
     s.tap(dialog.locator("ha-picker-combo-box ha-combo-box-item", has_text=chosen.name))
+
+
+# The state of the frontend's entity picker around a ha-picker-field, to say
+# why it didn't open.
+PICKER = """(field) => {
+  const picker = field.getRootNode().host;
+  return {
+    opening: picker._pickerWrapperOpen,
+    opened: picker._opened,
+    disabled: picker.disabled,
+    bottomSheet: picker._openedNarrow,
+    popoverOpen: picker.shadowRoot.querySelector("wa-popover")?.open ?? null,
+    comboBoxDefined: !!customElements.get("ha-picker-combo-box"),
+  };
+}"""
 
 
 def submit(s: Screen, dialog: Locator) -> None:
@@ -745,6 +802,7 @@ def e8_german_on_a_narrow_card(s: Screen) -> None:
     open_home(s.home, s.page)
 
     def fits(line: str, *figures: str) -> None:
+        in_page(s.page, old, new)
         card = mount(s.page, "metron-food-diary-card", {"person": anna, "locale": "de"})
         card.evaluate("el => { el.style.display = 'block'; el.style.width = '300px'; }")
         expect_line(card, line)

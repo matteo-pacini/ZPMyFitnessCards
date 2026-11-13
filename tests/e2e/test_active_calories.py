@@ -90,3 +90,30 @@ def test_active_calories_units_in_the_person_form(home: Home, page: Page, unit: 
     finally:
         remove_person(home, name)
         home.api("DELETE", f"/api/states/{entity_id}")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "The diary names the sensor from the states it had when it last drew, and draws again "
+        "only when Metron's data changes (src/cards/person-card.js, ShowsPerson's set hass), "
+        "so a renamed sensor keeps its old name until its next reading"
+    ),
+)
+def test_the_line_follows_a_renamed_sensor(home: Home, page: Page) -> None:
+    s = ac.Screen(home, page, "laptop", opener(home, page), flows.OpenFoodFacts())
+    with s.cleanup:
+        watch = ac.sensor(s, "Garmin Active calories rename", ac.WATCH, 500)
+        anna = ac.add_person(s, ac.ANNA, "rename", enabled=True, sensor=watch)
+        diary, _summary = ac.open_cards(s, anna)
+        line = diary.locator(".body > .activity")
+        expect(line).to_contain_text(f"{watch.name} measured 500 kcal.", timeout=TIMEOUT)
+        # The same reading, under the name given in the sensor's settings.
+        watch.name = "Anna's rename watch"
+        watch.post(500)
+        page.wait_for_function(
+            "([id, name]) => document.querySelector('home-assistant').hass.states[id]"
+            "?.attributes.friendly_name === name",
+            arg=[watch.entity_id, watch.name],
+        )
+        expect(line).to_contain_text(f"{watch.name} measured 500 kcal.", timeout=5_000)
