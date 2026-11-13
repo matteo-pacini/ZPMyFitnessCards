@@ -112,6 +112,7 @@ def test_upgrades_the_old_database_and_the_cards_show_its_data(
     assert version(old_home.db_url) == LATEST
     assert "source" in layout(old_home.db_url)["entries"]
     assert {"measured", "last_reading"} <= set(layout(old_home.db_url)["activity"])
+    assert "allowed" in layout(old_home.db_url)["goals"]
     assert config_entry(old_home)["state"] == "loaded"
     assert day(old_home, "Matteo", today()) == OLD_ENTRIES
     assert day(old_home, "Debora", today()) == OLD_ENTRIES

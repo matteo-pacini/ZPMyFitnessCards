@@ -270,8 +270,13 @@ def _schema_v5() -> MetaData:
     `last_reading` is the sensor's last reading that counted for the day,
     in kcal, or NULL if none did; it differs from `measured` once the
     action set the figure.
+
+    Each goals row also gets `allowed`: the kcal of activity the person's
+    activity level allowed for when it was set, at that day's weight and
+    age, or NULL for goals set before this version.
     """
     metadata = _schema_v4()
+    metadata.tables["goals"].append_column(Column("allowed", Float))
     Table(
         "activity",
         metadata,
@@ -319,7 +324,12 @@ def _migrate_to_v4(conn: Connection) -> None:
 
 
 def _migrate_to_v5(conn: Connection) -> None:
-    _schema_v5().tables["activity"].create(conn)
+    schema = _schema_v5()
+    schema.tables["activity"].create(conn)
+    allowed = schema.tables["goals"].c.allowed
+    conn.execute(
+        DDL(f"ALTER TABLE goals ADD COLUMN {CreateColumn(allowed).compile(dialect=conn.dialect)}")
+    )
 
 
 # Each entry upgrades the schema by one version; schema_version holds the
@@ -1126,15 +1136,29 @@ class Database:
 
     # Goals
 
-    def goal_in_force(self, person: str, day: str) -> tuple[str, Goals] | None:
-        """The day the goals in force on `day` were set, and those goals; or None."""
+    def goal_in_force(self, person: str, day: str) -> tuple[str, Goals, float | None] | None:
+        """The goals in force on `day`, or None.
+
+        As (the day they were set, the goals, what the activity level
+        allowed for then, which is None for goals set before version 5).
+        """
         row = self._one(
-            select(GOALS.c.day, GOALS.c.kcal, GOALS.c.protein, GOALS.c.carbs, GOALS.c.fat)
+            select(
+                GOALS.c.day,
+                GOALS.c.allowed,
+                GOALS.c.kcal,
+                GOALS.c.protein,
+                GOALS.c.carbs,
+                GOALS.c.fat,
+            )
             .where(GOALS.c.person == person, GOALS.c.day <= day)
             .order_by(GOALS.c.day.desc())
             .limit(1)
         )
-        return (row.pop("day"), Goals(**row)) if row else None
+        if row is None:
+            return None
+        day, allowed = row.pop("day"), row.pop("allowed")
+        return day, Goals(**row), allowed
 
     def first_goal_day(self, person: str) -> str | None:
         """The first day a person's goals were set, or None if they never were."""
@@ -1163,12 +1187,15 @@ class Database:
         )
         return [(row.pop("day"), Goals(**row)) for row in rows]
 
-    def _set_goal(self, conn: Connection, person: str, day: str, goals: Goals) -> None:
+    def _set_goal(
+        self, conn: Connection, person: str, day: str, goals: Goals, allowed: float | None
+    ) -> None:
         values = {
             "kcal": goals.kcal,
             "protein": goals.protein,
             "carbs": goals.carbs,
             "fat": goals.fat,
+            "allowed": allowed,
         }
         upsert = self._insert(GOALS).values(person=person, day=day, **values)
         conn.execute(upsert.on_conflict_do_update(index_elements=["person", "day"], set_=values))
@@ -1189,17 +1216,19 @@ class Database:
         day: str,
         activity: dict[str, Any] | None,
         goals: Goals | None = None,
-        pin: tuple[str, Goals] | None = None,
+        allowed: float | None = None,
+        pin: tuple[str, Goals, float | None] | None = None,
     ) -> None:
         """Set a person's activity on `day`, or delete it if None, and the day's goals if given.
 
-        All or nothing. `pin`, a later day and its goals, first gives that
-        day a goals row of its own with them, unless it has one, so that
-        `goals` stop before it.
+        All or nothing. `allowed` goes with `goals`: what the activity level
+        allowed for. `pin`, a later day with its goals and allowance, first
+        gives that day a goals row of its own with them, unless it has one,
+        so that `goals` stop before it.
         """
         with self._db.begin() as conn:
             if pin is not None:
-                pin_day, kept = pin
+                pin_day, kept, kept_allowed = pin
                 insert_new = self._insert(GOALS).values(
                     person=person,
                     day=pin_day,
@@ -1207,6 +1236,7 @@ class Database:
                     protein=kept.protein,
                     carbs=kept.carbs,
                     fat=kept.fat,
+                    allowed=kept_allowed,
                 )
                 conn.execute(insert_new.on_conflict_do_nothing(index_elements=["person", "day"]))
             if activity is None:
@@ -1219,4 +1249,4 @@ class Database:
                     upsert.on_conflict_do_update(index_elements=["person", "day"], set_=activity)
                 )
             if goals is not None:
-                self._set_goal(conn, person, day, goals)
+                self._set_goal(conn, person, day, goals, allowed)

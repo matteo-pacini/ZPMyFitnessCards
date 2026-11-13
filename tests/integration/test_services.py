@@ -21,7 +21,7 @@ from custom_components.metron.const import DOMAIN
 from custom_components.metron.schema import vol
 
 from .conftest import mock_entry, person
-from .test_activity import BASE, GARMIN, anna, figures, reading
+from .test_activity import ALLOWED, BASE, GARMIN, anna, figures, reading
 from .test_translations import ENGLISH
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
@@ -650,11 +650,50 @@ async def test_h6_a_past_day_keeps_the_settings_it_had(
     # Its base and its split: 20% protein, 50% carbs, 30% fat.
     assert day["goals"] == {"kcal": 1804, "protein": 90.2, "carbs": 225.5, "fat": 60.1}
 
-    # A day with no activity yet has only today's settings to go by.
+    # A day with no activity yet keeps the level its goals had, Light's, and
+    # takes today's share and cap.
     await log_active(hass, 906, day="2026-11-07")
     activity = (await anna_s_day(hass, "2026-11-07"))["activity"]
-    assert activity["allowed"] == pytest.approx(1395.25 * 0.35, abs=0.005)
+    assert activity["allowed"] == ALLOWED
     assert (activity["share"], activity["cap"], activity["counted"]) == (50, 300, 300)
+
+
+@pytest.mark.parametrize("level", ["sedentary", "moderate"])
+async def test_h6_a_past_day_without_activity_keeps_the_level_its_goals_had(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory, level: str
+) -> None:
+    # Light on the 8th, when Metron worked out that day's goals.
+    entry = mock_entry(anna(active_calories_entity=None), data=entry_data)
+    await added_on(hass, freezer, "2026-11-08", entry)
+    subentry = next(iter(entry.subentries.values()))
+    hass.config_entries.async_update_subentry(
+        entry, subentry, data=subentry.data | {"activity": level}
+    )
+    await hass.async_block_till_done()
+
+    await log_active(hass, 906, day="2026-11-08")
+    day = await anna_s_day(hass, "2026-11-08")
+    assert day["activity"] == logged(906, 680, 435.83, None)
+    assert day["goals"]["kcal"] == 1804
+
+
+async def test_a_past_day_whose_goals_are_from_before_version_5_takes_today_s_level(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
+) -> None:
+    entry = mock_entry(anna(active_calories_entity=None), data=entry_data)
+    data = (await added_on(hass, freezer, "2026-11-08", entry)).runtime_data.data
+    # Goals set before version 5 stored no allowance.
+    goals = await data.async_goal_on(data.people["anna"], "2026-11-08")
+    await data.async_read(data.db.set_day, "anna", "2026-11-08", None, goals)
+    subentry = next(iter(entry.subentries.values()))
+    hass.config_entries.async_update_subentry(
+        entry, subentry, data=subentry.data | {"activity": "moderate"}
+    )
+    await hass.async_block_till_done()
+
+    await log_active(hass, 906, day="2026-11-08")
+    activity = (await anna_s_day(hass, "2026-11-08"))["activity"]
+    assert activity["allowed"] == pytest.approx(1395.25 * 0.35, abs=0.005)
 
 
 async def test_the_action_takes_days_from_metron_s_first_goals_for_the_person(

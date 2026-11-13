@@ -10,7 +10,7 @@ import asyncio
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from typing import Any
+from typing import Any, NamedTuple
 
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
 from homeassistant.const import UnitOfMass
@@ -226,6 +226,22 @@ def _goals_shown(day: str, set_on: str, goals: g.Goals, added: float) -> g.Goals
     return _scaled(goals, goals.kcal - added)
 
 
+class InForce(NamedTuple):
+    """The goals in force on a day, and what was so on the day they were set."""
+
+    set_on: str
+    goals: g.Goals
+    # What activity added on `set_on`.
+    added: float
+    # What the activity level allowed for on `set_on`; None for goals set
+    # before schema version 5.
+    allowed: float | None
+
+    def shown(self, day: str) -> g.Goals:
+        """The goals `day` shows, as `_goals_shown` has them."""
+        return _goals_shown(day, self.set_on, self.goals, self.added)
+
+
 def _unseen(row: Mapping[str, Any] | None) -> dict[str, Any] | None:
     """An activity row without what nothing shows: the sensor's last reading."""
     return row and {key: value for key, value in row.items() if key != "last_reading"}
@@ -309,22 +325,19 @@ class FitnessData:
             return person.calorie_goal
         return g.suggested_calories(await self.async_burn(person, day), person.pace)
 
-    async def _in_force(self, person: Person, day: str) -> tuple[str, g.Goals, float] | None:
-        """The day the goals in force on `day` were set, those goals, and what activity added then.
-
-        None before the person's goals were first set.
-        """
+    async def _in_force(self, person: Person, day: str) -> InForce | None:
+        """The goals in force on `day`, or None before the person's goals were first set."""
         found = await self._read(self.db.goal_in_force, person.key, day)
         if found is None:
             return None
-        set_on, goals = found
+        set_on, goals, allowed = found
         row = await self._read(self.db.activity, person.key, set_on)
-        return set_on, goals, row["added"] if row else 0.0
+        return InForce(set_on, goals, row["added"] if row else 0.0, allowed)
 
     async def async_goal_on(self, person: Person, day: str) -> g.Goals | None:
         """The goals `day` shows, as `_goals_shown` has them, or None before any were set."""
         found = await self._in_force(person, day)
-        return None if found is None else _goals_shown(day, *found)
+        return None if found is None else found.shown(day)
 
     async def async_goals(
         self, person: Person, start: date, end: date
@@ -352,13 +365,6 @@ class FitnessData:
         goals = g.macro_grams(round(kcal), person.protein_pct, person.carbs_pct, person.fat_pct)
         return g.Goals(*(round(v, 1) for v in (goals.kcal, goals.protein, goals.carbs, goals.fat)))
 
-    async def _activity_row(
-        self, person: Person, day: date, held: Mapping[str, Any]
-    ) -> dict[str, Any]:
-        """A day's activity row for `held`, as HELD, under the person's settings."""
-        allowed = await self._allowed(person, day)
-        return _row(held, allowed, person.active_calories_share, person.active_calories_cap)
-
     async def _update_today(
         self,
         person: Person,
@@ -371,10 +377,11 @@ class FitnessData:
         came from the action or from the sensor the person has now. `change`
         is given what stays, as HELD or None, and returns what to keep
         instead. The rest of the row follows the person's settings and
-        weight. The goals are the base plus what activity adds. It reads and
-        writes under the lock, so no write meanwhile is lost. A change to the
-        sensor's last reading alone is written but, as nothing shows it, not
-        reported as a change.
+        weight. The goals are the base plus what activity adds, stored with
+        what the activity level allows for today. It reads and writes under
+        the lock, so no write meanwhile is lost. A change to the sensor's
+        last reading or to that allowance alone is written but, as nothing
+        shows it, not reported as a change.
         """
         day = today()
         key, iso = person.key, day.isoformat()
@@ -389,13 +396,19 @@ class FitnessData:
                 kept = {field: row[field] for field in HELD}
             if change is not None:
                 kept = change(kept)
-            new = None if kept is None else await self._activity_row(person, day, kept)
+            allowed = await self._allowed(person, day)
+            new = None
+            if kept is not None:
+                share, cap = person.active_calories_share, person.active_calories_cap
+                new = _row(kept, allowed, share, cap)
             added = new["added"] if new else 0
             goals = self._goals(person, await self._base(person, day) + added)
-            current = await self.async_goal_on(person, iso)
-            if new != row or goals != current:
+            found = await self._in_force(person, iso)
+            current = found and found.shown(iso)
+            set_again = goals != current or allowed != (found and found.allowed)
+            if new != row or set_again:
                 await self.hass.async_add_executor_job(
-                    self.db.set_day, key, iso, new, None if goals == current else goals
+                    self.db.set_day, key, iso, new, goals if set_again else None, allowed
                 )
         return goals, new, goals != current or _unseen(new) != _unseen(row)
 
@@ -512,23 +525,30 @@ class FitnessData:
         the_day = date.fromisoformat(day)
         async with self._write_lock:
             old = await self._read(self.db.activity, person.key, day)
+            found = await self._in_force(person, day)
             last_reading = None if old is None else old["last_reading"]
             held = {"source": a.ACTION, "measured": kcal, "last_reading": last_reading}
             if old is None:
-                # Without activity, the day kept no allowance, share or cap of
-                # its own: today's are all there is to go by.
-                new = await self._activity_row(person, the_day, held)
+                # The day's goals kept what its activity level allowed for, but
+                # not its share or cap: those are today's. Goals set before
+                # version 5 kept no allowance either, so today's level stands in.
+                allowed = found.allowed
+                if allowed is None:
+                    allowed = await self._allowed(person, the_day)
+                share, cap = person.active_calories_share, person.active_calories_cap
+                new = _row(held, allowed, share, cap)
             else:
                 new = _row(held, old["allowed"], old["share"], old["cap"])
             if new == old:
                 return
             old_added = old["added"] if old else 0.0
-            _set_on, kept, added = await self._in_force(person, day)
-            goals = _scaled(kept, kept.kcal - added + new["added"])
+            kept = found.goals
+            goals = _scaled(kept, kept.kcal - found.added + new["added"])
             next_day = (the_day + timedelta(days=1)).isoformat()
-            pin = next_day, await self.async_goal_on(person, next_day)
+            following = await self._in_force(person, next_day)
+            pin = next_day, following.shown(next_day), following.allowed
             await self.hass.async_add_executor_job(
-                self.db.set_day, person.key, day, new, goals, pin
+                self.db.set_day, person.key, day, new, goals, new["allowed"], pin
             )
         # As the Activity sensor reports it.
         delta = round(new["added"], 2) - round(old_added, 2)

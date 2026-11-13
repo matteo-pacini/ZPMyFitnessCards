@@ -147,6 +147,11 @@ def test_upgrades_a_version_4_database_with_somewhere_to_keep_activity(
     try:
         assert db.schema_version() == LATEST == 5
         assert contents(database_url, version_4_columns) == before
+        # Goals set before stored no allowance.
+        assert "allowed" in layout(database_url)["goals"]
+        assert {row.allowed for row in contents(database_url, {"goals": ["allowed"]})["goals"]} == {
+            None
+        }
         assert layout(database_url)["activity"] == sorted(
             [
                 "person",
