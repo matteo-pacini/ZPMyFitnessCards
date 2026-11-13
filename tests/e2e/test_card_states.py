@@ -8,9 +8,13 @@ straight to the button as events.
 
 from __future__ import annotations
 
+import re
+
+import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import Home
+from .flows import person_named, today
 
 TIMEOUT = 15_000
 
@@ -72,6 +76,7 @@ def test_load_errors_are_shown(home: Home, page: Page) -> None:
     for tag, config in (
         ("metron-food-diary-card", {"person": "Debora"}),
         ("metron-weight-card", {"person": "Debora"}),
+        ("metron-streak-card", {"person": "Debora"}),
         ("metron-foods-card", {}),
     ):
         card = mount(page, tag, config, fail={"*": "boom"})
@@ -92,6 +97,45 @@ def test_cards_wait_and_retry_while_the_integration_reloads(home: Home, page: Pa
     expect(card.locator(".muted")).to_have_text("Loading…")
     # The card tries again after two seconds, and then the calls work.
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
+
+    card = mount(
+        page, "metron-streak-card", {"person": "Debora"}, fail={"*": "not_loaded"}, once=True
+    )
+    expect(card.locator(".muted")).to_have_text("Loading…")
+    expect(card.locator(".cal")).to_be_visible(timeout=TIMEOUT)
+
+    # The person loads, and only then does the integration start reloading.
+    card = mount(
+        page,
+        "metron-streak-card",
+        {"person": "Debora"},
+        fail={"metron/days": "not_loaded"},
+        once=True,
+    )
+    expect(card.locator(".title")).to_have_text("Streak")
+    expect(card.locator(".muted")).to_have_text("Loading…")
+    expect(card.locator(".cal")).to_be_visible(timeout=TIMEOUT)
+
+
+# Every call failing once, so metron/people first; or only the person's days.
+@pytest.mark.parametrize(
+    "failing",
+    [
+        "*",
+        "metron/days",
+    ],
+)
+def test_the_streak_card_shows_a_failed_load_then_tries_again(
+    home: Home, page: Page, failing: str
+) -> None:
+    open_home(home, page)
+    card = mount(
+        page, "metron-streak-card", {"person": "Debora"}, fail={failing: "boom"}, once=True
+    )
+    expect(card.locator(".error")).to_have_text("Something went wrong: boom on purpose")
+    # The card tries again after two seconds, and then the calls work.
+    expect(card.locator(".cal")).to_be_visible(timeout=TIMEOUT)
+    expect(card.locator(".error")).to_have_count(0)
 
 
 def test_a_card_moved_while_it_waits_to_retry_tries_again(home: Home, page: Page) -> None:
@@ -127,8 +171,12 @@ def test_says_who_the_card_cannot_find(home: Home, page: Page) -> None:
     expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
     card = mount(page, "metron-food-diary-card", {"person": "Nora"})
     expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
+    card = mount(page, "metron-streak-card", {"person": "Nora"})
+    expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
     # Nobody is linked to the test owner, so a card without a person has no one.
     card = mount(page, "metron-summary-card", {})
+    expect(card.locator(".error")).to_contain_text("No person to show", timeout=TIMEOUT)
+    card = mount(page, "metron-streak-card", {})
     expect(card.locator(".error")).to_contain_text("No person to show", timeout=TIMEOUT)
 
 
@@ -295,6 +343,39 @@ def test_the_diary_and_saved_foods_recover_from_a_failed_refresh(home: Home, pag
     page.wait_for_timeout(500)
     page.evaluate(MEND)
     expect(card.locator(".row", has_text="Recovered pear")).to_have_count(1, timeout=TIMEOUT)
+
+
+def test_the_streak_card_keeps_its_calendar_through_a_failed_refresh(
+    home: Home, page: Page
+) -> None:
+    name = "Streak refresh e2e"
+    with person_named(home, name):
+        person = next(p["id"] for p in home.ws({"type": "metron/people"}) if p["name"] == name)
+        open_home(home, page)
+        card = mount(page, "metron-streak-card", {"person": name})
+        expect(card.locator(".today-line")).to_have_text("Nothing logged today", timeout=TIMEOUT)
+        page.evaluate(BREAK)
+        home.ws(
+            {
+                "type": "metron/entry/add",
+                "person": person,
+                "day": today(),
+                "meal": "lunch",
+                "name": "Refreshed soup e2e",
+                "kcal": 300,
+            }
+        )
+        # The change's refresh failed, and so did the reload it falls back to.
+        page.wait_for_function("document.getElementById('mounted')._failure", timeout=TIMEOUT)
+        # It keeps what it showed, and keeps trying.
+        expect(card.locator(".cal")).to_be_visible()
+        expect(card.locator(".error")).to_have_count(0)
+        expect(card.locator(".today-line")).to_have_text("Nothing logged today")
+        page.evaluate(MEND)
+        expect(card.locator(".today-line")).to_have_text(
+            re.compile(r" kcal left today$"), timeout=TIMEOUT
+        )
+        expect(card.locator(".error")).to_have_count(0)
 
 
 def test_a_failed_food_search_is_shown_in_the_panel(home: Home, page: Page) -> None:

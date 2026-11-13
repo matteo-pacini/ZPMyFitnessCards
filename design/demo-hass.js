@@ -891,6 +891,15 @@ class DemoStore {
       for (const e of this._entries.values()) if (e.person === p.key) days.push(e.day);
       for (let day = days.reduce((a, b) => (b < a ? b : a)); day <= today; day = addDays(day, 1)) this._refreshGoals(p, day);
     }
+    // Matteo's dinners for the streak card, against goals that follow only
+    // his weight: on goal most days, over on two, nothing logged on two.
+    for (let n = 1; n <= 35; n++) {
+      if (n === 12 || n === 24) continue;
+      const day = addDays(today, -n);
+      const goal = this._goalOn(matteo, day).kcal;
+      const kcal = n === 9 || n === 17 ? goal + 150 + n * 10 : goal - 60 - ((n * 37) % 250);
+      run({ type: "metron/entry/add", person: matteo, day, meal: "dinner", name: "Sample", kcal, protein: kcal * 0.05, carbs: kcal * 0.12, fat: kcal * 0.035 });
+    }
   }
 
   // Tables, as db.py reads them
@@ -1326,6 +1335,7 @@ const CARD_TYPES = [
   "metron-weight-card",
   "metron-trends-card",
   "metron-summary-card",
+  "metron-streak-card",
 ];
 
 // The page's API. `clock` is the cards' clock: `fixed`, in ms, stops it, and

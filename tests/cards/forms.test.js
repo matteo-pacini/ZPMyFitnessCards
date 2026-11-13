@@ -124,7 +124,7 @@ test("dates show the year only when asked", () => {
   assert.equal(fn.shortDate("2026-11-09", "en-GB", true), "9 Nov 26");
 });
 
-const ELEMENTS = ["metron-food-diary-card", "metron-foods-card", "metron-meals-card", "metron-weight-card", "metron-trends-card", "metron-summary-card"];
+const ELEMENTS = ["metron-food-diary-card", "metron-foods-card", "metron-meals-card", "metron-weight-card", "metron-trends-card", "metron-summary-card", "metron-streak-card"];
 
 test("every card opens the visual editor on its options, which have labels, and has a stub config", () => {
   const options = Object.fromEntries(ELEMENTS.map((name) => [name, plain(ctx.customElements.defined[name].options)]));
@@ -135,6 +135,7 @@ test("every card opens the visual editor on its options, which have labels, and 
     "metron-weight-card": ["person", "title", "locale"],
     "metron-trends-card": ["person", "title", "locale"],
     "metron-summary-card": ["person", "title", "locale", "navigation_path"],
+    "metron-streak-card": ["person", "title", "locale"],
   });
   ctx.document = { createElement: (tag) => ({ tag }) };
   for (const name of ELEMENTS) {

@@ -77,6 +77,9 @@ def test_active_calories_units_in_the_person_form(home: Home, page: Page, unit: 
         dialog = page.locator("dialog-data-entry-flow")
         page.get_by_text("Active calories", exact=True).click()
         dialog.get_by_label("Allow active calories").click()
+        # A click on the field while the section still opens can end on another
+        # element, as the form moves under the pointer, and leave it closed.
+        ac.section_settled(dialog)
         dialog.locator('ha-picker-field[aria-label="Sensor (optional)"]').click()
         dialog.locator("ha-picker-combo-box ha-input-search input").fill(friendly)
         dialog.locator("ha-picker-combo-box ha-combo-box-item", has_text=friendly).click()

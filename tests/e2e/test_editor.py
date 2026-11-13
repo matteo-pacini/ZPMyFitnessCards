@@ -124,6 +124,23 @@ def test_adds_a_summary_card_that_opens_a_page_from_the_card_picker(home: Home, 
     ]
 
 
+def test_adds_a_streak_card_from_the_card_picker(home: Home, page: Page) -> None:
+    dialog = pick_card(home, page, "Streak")
+    expect(dialog.get_by_label("Person")).to_be_visible()
+    expect(dialog.get_by_role("textbox", name="Title")).to_be_visible()
+    expect(dialog.get_by_label("Language")).to_be_visible()
+    dialog.get_by_role("textbox", name="Title").fill("Debora's run")
+    choose(dialog, "Person", "Debora")
+    element = "metron-streak-card"
+    expect(dialog.locator(f"{element} .title")).to_have_text("Debora's run", timeout=TIMEOUT)
+    card = save(page, dialog, element)
+    expect(card.locator(".person")).to_have_text("Debora", timeout=TIMEOUT)
+    expect(card.locator(".cal")).to_be_visible()
+    assert saved_cards(home) == [
+        {"type": f"custom:{element}", "title": "Debora's run", "person": "Debora"}
+    ]
+
+
 def test_the_language_dropdown_sets_the_card_s_language(home: Home, page: Page) -> None:
     element = "metron-food-diary-card"
     dialog = pick_card(home, page, "Food diary")

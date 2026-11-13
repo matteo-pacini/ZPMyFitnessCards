@@ -18,7 +18,7 @@ Metron is a Home Assistant custom integration, `metron`, with dashboard cards. H
   - `myfitnesspal.py`: reads MyFitnessPal's Premium export (a ZIP or one of its CSVs) and its printable diary page saved as a complete web page into a `Diary`, with no Home Assistant code. `config_flow.py` uploads the file, asks for meals and the weight unit, and writes through `FitnessData.async_replace_entries`.
   - `export.py`: a person's entries, weights and activity, every saved food, and everyone's and their own saved meals as a ZIP of CSVs, served by an admin-only view; "Export data" shows a signed link to it.
 - `custom_components/metron/frontend/metron-cards.js`: generated from `src/` by `scripts/build.js`. Never edit it by hand. Commit it rebuilt, together with every change to `src/`.
-- `src/cards/`: the cards, as plain browser scripts with no imports and no npm dependencies. `scripts/build.js` puts them, in the order of its `SOURCES`, into one block of the bundle, where they share one scope. Each card has a file of its own: `food-diary-card.js`, `foods-card.js`, `meals-card.js`, `weight-card.js`, `trends-card.js` and `summary-card.js`. The rest are shared:
+- `src/cards/`: the cards, as plain browser scripts with no imports and no npm dependencies. `scripts/build.js` puts them, in the order of its `SOURCES`, into one block of the bundle, where they share one scope. Each card has a file of its own: `food-diary-card.js`, `foods-card.js`, `meals-card.js`, `weight-card.js`, `trends-card.js`, `summary-card.js` and `streak-card.js`. The rest are shared:
   - `header.js`: the comment that lists the cards and their config.
   - `strings.js`: `STRINGS` and `translate`.
   - `strings/`: a file per language, named for its tag, such as `en.js` or `pt-BR.js`, that puts that language's strings in `STRINGS`.
@@ -29,7 +29,7 @@ Metron is a Home Assistant custom integration, `metron`, with dashboard cards. H
   - `food-card.js`: `FoodCard`, the base of the food diary, saved foods and saved meals cards: barcode lookups and scans, Open Food Facts searches, and messages above the buttons of the card's open panel.
   - `editor.js`: the visual editor every card opens, with a field for each option in the card's static `options`, drawn with the frontend's `ha-form`.
   - `charts.js` and `weights.js`: chart helpers, and weight units and BMI bands, for more than one card.
-  - `person-card.js`: `ShowsPerson`, which loads the one person a card shows, for the food diary and `PersonCard`, and `PersonCard`, the base of the weight, trends and summary cards.
+  - `person-card.js`: `ShowsPerson`, which loads the one person a card shows, for the food diary and `PersonCard`, and `PersonCard`, the base of the weight, trends, summary and streak cards.
   - `register.js`: defines the cards and their editor once the frontend is ready.
 - `tests/fixtures/myfitnesspal/`: made-up MyFitnessPal files with the real ones' quirks. The ZIP is built from its folder at test time.
 - `tests/conftest.py`: a throwaway Postgres server for the session, on a Unix socket under `/tmp`, and a fresh database per test. `database_url` runs a test once on SQLite and once on Postgres.
