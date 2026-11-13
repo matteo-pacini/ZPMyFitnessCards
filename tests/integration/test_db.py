@@ -178,6 +178,7 @@ ROW = {
     "allowed": 244.2,
     "share": 75,
     "cap": 1500,
+    "last_reading": None,
 }
 
 

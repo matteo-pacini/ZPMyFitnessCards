@@ -267,6 +267,9 @@ def _schema_v5() -> MetaData:
     `source` is the sensor's entity ID, or "action". `measured` is the day's
     figure in kcal, and the rest is what it came to under the person's
     settings that day, kept so that a past day explains its own goal.
+    `last_reading` is the sensor's last reading that counted for the day,
+    in kcal, or NULL if none did; it differs from `measured` once the
+    action set the figure.
     """
     metadata = _schema_v4()
     Table(
@@ -279,6 +282,7 @@ def _schema_v5() -> MetaData:
             Column(n, Float, nullable=False)
             for n in ("measured", "counted", "added", "allowed", "share", "cap")
         ],
+        Column("last_reading", Float),
     )
     return metadata
 
@@ -345,7 +349,16 @@ PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS, SAVED_MEALS, MEAL_ITEMS, ACTIVITY = (
 )
 
 # An activity row's columns besides its person and day.
-ACTIVITY_FIELDS = ("source", "measured", "counted", "added", "allowed", "share", "cap")
+ACTIVITY_FIELDS = (
+    "source",
+    "measured",
+    "counted",
+    "added",
+    "allowed",
+    "share",
+    "cap",
+    "last_reading",
+)
 
 VERSION = Table("schema_version", MetaData(), Column("version", Integer, nullable=False))
 

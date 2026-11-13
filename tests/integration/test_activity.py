@@ -242,6 +242,25 @@ async def test_e2_after_a_restart_past_midnight_yesterday_s_figure_does_not_coun
     assert (await day(TOMORROW))["activity"]["measured"] == 907
 
 
+async def test_e2_yesterday_s_last_reading_does_not_count_though_the_action_changed_the_figure(
+    hass: HomeAssistant, set_up, day, freezer: FrozenDateTimeFactory
+) -> None:
+    await reading(hass, 906)
+    entry = await set_up(anna())
+    data = entry.runtime_data.data
+    # An automation logged another figure for the day than the watch's last.
+    await data.async_log_activity(data.people["anna"], TODAY, 950)
+    await hass.async_block_till_done()
+    freezer.move_to(f"{TOMORROW}T07:00:00+00:00")
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    # Restored as Home Assistant starts, so it last changed now.
+    hass.states.async_remove(GARMIN)
+    await reading(hass, 906)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert (await day(TOMORROW))["activity"]["status"] == "waiting"
+
+
 async def test_e3_unavailable_keeps_the_held_value_and_recovery_counts_again(
     hass: HomeAssistant, set_up, day, hass_ws_client: WebSocketGenerator
 ) -> None:

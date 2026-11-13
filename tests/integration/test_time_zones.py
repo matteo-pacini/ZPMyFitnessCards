@@ -195,6 +195,34 @@ async def test_e1_a_reading_from_before_local_midnight_does_not_count(
     assert (activity["measured"], activity["status"]) == (None, "waiting")
 
 
+async def test_e2_yesterday_s_last_reading_does_not_count_after_a_local_midnight_restart(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    entry_data: dict,
+    hass_ws_client: WebSocketGenerator,
+) -> None:
+    # 19:00 here on the 9th; then an automation logs another figure for it.
+    hass.states.async_set(GARMIN, "906", KCAL)
+    entry = mock_entry(anna(), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    client = await hass_ws_client(hass)
+    data = entry.runtime_data.data
+    await data.async_log_activity(data.people["anna"], "2026-11-09", 950)
+    await hass.async_block_till_done()
+    # Home Assistant restarts at 01:00 on the 10th here, 09:00 in UTC.
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    freezer.move_to("2026-11-10T09:00:00+00:00")
+    hass.states.async_remove(GARMIN)
+    hass.states.async_set(GARMIN, "906", KCAL)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    await client.send_json_auto_id({"type": "metron/day", "person": "anna", "day": "2026-11-10"})
+    activity = (await client.receive_json())["result"]["activity"]
+    assert (activity["measured"], activity["status"]) == (None, "waiting")
+
+
 async def test_e1_active_calories_count_from_local_midnight(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,

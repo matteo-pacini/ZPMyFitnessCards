@@ -586,6 +586,34 @@ async def test_with_a_sensor_and_the_action_the_latest_write_wins(
     assert await held() == (GARMIN, 600)
 
 
+async def test_only_a_new_reading_from_the_sensor_raises_the_action_s_figure(
+    hass: HomeAssistant, entry_data: dict[str, Any]
+) -> None:
+    await reading(hass, 906)
+    entry = mock_entry(anna(), person("Ben"), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    async def held() -> tuple[str, float]:
+        activity = (await anna_s_day(hass))["activity"]
+        return activity["source"], activity["measured"]
+
+    # A correction below the watch's figure.
+    await log_active(hass, 500)
+    # Ben's details change, so the entry reloads and reads Anna's sensor again.
+    ben = next(s for s in entry.subentries.values() if s.title == "Ben")
+    hass.config_entries.async_update_subentry(entry, ben, data={**ben.data, "goal_weight_kg": 60})
+    await hass.async_block_till_done()
+    assert await held() == ("action", 500)
+    # Back from a moment unavailable, with the figure it had.
+    await reading(hass, "unavailable")
+    await reading(hass, 906)
+    assert await held() == ("action", 500)
+    await reading(hass, 910)
+    assert await held() == (GARMIN, 910)
+
+
 @pytest.mark.usefixtures("anna_entry")
 async def test_the_action_trusts_its_caller_on_which_day_a_figure_is_for(
     hass: HomeAssistant,

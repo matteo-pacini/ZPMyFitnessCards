@@ -148,7 +148,18 @@ def test_upgrades_a_version_4_database_with_somewhere_to_keep_activity(
         assert db.schema_version() == LATEST == 5
         assert contents(database_url, version_4_columns) == before
         assert layout(database_url)["activity"] == sorted(
-            ["person", "day", "source", "measured", "counted", "added", "allowed", "share", "cap"]
+            [
+                "person",
+                "day",
+                "source",
+                "measured",
+                "counted",
+                "added",
+                "allowed",
+                "share",
+                "cap",
+                "last_reading",
+            ]
         )
         assert db.activity("matteo", SAMPLE_DAY) is None
         row = {
@@ -159,6 +170,7 @@ def test_upgrades_a_version_4_database_with_somewhere_to_keep_activity(
             "allowed": 244.2,
             "share": 75,
             "cap": 1500,
+            "last_reading": 906,
         }
         db.set_day("matteo", SAMPLE_DAY, row)
         assert db.activity("matteo", SAMPLE_DAY) == row

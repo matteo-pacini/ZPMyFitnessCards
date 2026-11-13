@@ -178,13 +178,24 @@ def food_entry(food: Mapping[str, Any], grams: float) -> dict[str, Any]:
     }
 
 
+# What a day's activity row holds besides what it comes to under the
+# person's settings: its source, the measured figure, and the sensor's last
+# reading that counted for the day, or None.
+HELD = ("source", "measured", "last_reading")
+
+
 def _shown(row: Mapping[str, Any], status: str | None) -> dict[str, Any]:
     """An activity row as metron/day gives it, with `status`, its kcal figures to 0.01 kcal."""
     figures = {
         key: None if row[key] is None else round(row[key], 2)
         for key in ("measured", "counted", "added", "allowed")
     }
-    return {**row, **figures, "status": status}
+    return {**_unseen(row), **figures, "status": status}
+
+
+def _unseen(row: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """An activity row without what nothing shows: the sensor's last reading."""
+    return row and {key: value for key, value in row.items() if key != "last_reading"}
 
 
 def loaded_data(hass: HomeAssistant) -> FitnessData | None:
@@ -272,15 +283,14 @@ class FitnessData:
         return g.Goals(*(round(v, 1) for v in (goals.kcal, goals.protein, goals.carbs, goals.fat)))
 
     async def _activity_row(
-        self, person: Person, day: date, source: str, measured: float
+        self, person: Person, day: date, held: Mapping[str, Any]
     ) -> dict[str, Any]:
-        """A day's activity row for `measured` kcal from `source`, under the person's settings."""
+        """A day's activity row for `held`, as HELD, under the person's settings."""
         share, cap = person.active_calories_share, person.active_calories_cap
-        counted = g.activity_counted(measured, share, cap)
+        counted = g.activity_counted(held["measured"], share, cap)
         allowed = await self._allowed(person, day)
         return {
-            "source": source,
-            "measured": measured,
+            **held,
             "counted": counted,
             "added": g.activity_added(counted, allowed),
             "allowed": allowed,
@@ -291,16 +301,18 @@ class FitnessData:
     async def _update_today(
         self,
         person: Person,
-        change: Callable[[tuple[str, float] | None], tuple[str, float] | None] | None = None,
+        change: Callable[[dict[str, Any] | None], dict[str, Any] | None] | None = None,
     ) -> tuple[g.Goals, bool]:
-        """Bring today's activity and goals up to date; return the goals and whether they changed.
+        """Bring today's activity and goals up to date; return the goals, and whether they changed.
 
         Today's activity stays only while the box is ticked, and only if it
         came from the action or from the sensor the person has now. `change`
-        is given what stays, as (source, measured kcal) or None, and returns
-        what to keep instead. The rest of the row follows the person's
-        settings and weight. The goals are the base plus what activity adds.
-        It reads and writes under the lock, so no write meanwhile is lost.
+        is given what stays, as HELD or None, and returns what to keep
+        instead. The rest of the row follows the person's settings and
+        weight. The goals are the base plus what activity adds. It reads and
+        writes under the lock, so no write meanwhile is lost. A change to the
+        sensor's last reading alone is written but, as nothing shows it, not
+        reported as a change.
         """
         day = today()
         key, iso = person.key, day.isoformat()
@@ -312,19 +324,18 @@ class FitnessData:
                 and person.active_calories_enabled
                 and row["source"] in (a.ACTION, person.active_calories_entity)
             ):
-                kept = row["source"], row["measured"]
+                kept = {field: row[field] for field in HELD}
             if change is not None:
                 kept = change(kept)
-            new = None if kept is None else await self._activity_row(person, day, *kept)
+            new = None if kept is None else await self._activity_row(person, day, kept)
             added = new["added"] if new else 0
             goals = self._goals(person, await self._base(person, day) + added)
             current = await self._read(self.db.goal_on, key, iso)
-            changed = new != row or goals != current
-            if changed:
+            if new != row or goals != current:
                 await self.hass.async_add_executor_job(
                     self.db.set_day, key, iso, new, None if goals == current else goals
                 )
-        return goals, changed
+        return goals, goals != current or _unseen(new) != _unseen(row)
 
     async def async_refresh_goals(self, person: Person) -> g.Goals:
         """Work out today's goals and record them if they changed; return them.
@@ -383,15 +394,26 @@ class FitnessData:
         if kcal is not None:
             yesterday = (today() - timedelta(days=1)).isoformat()
             last = await self._read(self.db.activity, person.key, yesterday)
-            if not a.counts_today(state, kcal, last and last["measured"]):
+            seen = last and (
+                last["measured"] if last["last_reading"] is None else last["last_reading"]
+            )
+            if not a.counts_today(state, kcal, seen):
                 kcal = None
         changed = False
         if kcal is not None:
 
-            def rise(kept: tuple[str, float] | None) -> tuple[str, float] | None:
-                return kept if kept is not None and kept[1] >= kcal else (sensor, kcal)
+            def read(kept: dict[str, Any] | None) -> dict[str, Any]:
+                # A figure the action set gives way only to a reading the sensor
+                # hasn't given before, not to one read again at setup or midnight
+                # or as the sensor comes back.
+                if kept is not None and (
+                    kcal <= kept["measured"]
+                    or (kept["source"] == a.ACTION and kcal == kept["last_reading"])
+                ):
+                    return {**kept, "last_reading": kcal}
+                return {"source": sensor, "measured": kcal, "last_reading": kcal}
 
-            _goals, changed = await self._update_today(person, rise)
+            _goals, changed = await self._update_today(person, read)
         day = today().isoformat()
         if not changed:
             held = await self._read(self.db.activity, person.key, day)
@@ -409,14 +431,21 @@ class FitnessData:
         first gets a goals row of its own, so the change stops there.
         """
         if day == today().isoformat():
-            _goals, changed = await self._update_today(person, lambda _kept: (a.ACTION, kcal))
+
+            def logged(kept: dict[str, Any] | None) -> dict[str, Any]:
+                last_reading = None if kept is None else kept["last_reading"]
+                return {"source": a.ACTION, "measured": kcal, "last_reading": last_reading}
+
+            _goals, changed = await self._update_today(person, logged)
             if changed:
                 self._changed(person.key)
             return
         the_day = date.fromisoformat(day)
         async with self._write_lock:
             old = await self._read(self.db.activity, person.key, day)
-            new = await self._activity_row(person, the_day, a.ACTION, kcal)
+            last_reading = None if old is None else old["last_reading"]
+            held = {"source": a.ACTION, "measured": kcal, "last_reading": last_reading}
+            new = await self._activity_row(person, the_day, held)
             if new == old:
                 return
             old_added = old["added"] if old else 0.0
