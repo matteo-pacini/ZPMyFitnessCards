@@ -16,6 +16,7 @@ from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_change
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 from sqlalchemy.exc import OperationalError
@@ -147,6 +148,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
         async_dispatcher_send(hass, SIGNAL_CHANGED, key, set())
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CHANGED, changed))
     entry.async_on_unload(async_track_time_change(hass, midnight, hour=0, minute=0, second=0))
+
+    @callback
+    def started(_hass: HomeAssistant) -> None:
+        # Until now a sensor with no state might still have been setting up;
+        # one that has none yet is missing.
+        for key, sensor in sensors.items():
+            if hass.states.get(sensor) is None:
+                async_dispatcher_send(hass, SIGNAL_CHANGED, key, set())
+
+    entry.async_on_unload(async_at_started(hass, started))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

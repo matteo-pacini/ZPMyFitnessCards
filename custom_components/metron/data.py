@@ -14,7 +14,7 @@ from typing import Any, NamedTuple
 
 from homeassistant.config_entries import ConfigEntryState, ConfigSubentry
 from homeassistant.const import UnitOfMass
-from homeassistant.core import HomeAssistant, State
+from homeassistant.core import CoreState, HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.util import dt as dt_util
@@ -269,6 +269,11 @@ class FitnessData:
         # When each person's sensor last changed to a reading that counted.
         self._counted_at: dict[str, datetime] = {}
 
+    @property
+    def _started(self) -> bool:
+        """Whether Home Assistant has started, as `async_at_started` has it."""
+        return self.hass.state is CoreState.running
+
     async def _read(self, func: Callable[..., Any], *args: Any) -> Any:
         return await self.hass.async_add_executor_job(func, *args)
 
@@ -468,7 +473,7 @@ class FitnessData:
             "cap": person.active_calories_cap,
         }
         state = self.hass.states.get(sensor) if sensor else None
-        return _shown(row, a.status(sensor, state, held))
+        return _shown(row, a.status(sensor, state, held, self._started))
 
     async def async_sensor_reading(
         self, person: Person, state: State | None, before: State | None
@@ -515,7 +520,8 @@ class FitnessData:
                 _goals, _held, changed = await self._update_today_locked(person, read)
             if not changed:
                 held = await self._read(self.db.activity, person.key, today().isoformat())
-                changed = a.status(sensor, before, held) != a.status(sensor, state, held)
+                was = a.status(sensor, before, held, self._started)
+                changed = was != a.status(sensor, state, held, self._started)
         if changed:
             self._changed(person.key)
 

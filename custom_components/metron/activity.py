@@ -54,17 +54,22 @@ def counts_today(state: State, kcal: float, yesterday: float | None) -> bool:
     return kcal != yesterday
 
 
-def status(sensor: str | None, state: State | None, held: Mapping[str, Any] | None) -> str:
+def status(
+    sensor: str | None, state: State | None, held: Mapping[str, Any] | None, started: bool
+) -> str:
     """Today's status, for a person with the box ticked.
 
     `sensor` is their sensor's entity ID, if they have one, and `state` its
-    state now. `held` is today's stored activity, if any.
+    state now. `held` is today's stored activity, if any. `started` says
+    whether Home Assistant has started: until then, a sensor with no state
+    may be one whose integration hasn't set up yet, so it reads as one with
+    no reading, not as missing.
     """
-    if sensor is not None and state is None:
+    if sensor is not None and state is None and started:
         return "missing"
     if held is None:
         return "waiting"
-    if sensor is not None and kcal_of(state) is None:
+    if sensor is not None and (state is None or kcal_of(state) is None):
         return "unavailable"
     if held["counted"] <= held["allowed"]:
         return "level"

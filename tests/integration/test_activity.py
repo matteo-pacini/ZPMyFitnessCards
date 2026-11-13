@@ -14,7 +14,8 @@ from unittest.mock import patch
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.core import HomeAssistant, State
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import CoreState, HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
@@ -684,6 +685,59 @@ async def test_the_sensor_is_read_only_while_the_entry_is_loaded(
         assert await hass.config_entries.async_unload(entry.entry_id)
         await reading(hass, 960)
         assert calls == ["906", "950"]
+
+
+# While Home Assistant starts
+
+
+async def started(hass: HomeAssistant) -> None:
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done()
+
+
+async def test_a_sensor_with_no_state_is_waiting_until_home_assistant_has_started(
+    hass: HomeAssistant, set_up, day, hass_ws_client: WebSocketGenerator
+) -> None:
+    # Metron set up before the watch's integration has.
+    hass.set_state(CoreState.starting)
+    await set_up(anna())
+    assert (await day())["activity"] == figures(None, 0, 0, "waiting")
+    assert hass.states.get("sensor.anna_activity").attributes["status"] == "waiting"
+    client = await subscribed(hass, hass_ws_client)
+
+    # Started, and still none: missing, and the cards hear of it.
+    await started(hass)
+    assert (await client.receive_json())["event"] == {"person": "anna", "days": []}
+    assert (await day())["activity"] == figures(None, 0, 0, "missing")
+    assert hass.states.get("sensor.anna_activity").attributes["status"] == "missing"
+
+
+async def test_a_sensor_that_appears_while_home_assistant_starts_counts(
+    hass: HomeAssistant, set_up, day
+) -> None:
+    hass.set_state(CoreState.starting)
+    await set_up(anna())
+    await reading(hass, 906)
+    assert (await day())["activity"] == figures(906, 680, 435.83, "counting")
+    await started(hass)
+    assert (await day())["activity"] == figures(906, 680, 435.83, "counting")
+
+
+async def test_a_held_figure_is_unavailable_until_home_assistant_has_started(
+    hass: HomeAssistant, set_up, day
+) -> None:
+    await reading(hass, 906)
+    entry = await set_up(anna())
+    # Home Assistant restarts, and Metron sets up before the watch's integration.
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.states.async_remove(GARMIN)
+    hass.set_state(CoreState.starting)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert (await day())["activity"] == figures(906, 680, 435.83, "unavailable")
+    await started(hass)
+    assert (await day())["activity"] == figures(906, 680, 435.83, "missing")
 
 
 # Telling the cards
