@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
@@ -511,6 +511,31 @@ async def test_a_weight_changes_what_today_s_activity_adds(
 
 
 # Sensors
+
+
+async def test_the_sensors_take_the_goal_and_the_activity_from_one_moment(
+    hass: HomeAssistant, set_up
+) -> None:
+    await reading(hass, 120)
+    entry = await set_up(anna())
+    data = entry.runtime_data.data
+    real = FitnessData.async_burn
+    landed = []
+
+    async def burn_as_a_reading_lands(self: FitnessData, *args: Any) -> float:
+        # A reading that raises the goal, while the sensors' figures are read;
+        # not during a write, which holds the lock the reading waits for.
+        if not landed and not self._write_lock.locked():
+            landed.append(True)
+            new = State(GARMIN, "906", KCAL)
+            await data.async_sensor_reading(data.people["anna"], new, None)
+        return await real(self, *args)
+
+    with patch.object(FitnessData, "async_burn", burn_as_a_reading_lands):
+        figures = await entry.runtime_data.coordinators["anna"]._async_update_data()
+    assert landed
+    # Both from before it, or the goal sensor would report 1,368 less 436.
+    assert (figures.goals.kcal, figures.added) == (BASE, 0)
 
 
 async def test_the_activity_sensor_reports_what_activity_added(hass: HomeAssistant, set_up) -> None:

@@ -58,12 +58,15 @@ class PersonCoordinator(DataUpdateCoordinator[Today]):
             self.fitness.db.meal_totals, self.person.key, day.isoformat(), day.isoformat()
         )
         weight, weighed_on = await self.fitness.async_weight(self.person, day)
+        # Together, or the calorie goal sensor could take a reading's activity
+        # off a goal from before it.
+        goals, activity = await self.fitness.async_refresh_goals(self.person)
         return Today(
             day=day,
             sums=day_sums(meals.get(day.isoformat(), {})),
-            goals=await self.fitness.async_refresh_goals(self.person),
+            goals=goals,
             weight_kg=weight,
             weighed_on=weighed_on,
             burn=await self.fitness.async_burn(self.person, day),
-            activity=await self.fitness.async_activity(self.person, day.isoformat()),
+            activity=activity,
         )
