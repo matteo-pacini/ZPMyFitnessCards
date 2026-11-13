@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -91,14 +92,14 @@ SENSORS: tuple[FitnessSensorDescription, ...] = (
     ),
     # The goal before activity, which the Activity sensor adds to, as the
     # food diary splits it: the stored goal less what activity added, to the
-    # whole kcal.
+    # whole kcal half up, as the diary's Math.round has it.
     FitnessSensorDescription(
         key="calorie_goal",
         translation_key="calorie_goal",
         native_unit_of_measurement=KCAL,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-        value=lambda t, _c: t.goals.kcal - round(t.added),
+        value=lambda t, _c: t.goals.kcal - math.floor(t.added + 0.5),
     ),
     _goal("protein_goal", GRAMS, "protein"),
     _goal("carbs_goal", GRAMS, "carbs"),
