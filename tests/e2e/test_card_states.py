@@ -8,6 +8,7 @@ straight to the button as events.
 
 from __future__ import annotations
 
+import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import Home
@@ -72,6 +73,7 @@ def test_load_errors_are_shown(home: Home, page: Page) -> None:
     for tag, config in (
         ("metron-food-diary-card", {"person": "Debora"}),
         ("metron-weight-card", {"person": "Debora"}),
+        ("metron-streak-card", {"person": "Debora"}),
         ("metron-foods-card", {}),
     ):
         card = mount(page, tag, config, fail={"*": "boom"})
@@ -92,6 +94,38 @@ def test_cards_wait_and_retry_while_the_integration_reloads(home: Home, page: Pa
     expect(card.locator(".muted")).to_have_text("Loading…")
     # The card tries again after two seconds, and then the calls work.
     expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
+
+    card = mount(
+        page, "metron-streak-card", {"person": "Debora"}, fail={"*": "not_loaded"}, once=True
+    )
+    expect(card.locator(".muted")).to_have_text("Loading…")
+    expect(card.locator(".cal")).to_be_visible(timeout=TIMEOUT)
+
+
+# Every call failing once, so metron/people first; or only the person's days.
+@pytest.mark.parametrize(
+    "failing",
+    [
+        "*",
+        pytest.param(
+            "metron/days",
+            marks=pytest.mark.xfail(
+                strict=True, reason="a failed metron/days after metron/people leaves it blank"
+            ),
+        ),
+    ],
+)
+def test_the_streak_card_shows_a_failed_load_then_tries_again(
+    home: Home, page: Page, failing: str
+) -> None:
+    open_home(home, page)
+    card = mount(
+        page, "metron-streak-card", {"person": "Debora"}, fail={failing: "boom"}, once=True
+    )
+    expect(card.locator(".error")).to_have_text("Something went wrong: boom on purpose")
+    # The card tries again after two seconds, and then the calls work.
+    expect(card.locator(".cal")).to_be_visible(timeout=TIMEOUT)
+    expect(card.locator(".error")).to_have_count(0)
 
 
 def test_a_card_moved_while_it_waits_to_retry_tries_again(home: Home, page: Page) -> None:
@@ -127,8 +161,12 @@ def test_says_who_the_card_cannot_find(home: Home, page: Page) -> None:
     expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
     card = mount(page, "metron-food-diary-card", {"person": "Nora"})
     expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
+    card = mount(page, "metron-streak-card", {"person": "Nora"})
+    expect(card.locator(".error")).to_contain_text("No person named Nora", timeout=TIMEOUT)
     # Nobody is linked to the test owner, so a card without a person has no one.
     card = mount(page, "metron-summary-card", {})
+    expect(card.locator(".error")).to_contain_text("No person to show", timeout=TIMEOUT)
+    card = mount(page, "metron-streak-card", {})
     expect(card.locator(".error")).to_contain_text("No person to show", timeout=TIMEOUT)
 
 

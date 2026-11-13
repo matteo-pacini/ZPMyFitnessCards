@@ -9,9 +9,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from playwright.sync_api import Locator, Page, expect
+from sqlalchemy import MetaData, Table, update
 
+from custom_components.metron.db import make_engine
+
+from ..schemas import contents
 from .conftest import FakeSearch, Home
-from .flows import person_named
+from .flows import person_named, wait_for
 
 TIMEOUT = 15_000
 
@@ -590,6 +594,206 @@ def test_open_cards_move_to_the_new_day_at_midnight(home: Home, page: Page) -> N
         expect(weight.locator('[data-field="day"]')).to_have_value(new_day)
         expect(weight.locator('[data-field="day"]')).to_have_attribute("max", new_day)
         expect(summary.locator(".body")).to_contain_text("321 of", timeout=TIMEOUT)
+
+
+# The streak card
+
+
+def goals_since(home: Home, name: str, day: str) -> None:
+    """Move `name`'s goals to `day`, as though they had stayed the same since.
+
+    The integration only ever sets today's goals, so a person added for a
+    test has none before today, and every past day ends the streak's
+    look-back. The tests that need past days with goals set them here, in
+    the database itself. Today then has no goals of its own, as on most days.
+    """
+    key = person_id(home, name)
+    # The first goals are written as the person is set up, which may not be done.
+    wait_for(lambda: (key,) in contents(home.db_url, {"goals": ["person"]})["goals"])
+    engine = make_engine(home.db_url)
+    try:
+        goals = Table("goals", MetaData(), autoload_with=engine)
+        with engine.begin() as conn:
+            moved = conn.execute(update(goals).where(goals.c.person == key).values(day=day))
+            assert moved.rowcount == 1
+    finally:
+        engine.dispose()
+
+
+def goal_kcal(home: Home, name: str) -> float:
+    day = home.ws({"type": "metron/day", "person": person_id(home, name), "day": today()})
+    return day["goals"]["kcal"]
+
+
+def eat(home: Home, name: str, day: str, kcal: float) -> int:
+    """Log `kcal` for `name` on `day`; return the entry's ID."""
+    entry = home.ws(
+        {
+            "type": "metron/entry/add",
+            "person": person_id(home, name),
+            "day": day,
+            "meal": "dinner",
+            "name": "Streak stew e2e",
+            "kcal": kcal,
+        }
+    )
+    return entry["id"]
+
+
+def has(name: str) -> re.Pattern:
+    """A class attribute that includes `name`."""
+    return re.compile(rf"(^|\s){name}(\s|$)")
+
+
+@ON_A_PHONE_TOO
+def test_the_streak_card_counts_good_days_and_follows_today(
+    home: Home, page: Page, on: str
+) -> None:
+    name = f"Streak e2e {on}"
+    now = date.fromisoformat(today())
+
+    def ago(n: int) -> str:
+        return (now - timedelta(days=n)).isoformat()
+
+    with person_named(home, name):
+        goals_since(home, name, ago(10))
+        goal = goal_kcal(home, name)
+        # On goal from 10 days ago to 6, nothing logged 5 days ago, over 4
+        # days ago, and on goal again since 3 days ago.
+        for n in (10, 9, 8, 7, 6, 3, 2, 1):
+            eat(home, name, ago(n), 500)
+        eat(home, name, ago(4), goal + 250)
+
+        card = open_card(home, page, {"type": "custom:metron-streak-card", "person": name})
+        streak = card.locator(".fig b")
+        expect(streak).to_have_text("3", timeout=TIMEOUT)
+        expect(streak).to_have_class(has("live"))
+        expect(card.locator(".unit")).to_have_text("day streak")
+        expect(card.locator(".best")).to_have_text("Best 5 in 30")
+        expect(card.locator(".count")).to_have_text("8")
+        expect(card.locator(".of")).to_have_text("of the last 30 days")
+        expect(card.locator(".track i")).to_have_attribute("style", "width:27%")
+        expect(card.locator(".today-line")).to_have_text("Nothing logged today")
+        expect(card.locator(".cal")).to_have_attribute(
+            "aria-label",
+            f"{name}, the last 30 days: on goal 8, over goal 1, nothing logged 1. "
+            "Current streak 3, best 5.",
+        )
+
+        def cell(n: int) -> Locator:
+            return card.locator(f'.cell[data-day="{ago(n)}"]')
+
+        of_goal = f"of {round(goal):,} kcal"
+        expect(cell(1)).to_have_class(has("good"))
+        expect(cell(1)).to_have_attribute("title", re.compile(rf": on goal, 500 {of_goal}$"))
+        expect(cell(4)).to_have_class(has("over"))
+        expect(cell(4)).to_have_attribute(
+            "title", re.compile(rf": over goal, {round(goal + 250):,} {of_goal}$")
+        )
+        expect(cell(5)).to_have_class(has("unlogged"))
+        expect(cell(5)).to_have_attribute("title", re.compile(r": nothing logged$"))
+        expect(cell(11)).to_have_class(has("before"))
+        expect(cell(11)).to_have_attribute("title", re.compile(r": no goal yet$"))
+        # A run joins its neighbours within a week's row, Monday to Sunday,
+        # and never today.
+        joins = cell(2).get_attribute("class").split()
+        weekday = (now - timedelta(days=2)).weekday()
+        assert ("jl" in joins) == (weekday != 0)
+        assert ("jr" in joins) == (weekday != 6)
+        expect(cell(1)).not_to_have_class(has("jr"))
+        today_cell = card.locator(".cell.today")
+        expect(today_cell).to_have_attribute("data-day", today())
+        expect(today_cell).to_have_class(has("pending"))
+        expect(today_cell).to_have_attribute("title", re.compile(r": today, on goal so far$"))
+
+        # Over today: the streak drops to 0 at once.
+        over = eat(home, name, today(), goal + 100)
+        expect(streak).to_have_text("0", timeout=TIMEOUT)
+        expect(streak).not_to_have_class(has("live"))
+        expect(card.locator(".today-line")).to_have_text("100 kcal over today")
+        expect(card.locator(".today-line")).to_have_class(has("over"))
+        expect(today_cell).to_have_class(has("over"))
+        expect(today_cell).to_have_attribute(
+            "title", re.compile(rf": over goal, {round(goal + 100):,} {of_goal}$")
+        )
+        expect(card.locator(".best")).to_have_text("Best 5 in 30")
+        expect(card.locator(".count")).to_have_text("8")
+
+        # Deleted, and the streak is back.
+        home.ws({"type": "metron/entry/delete", "entry_id": over})
+        expect(streak).to_have_text("3", timeout=TIMEOUT)
+        expect(card.locator(".today-line")).to_have_text("Nothing logged today")
+        expect(today_cell).to_have_class(has("pending"))
+
+        # Under goal today: still pending, with what is left.
+        eat(home, name, today(), 400)
+        expect(card.locator(".today-line")).to_have_text(
+            f"{round(goal - 400):,} kcal left today", timeout=TIMEOUT
+        )
+        expect(today_cell).to_have_attribute(
+            "title", re.compile(rf": today, on goal so far, 400 {of_goal}$")
+        )
+        expect(streak).to_have_text("3")
+
+
+def test_the_streak_card_shows_a_new_person_s_days_before_their_goals(
+    home: Home, page: Page
+) -> None:
+    name = "Streak newcomer e2e"
+    now = date.fromisoformat(today())
+    yesterday = (now - timedelta(days=1)).isoformat()
+    with person_named(home, name):
+        # Food before the first goals counts for nothing.
+        eat(home, name, yesterday, 500)
+        card = open_card(home, page, {"type": "custom:metron-streak-card", "person": name})
+        expect(card.locator(".cal")).to_have_attribute(
+            "aria-label",
+            f"{name}, the last 30 days: on goal 0, over goal 0, nothing logged 0. "
+            "Current streak 0, best 0.",
+            timeout=TIMEOUT,
+        )
+        expect(card.locator(".fig b")).to_have_text("0")
+        expect(card.locator(".fig b")).not_to_have_class(has("live"))
+        expect(card.locator(".best")).to_have_text("Best 0 in 30")
+        expect(card.locator(".count")).to_have_text("0")
+        expect(card.locator(".track i")).to_have_attribute("style", "width:0%")
+        expect(card.locator(".today-line")).to_have_text("Nothing logged today")
+        before = card.locator(f'.cell[data-day="{yesterday}"]')
+        expect(before).to_have_class(has("before"))
+        expect(before).to_have_attribute("title", re.compile(r": no goal yet$"))
+        # Every day shown before today, from the Monday the calendar starts on.
+        first = now - timedelta(days=29)
+        expect(card.locator(".cell.before")).to_have_count(29 + first.weekday())
+        expect(card.locator(".cell.today")).to_have_class(has("pending"))
+
+
+def test_the_streak_card_moves_to_the_new_day_at_midnight(home: Home, page: Page) -> None:
+    midnight = datetime.now(ZoneInfo("Europe/London")).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    new_day = midnight.date()
+    old_day = (new_day - timedelta(days=1)).isoformat()
+    name = "Streak midnight e2e"
+    with person_named(home, name):
+        goals_since(home, name, (new_day - timedelta(days=3)).isoformat())
+        for n in (1, 2):
+            eat(home, name, (new_day - timedelta(days=n)).isoformat(), 500)
+        # The browser's clock starts before last midnight, so the card first
+        # takes yesterday for today, and counts its streak from the day before.
+        page.clock.install(time=midnight - timedelta(minutes=5))
+        card = open_card(home, page, {"type": "custom:metron-streak-card", "person": name})
+        expect(card.locator(".fig b")).to_have_text("1", timeout=TIMEOUT)
+        expect(card.locator(".cell.today")).to_have_attribute("data-day", old_day)
+        expect(card.locator(".count")).to_have_text("1")
+
+        page.clock.fast_forward("05:10")
+        # Any new state reaches the card, as Metron's own sensors' do at midnight.
+        home.api("POST", "/api/states/sensor.e2e_streak_clock", {"state": "midnight"})
+
+        expect(card.locator(".fig b")).to_have_text("2", timeout=TIMEOUT)
+        expect(card.locator(".cell.today")).to_have_attribute("data-day", new_day.isoformat())
+        expect(card.locator(f'.cell[data-day="{old_day}"]')).to_have_class(has("good"))
+        expect(card.locator(".count")).to_have_text("2")
 
 
 # Open Food Facts is answered here, so the tests never call the real service.
