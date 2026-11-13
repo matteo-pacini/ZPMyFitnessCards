@@ -133,7 +133,7 @@ Automations, scripts and Assist can log and read with five actions. Each takes a
 - `metron.log_food` logs food under a meal: `breakfast`, `lunch`, `dinner` or `snacks`. Give either a saved food, by `food` (its name, in any case) or `barcode`, with its `grams`; or a quick add, with a `name` and `kcal`, and if you like `protein`, `carbs` and `fat`.
 - `metron.log_meal` logs every food of a saved meal under a meal. Give the saved meal's name as `saved_meal`, in any case, and the `meal`. It logs everyone's meals and the person's own; another person's own meal is refused.
 - `metron.log_active_calories` sets a person's [active calories](#active-calories) for the day, as `kcal`, from 0 to 10,000. Give the figure measured: the person's share and cap apply, as for a sensor. It replaces the figure already there, even with a lower one. The person must have Allow active calories ticked, and the day can't be before they were added: the first day Metron worked out their goals.
-- `metron.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`. The goals include activity, and `activity` says what it added: `source`, `measured`, `counted`, `added`, `allowed` (what the activity level allows for), `share`, `cap` and, for today, `status`. It is null on a day without activity.
+- `metron.get_day` returns a person's day: each meal's entries and totals, the day's totals, the goals and the weight, all to 0.1. The weight comes in kg as `weight_kg`, and in Home Assistant's unit as `weight`, with that unit in `weight_unit`. The goals include activity, and `activity` says what it added: `source`, `measured`, `counted`, `added`, `allowed` (what the activity level allows for), `share`, `cap` and, for today, `status`. It is null on a past day without activity, and today while Allow active calories is unticked. Today, while it is ticked, it is always there, with `measured` null until something is measured or logged.
 
 Choose the person in the action editor, which fills in their `device_id`. For example, to log each new reading from a smart scale:
 
@@ -179,7 +179,7 @@ Why 75%: a watch's figure can be well off for any one person, either way, and co
 
 In the food diary, a day with activity reads Goal + Activity − Food = Remaining. Goal is the goal before activity, and Activity is what it added. The line under it says what was measured, how much of it counts, and how much of that the activity level already allows for. Past days keep their own figures and line. The summary card's ring measures against the whole goal, and its line names the activity: "850 of 1,804 kcal, 436 from activity".
 
-<img src="images/food-diary-activity.png" alt="Food diary with activity: Goal plus Activity minus Food equals Remaining, and a line that explains the Activity" width="400">
+<img src="images/food-diary-activity.png" alt="Food diary with activity: Goal plus Activity minus Food equals Remaining, and a line that explains the Activity" width="400"> <img src="images/summary-activity.png" alt="Summary with activity: the ring measures against the goal with activity, and the line under it names the activity" width="400">
 
 ### Which sensor
 

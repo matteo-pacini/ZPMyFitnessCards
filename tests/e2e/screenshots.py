@@ -402,6 +402,7 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
     # Last, so that the images before show Debora without activity.
     allow_active_calories(sample)
     shoot(sample, browser, DIARY, "food-diary-activity")
+    shoot(sample, browser, SUMMARY, "summary-activity")
     shoot_person_form(sample, browser, "person-form-active-calories")
     # The phone-*.png images come from scripts/phone-screenshots.
     taken = (p.name for p in IMAGES.glob("*.png") if not p.name.startswith("phone-"))
@@ -427,6 +428,7 @@ def test_screenshots(sample: Home, browser: Browser, search: FakeSearch) -> None
             "summary",
             "summary-dark",
             "food-diary-activity",
+            "summary-activity",
             "person-form-active-calories",
         )
     )
