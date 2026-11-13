@@ -625,6 +625,38 @@ async def test_the_action_trusts_its_caller_on_which_day_a_figure_is_for(
     assert (await anna_s_day(hass))["activity"]["measured"] == 906
 
 
+async def test_h6_a_past_day_keeps_the_settings_it_had(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
+) -> None:
+    entry = mock_entry(anna(active_calories_entity=None), data=entry_data)
+    await added_on(hass, freezer, "2026-11-07", entry)
+    await log_active(hass, 500, day="2026-11-08")
+    # Then she changes her level, share, cap and macros.
+    subentry = next(iter(entry.subentries.values()))
+    changes = {
+        "activity": "moderate",
+        "active_calories_share": 50,
+        "active_calories_cap": 300,
+        "protein_pct": 40,
+        "carbs_pct": 30,
+    }
+    hass.config_entries.async_update_subentry(entry, subentry, data=subentry.data | changes)
+    await hass.async_block_till_done()
+
+    await log_active(hass, 906, day="2026-11-08")
+    day = await anna_s_day(hass, "2026-11-08")
+    # Light's allowance, 75% and 1,500 kcal, as the day had them.
+    assert day["activity"] == logged(906, 680, 435.83, None)
+    # Its base and its split: 20% protein, 50% carbs, 30% fat.
+    assert day["goals"] == {"kcal": 1804, "protein": 90.2, "carbs": 225.5, "fat": 60.1}
+
+    # A day with no activity yet has only today's settings to go by.
+    await log_active(hass, 906, day="2026-11-07")
+    activity = (await anna_s_day(hass, "2026-11-07"))["activity"]
+    assert activity["allowed"] == pytest.approx(1395.25 * 0.35, abs=0.005)
+    assert (activity["share"], activity["cap"], activity["counted"]) == (50, 300, 300)
+
+
 async def test_the_action_takes_days_from_metron_s_first_goals_for_the_person(
     hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
 ) -> None:

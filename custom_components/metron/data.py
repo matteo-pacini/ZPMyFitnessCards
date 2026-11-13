@@ -193,6 +193,19 @@ def _shown(row: Mapping[str, Any], status: str | None) -> dict[str, Any]:
     return {**_unseen(row), **figures, "status": status}
 
 
+def _row(held: Mapping[str, Any], allowed: float, share: float, cap: float) -> dict[str, Any]:
+    """The activity row for `held`, as HELD, at this allowance, share and cap."""
+    counted = g.activity_counted(held["measured"], share, cap)
+    return {
+        **held,
+        "counted": counted,
+        "added": g.activity_added(counted, allowed),
+        "allowed": allowed,
+        "share": share,
+        "cap": cap,
+    }
+
+
 def _scaled(goals: g.Goals, kcal: float) -> g.Goals:
     """`goals` for `kcal` instead, to the whole kcal, each macro scaled to match to 0.1 g."""
     total = round(kcal)
@@ -343,17 +356,8 @@ class FitnessData:
         self, person: Person, day: date, held: Mapping[str, Any]
     ) -> dict[str, Any]:
         """A day's activity row for `held`, as HELD, under the person's settings."""
-        share, cap = person.active_calories_share, person.active_calories_cap
-        counted = g.activity_counted(held["measured"], share, cap)
         allowed = await self._allowed(person, day)
-        return {
-            **held,
-            "counted": counted,
-            "added": g.activity_added(counted, allowed),
-            "allowed": allowed,
-            "share": share,
-            "cap": cap,
-        }
+        return _row(held, allowed, person.active_calories_share, person.active_calories_cap)
 
     async def _update_today(
         self,
@@ -484,9 +488,10 @@ class FitnessData:
         Today's goals follow as for a reading. A past day must have goals in
         force: it is on or after the first day the person's goals were set.
         Its goal keeps its base, the goals in force less what activity added
-        on the day they were set, which may be an earlier day's. The next day
-        first gets a goals row of its own with the goals it showed, so the
-        change stops there.
+        on the day they were set, which may be an earlier day's, and its macro
+        split. Its activity keeps the allowance, share and cap it had, if it
+        had any; otherwise today's apply. The next day first gets a goals row
+        of its own with the goals it showed, so the change stops there.
         """
         if day == today().isoformat():
 
@@ -503,12 +508,17 @@ class FitnessData:
             old = await self._read(self.db.activity, person.key, day)
             last_reading = None if old is None else old["last_reading"]
             held = {"source": a.ACTION, "measured": kcal, "last_reading": last_reading}
-            new = await self._activity_row(person, the_day, held)
+            if old is None:
+                # Without activity, the day kept no allowance, share or cap of
+                # its own: today's are all there is to go by.
+                new = await self._activity_row(person, the_day, held)
+            else:
+                new = _row(held, old["allowed"], old["share"], old["cap"])
             if new == old:
                 return
             old_added = old["added"] if old else 0.0
             _set_on, kept, added = await self._in_force(person, day)
-            goals = self._goals(person, kept.kcal - added + new["added"])
+            goals = _scaled(kept, kept.kcal - added + new["added"])
             next_day = (the_day + timedelta(days=1)).isoformat()
             pin = next_day, await self.async_goal_on(person, next_day)
             await self.hass.async_add_executor_job(
