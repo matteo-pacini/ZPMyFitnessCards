@@ -239,6 +239,23 @@ test("the card says it is loading, what failed, and who it cannot find", async (
   assert.match(unknown.c._card.innerHTML, /<div class="error">/);
 });
 
+test("a person found whose days fail to load shows the title and the error, then loads on the retry", async () => {
+  let fail = true;
+  const { c } = card({ person: "Debora", locale: "en" }, (m) => {
+    if (m.type === "metron/people") return PEOPLE;
+    if (fail) return Promise.reject(new Error("boom"));
+    return { days: history("uggp", c._today) };
+  });
+  await c._start();
+  assert.ok(c._retry);
+  clearTimeout(c._retry);
+  assert.equal(c._card.innerHTML, '<div class="title">Streak</div><div class="error">Something went wrong: boom</div>');
+  fail = false;
+  await c._start();
+  assert.equal(c._retry, null);
+  assert.match(text(c._card.innerHTML), /^Streak Debora 400 kcal left today 2 day streak/);
+});
+
 test("the card's editor offers person, title and language, and it has a size", () => {
   const Card = ctx.customElements.defined["metron-streak-card"];
   assert.deepEqual(plain(Card.options), ["person", "title", "locale"]);
