@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import uuid
 from collections.abc import Mapping
 from datetime import date, timedelta
@@ -322,7 +323,8 @@ def check_active_calories(
         kcal = g.to_kcal(float(state.state), unit)
     except ValueError:
         return None
-    if kcal > MAX_ACTIVE_KCAL:
+    # float() reads "inf" and "nan" too: no more a reading than any other text.
+    if math.isfinite(kcal) and kcal > MAX_ACTIVE_KCAL:
         return "active_calories_running_total", {"reading": str(round(kcal))}
     return None
 

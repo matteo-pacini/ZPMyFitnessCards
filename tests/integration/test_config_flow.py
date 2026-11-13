@@ -767,6 +767,9 @@ UNITS = {
     "E6 41,850 kJ": ("41850", {UNIT: "kJ"}, None, "running_total", {"reading": "10002"}),
     "E6 45,000 kJ": ("45000", {UNIT: "kJ"}, None, "running_total", {"reading": "10755"}),
     "E6 30,000 kJ": ("30000", {UNIT: "kJ"}, None, None, {}),
+    # Numbers to Python, but not readings: accepted as a state that isn't a number is.
+    "inf": ("inf", {UNIT: "kcal"}, None, None, {}),
+    "nan": ("nan", {UNIT: "kJ"}, None, None, {}),
 }
 
 
