@@ -144,10 +144,13 @@ class StreakCard extends PersonCard {
     return 6;
   }
 
+  // The days with the day they end on, which the card draws as today. A
+  // failed fetch after midnight leaves both as they were, so the card stays
+  // whole until the retry, rather than judging yesterday's days as of today.
   async _fetch() {
     const today = this._today;
     const { days } = await this._call({ type: "metron/days", person: this._person.id, start: shiftDay(today, 1 - STREAK_LOOKBACK), end: today });
-    return days;
+    return { today, days };
   }
 
   _render() {
@@ -165,6 +168,6 @@ class StreakCard extends PersonCard {
 
   _renderBody() {
     if (!this._card || !this._data) return;
-    this._card.innerHTML = streakHTML(this._config.title || this._t.title_streak, this._person.name, this._data, this._fetchedOn, this._locale, this._t);
+    this._card.innerHTML = streakHTML(this._config.title || this._t.title_streak, this._person.name, this._data.days, this._data.today, this._locale, this._t);
   }
 }

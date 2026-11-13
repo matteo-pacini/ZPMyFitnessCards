@@ -284,6 +284,49 @@ test("a failed refresh keeps the calendar drawn, and tries again", async () => {
   }
 });
 
+test("a failed fetch after midnight keeps yesterday's card whole, and the retry draws the new day", async () => {
+  let today = TODAY;
+  let fail = false;
+  const { c } = card({ person: "Debora", locale: "en" }, (m) => {
+    if (fail) return Promise.reject(new Error("boom"));
+    return m.type === "metron/people" ? PEOPLE : { days: history("uggp", today) };
+  });
+  Object.defineProperty(c, "_today", { get: () => today });
+  // Midnight's refresh, and the reload it falls back to, run without being
+  // awaited: keep their promises to wait for them here.
+  const pending = [];
+  for (const name of ["_refresh", "_start"]) {
+    const original = c[name];
+    c[name] = function () {
+      const run = original.call(this);
+      pending.push(run);
+      return run;
+    };
+  }
+  try {
+    await c._start();
+    const drawn = c._card.innerHTML;
+    assert.deepEqual(plain(cell(drawn, TODAY)), ["cell", "pending", "today"]);
+
+    today = fn.shiftDay(TODAY, 1);
+    fail = true;
+    c.hass = c._hass;
+    while (pending.length) await pending.shift();
+    assert.equal(c._failure.message, "boom");
+    assert.ok(c._retry);
+    assert.equal(c._card.innerHTML, drawn);
+
+    clearTimeout(c._retry);
+    fail = false;
+    await c._start();
+    assert.equal(c._retry, null);
+    assert.deepEqual(plain(cell(c._card.innerHTML, today)), ["cell", "pending", "today"]);
+    assert.deepEqual(plain(cell(c._card.innerHTML, TODAY)), ["cell", "good", "jl"]);
+  } finally {
+    clearTimeout(c._retry);
+  }
+});
+
 test("while the integration reloads after the person loaded, the card says it is loading", async () => {
   const { c } = card({ person: "Debora", locale: "en" }, (m) =>
     m.type === "metron/people" ? PEOPLE : Promise.reject(Object.assign(new Error("Metron is not loaded"), { code: "not_loaded" })),
