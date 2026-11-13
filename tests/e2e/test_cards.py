@@ -9,13 +9,9 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from playwright.sync_api import Locator, Page, expect
-from sqlalchemy import MetaData, Table, update
 
-from custom_components.metron.db import make_engine
-
-from ..schemas import contents
 from .conftest import FakeSearch, Home
-from .flows import person_named, wait_for
+from .flows import goals_since, person_named
 
 TIMEOUT = 15_000
 
@@ -597,27 +593,6 @@ def test_open_cards_move_to_the_new_day_at_midnight(home: Home, page: Page) -> N
 
 
 # The streak card
-
-
-def goals_since(home: Home, name: str, day: str) -> None:
-    """Move `name`'s goals to `day`, as though they had stayed the same since.
-
-    The integration only ever sets today's goals, so a person added for a
-    test has none before today, and every past day ends the streak's
-    look-back. The tests that need past days with goals set them here, in
-    the database itself. Today then has no goals of its own, as on most days.
-    """
-    key = person_id(home, name)
-    # The first goals are written as the person is set up, which may not be done.
-    wait_for(lambda: (key,) in contents(home.db_url, {"goals": ["person"]})["goals"])
-    engine = make_engine(home.db_url)
-    try:
-        goals = Table("goals", MetaData(), autoload_with=engine)
-        with engine.begin() as conn:
-            moved = conn.execute(update(goals).where(goals.c.person == key).values(day=day))
-            assert moved.rowcount == 1
-    finally:
-        engine.dispose()
 
 
 def goal_kcal(home: Home, name: str) -> float:

@@ -107,12 +107,7 @@ def test_cards_wait_and_retry_while_the_integration_reloads(home: Home, page: Pa
     "failing",
     [
         "*",
-        pytest.param(
-            "metron/days",
-            marks=pytest.mark.xfail(
-                strict=True, reason="a failed metron/days after metron/people leaves it blank"
-            ),
-        ),
+        "metron/days",
     ],
 )
 def test_the_streak_card_shows_a_failed_load_then_tries_again(

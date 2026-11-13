@@ -27,14 +27,11 @@ from zoneinfo import ZoneInfo
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Locator, Page, expect
-from sqlalchemy import MetaData, Table, update
-
-from custom_components.metron.db import make_engine
 
 from ..schemas import contents
 from . import flows
 from .conftest import Home
-from .flows import TIMEOUT, people, today, wait_for
+from .flows import TIMEOUT, goals_since, people, today, wait_for
 from .test_actions import act, refused
 from .test_card_states import mount, open_home
 from .test_person_form import remove_person, type_number
@@ -168,27 +165,6 @@ def settled(home: Home, name: str, check: Callable[[dict[str, Any] | None], bool
             return False  # reloading
 
     wait_for(passes)
-
-
-def goals_since(s: Screen, name: str, day: str) -> None:
-    """Move `name`'s goals to `day`, as though they had stayed the same since.
-
-    The integration only ever sets today's goals, and a past day needs goals
-    in force for its activity to show: those of the day it was set, or an
-    earlier one. A person added today has none before today, so the flows
-    that log a past day give them some here, in the database itself. Today
-    then has no goals of its own, as on most days.
-    """
-    engine = make_engine(s.home.db_url)
-    try:
-        goals = Table("goals", MetaData(), autoload_with=engine)
-        with engine.begin() as conn:
-            moved = conn.execute(
-                update(goals).where(goals.c.person == person_key(s.home, name)).values(day=day)
-            )
-            assert moved.rowcount == 1
-    finally:
-        engine.dispose()
 
 
 def goal_days(s: Screen, name: str) -> list[str]:
@@ -585,7 +561,7 @@ def h3_sedentary(s: Screen) -> None:
 def h4_a_past_day(s: Screen) -> None:
     """Anna looks back: a past day keeps its sum and line; a day without activity has neither."""
     anna = add_person(s, ANNA, "H4", enabled=True)
-    goals_since(s, anna, days_ago(3))
+    goals_since(s.home, anna, days_ago(3))
     eat(s, anna, 1050, days_ago(2))
     diary, summary = open_cards(s, anna)
     step(s, diary, "prev")
@@ -640,7 +616,7 @@ def h5_the_action_with_no_sensor(s: Screen) -> None:
 def h6_the_action_on_yesterday(s: Screen) -> None:
     """A late sync raises yesterday; today, with no goals of its own, is unchanged."""
     debora = add_person(s, DEBORA, "H6", enabled=True)
-    goals_since(s, debora, days_ago(3))
+    goals_since(s.home, debora, days_ago(3))
     eat(s, debora, 1200, days_ago(1))
     assert goal_days(s, debora) == [days_ago(3)]
     diary, summary = open_cards(s, debora)

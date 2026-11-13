@@ -20,7 +20,11 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from playwright.sync_api import Locator, Page, Route, expect
+from sqlalchemy import MetaData, Table, update
 
+from custom_components.metron.db import make_engine
+
+from ..schemas import contents
 from .conftest import FakeSearch, Home
 
 TIMEOUT = 15_000
@@ -329,6 +333,9 @@ def person_named(home: Home, name: str) -> Iterator[Callable[[], None]]:
         home.ws(
             {"type": "config_entries/subentries/delete", "entry_id": entry, "subentry_id": subentry}
         )
+        # Removing a person reloads the integration, which answers not_loaded
+        # until it is back.
+        wait_for(lambda: answers_without(home, name))
 
     try:
         wait_for(lambda: name in {p["name"] for p in people(home)})
@@ -343,6 +350,35 @@ def people(home: Home) -> list[dict]:
         return home.ws({"type": "metron/people"})
     except AssertionError:
         return []  # reloading
+
+
+def answers_without(home: Home, name: str) -> bool:
+    """Whether Metron is loaded, and has no person called `name`."""
+    try:
+        return name not in {p["name"] for p in home.ws({"type": "metron/people"})}
+    except AssertionError:
+        return False  # reloading
+
+
+def goals_since(home: Home, name: str, day: str) -> None:
+    """Move `name`'s goals to `day`, as though they had stayed the same since.
+
+    The integration only ever sets today's goals, so a person added today has
+    none before today. Tests that need past days with goals in force give
+    them some here, in the database itself. Today then has no goals of its
+    own, as on most days.
+    """
+    key = wait_for(lambda: next((p["id"] for p in people(home) if p["name"] == name), None))
+    # The first goals are written as the person is set up, which may not be done.
+    wait_for(lambda: (key,) in contents(home.db_url, {"goals": ["person"]})["goals"])
+    engine = make_engine(home.db_url)
+    try:
+        goals = Table("goals", MetaData(), autoload_with=engine)
+        with engine.begin() as conn:
+            moved = conn.execute(update(goals).where(goals.c.person == key).values(day=day))
+            assert moved.rowcount == 1
+    finally:
+        engine.dispose()
 
 
 def wait_for(check: Callable[[], Any], seconds: float = 30) -> Any:

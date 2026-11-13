@@ -12,12 +12,10 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from playwright.sync_api import Browser, Page, expect
-from sqlalchemy import MetaData, Table, update
-
-from custom_components.metron.db import make_engine
 
 from .active_calories import WATCH, change_person, person_key, settled
 from .conftest import REPO, FakeSearch, Home
+from .flows import goals_since
 from .test_editor import choose, pick_card
 
 IMAGES = REPO / "images"
@@ -167,15 +165,7 @@ def add_streak_data(home: Home) -> None:
     """
     matteo = person_key(home, "Matteo")
     today = datetime.now(ZoneInfo("Europe/London")).date()
-    engine = make_engine(home.db_url)
-    try:
-        goals = Table("goals", MetaData(), autoload_with=engine)
-        since = (today - timedelta(days=STREAK_DAYS + 5)).isoformat()
-        with engine.begin() as conn:
-            moved = conn.execute(update(goals).where(goals.c.person == matteo).values(day=since))
-            assert moved.rowcount == 1
-    finally:
-        engine.dispose()
+    goals_since(home, "Matteo", (today - timedelta(days=STREAK_DAYS + 5)).isoformat())
     for n in range(STREAK_DAYS + 1):
         if n in STREAK_UNLOGGED:
             continue
