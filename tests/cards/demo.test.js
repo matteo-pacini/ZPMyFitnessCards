@@ -154,6 +154,15 @@ test("days have totals by meal, goals and weight", async () => {
   assert.equal(backwards.error.code, "invalid_range");
 });
 
+test("Matteo's last month has a run on goal, days over and days with nothing logged", async () => {
+  const hass = newHass();
+  const { Matteo } = await people(hass);
+  const { days } = await call(hass, { type: "metron/days", person: Matteo, start: "2025-10-08", end: TODAY });
+  const tally = vm.runInContext("streakTally", await load());
+  const { streak, best, count } = tally(days, TODAY);
+  assert.deepEqual(plain({ streak, best, count }), { streak: 8, best: 8, count: { good: 25, over: 2, unlogged: 2 } });
+});
+
 test("Matteo has a year of weigh-ins", async () => {
   const hass = newHass();
   const { Matteo } = await people(hass);

@@ -45,6 +45,7 @@ const SOURCES = [
   "cards/weight-card.js",
   "cards/trends-card.js",
   "cards/summary-card.js",
+  "cards/streak-card.js",
   "cards/register.js",
 ];
 const root = path.join(__dirname, "..");

@@ -49,6 +49,13 @@ customElements.whenDefined("home-assistant").then(() => {
       description: "One person's day at a glance: calories, macros, meals and weight, from Metron",
       documentationURL: "https://github.com/matteo-pacini/metron#summary-card",
     },
+    {
+      element: StreakCard,
+      type: "metron-streak-card",
+      name: "Streak",
+      description: "One person's days in a row on their calorie goal, and the last 30 days, from Metron",
+      documentationURL: "https://github.com/matteo-pacini/metron#streak-card",
+    },
   ];
   window.customCards = window.customCards || [];
   for (const { element, ...card } of cards) {

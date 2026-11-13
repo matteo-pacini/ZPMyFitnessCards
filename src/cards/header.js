@@ -12,6 +12,8 @@
 //                                against their goal
 // custom:metron-summary-card     one person's day at a glance: calorie and macro
 //                                rings, meals, and weight
+// custom:metron-streak-card      one person's days in a row on their calorie
+//                                goal, and the last 30 days as a calendar
 //
 // They talk to the integration over its websocket commands, and redraw when
 // its metron/subscribe events say something changed.

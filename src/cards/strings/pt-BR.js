@@ -83,4 +83,11 @@ STRINGS["pt-BR"] = {
   activity_missing_held: "O Home Assistant não tem mais {sensor}. Escolha outro sensor para {person} em Configurações, Dispositivos e serviços, Metron. Até lá, é usada a última leitura dele de hoje, {measured} kcal.",
   activity_unavailable: "{sensor} não está disponível, então é usada a última leitura dele de hoje, {measured} kcal.",
   activity_logged_waiting: "Ainda não há calorias ativas registradas hoje.",
+  streak_nothing_today: "Ainda nada registrado hoje",
+  streak_good: "na meta",
+  streak_over: "acima da meta",
+  streak_unlogged: "nada registrado",
+  streak_pending: "hoje, na meta até agora",
+  streak_no_goal: "ainda sem meta",
+  streak_summary: "{person}, últimos {days} dias: na meta {count}, acima da meta {over}, nada registrado {unlogged}. Sequência atual {streak}, melhor {best}.",
 };
