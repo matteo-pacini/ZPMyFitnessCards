@@ -7,6 +7,7 @@ import io
 import re
 import zipfile
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -15,6 +16,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
+
+from custom_components.metron.export import build_zip
+
+from .conftest import mock_entry, person
+from .test_activity import GARMIN, KCAL, anna
+from .test_services import added_on
 
 OATS = {"name": "Porridge oats", "kcal": 389, "protein": 16.9, "carbs": 66, "fat": 6.9}
 
@@ -99,7 +106,15 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
         'attachment; filename="metron-debora-2026-11-09.zip"'
     )
     archive = zipfile.ZipFile(io.BytesIO(await response.read()))
-    assert archive.namelist() == ["entries.csv", "weights.csv", "foods.csv", "meals.csv"]
+    assert archive.namelist() == [
+        "entries.csv",
+        "weights.csv",
+        "foods.csv",
+        "meals.csv",
+        "activity.csv",
+    ]
+    # Debora has never had active calories allowed.
+    assert read_csv(archive, "activity.csv") == []
 
     pizza, porridge = read_csv(archive, "entries.csv")
     assert pizza == {
@@ -182,6 +197,41 @@ async def test_exports_a_person_s_data_as_a_zip_of_csvs(
         "carbs_g": "1.5",
         "fat_g": "1",
     }
+
+
+async def test_exports_a_person_s_active_calories(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
+) -> None:
+    entry = mock_entry(anna(), person(), data=entry_data)
+    data = (await added_on(hass, freezer, "2026-11-08", entry)).runtime_data.data
+    hass.states.async_set(GARMIN, "120", KCAL)
+    await hass.async_block_till_done()
+    await data.async_log_activity(data.people["anna"], "2026-11-08", 906)
+    archive = zipfile.ZipFile(
+        io.BytesIO(await hass.async_add_executor_job(build_zip, data.db, "anna"))
+    )
+    assert read_csv(archive, "activity.csv") == [
+        {
+            "day": "2026-11-08",
+            "source": "action",
+            "measured_kcal": "906",
+            "counted_kcal": "680",
+            "added_kcal": "435.831",
+            "allowed_kcal": "244.169",
+            "share_pct": "75",
+            "cap_kcal": "1500",
+        },
+        {
+            "day": "2026-11-09",
+            "source": GARMIN,
+            "measured_kcal": "120",
+            "counted_kcal": "90",
+            "added_kcal": "0",
+            "allowed_kcal": "244.169",
+            "share_pct": "75",
+            "cap_kcal": "1500",
+        },
+    ]
 
 
 async def test_the_link_is_short_lived_and_for_admins_only(

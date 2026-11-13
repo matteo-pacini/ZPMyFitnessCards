@@ -76,3 +76,105 @@ def test_paces_in_lb_are_kept_in_kg_fastest_first() -> None:
     assert g.PACES["lose_1_lb"] == -0.45359237
     assert g.suggested_calories(2200, "lose_1_lb") == pytest.approx(2200 - 0.45359237 * 1100)
     assert list(g.PACES.values()) == sorted(g.PACES.values())
+
+
+# Active calories. Anna: female, 35, 165 cm, 70 kg.
+ANNA = ("female", 70, 165, 35)
+
+
+def test_resting_burn_is_mifflin_st_jeor() -> None:
+    # 10 * 70 + 6.25 * 165 - 5 * 35 - 161.
+    assert g.resting_burn(*ANNA) == 1395.25
+    # 10 * 89 + 6.25 * 180 - 5 * 36 + 5.
+    assert g.resting_burn("male", 89, 180, 36) == 1840
+
+
+@pytest.mark.parametrize("activity", list(g.ACTIVITY))
+@pytest.mark.parametrize("sex", ["female", "male"])
+def test_daily_burn_is_unchanged_at_every_level(sex: str, activity: str) -> None:
+    def before(sex: str, weight_kg: float, height_cm: float, age: int, activity: str) -> float:
+        resting = 10 * weight_kg + 6.25 * height_cm - 5 * age + (5 if sex == "male" else -161)
+        return resting * g.ACTIVITY[activity]
+
+    assert g.daily_burn(sex, 70.3, 165.1, 35, activity) == before(sex, 70.3, 165.1, 35, activity)
+
+
+@pytest.mark.parametrize(
+    ("measured", "share", "counted"),
+    [
+        # E5: 3,790 kJ is 905.8 kcal, so 75% is 679.4: 68 tens.
+        (905.8, 75, 680),
+        (906, 75, 680),
+        (120, 75, 90),
+        # Python's round: a half ten goes to the even ten.
+        (900, 75, 680),
+        (220, 75, 160),
+        (906, 100, 910),
+        (906, 0, 0),
+        (0, 75, 0),
+        (-200, 75, 0),
+    ],
+)
+def test_activity_counted_is_the_share_to_the_nearest_10(
+    measured: float, share: float, counted: float
+) -> None:
+    assert g.activity_counted(measured, share, 1500) == counted
+
+
+def test_activity_counted_stops_at_the_cap() -> None:
+    # E4: 75% of 2,400 is 1,800.
+    assert g.activity_counted(2400, 75, 1500) == 1500
+    assert g.activity_counted(2000, 75, 1500) == 1500
+    assert g.activity_counted(1990, 75, 1500) == 1490
+    assert g.activity_counted(2400, 75, 100) == 100
+
+
+@pytest.mark.parametrize(
+    ("activity", "allowed"),
+    [
+        ("sedentary", 0),
+        ("light", 1395.25 * 0.175),
+        ("moderate", 1395.25 * 0.35),
+        ("active", 1395.25 * 0.525),
+        ("very_active", 1395.25 * 0.7),
+    ],
+)
+def test_activity_allowed_is_what_the_level_adds_to_sedentary(
+    activity: str, allowed: float
+) -> None:
+    assert g.activity_allowed(g.resting_burn(*ANNA), activity) == pytest.approx(allowed)
+
+
+def test_activity_added_is_what_counts_beyond_the_level() -> None:
+    allowed = g.activity_allowed(1395.25, "light")
+    assert allowed == pytest.approx(244.17, abs=0.005)
+    assert g.activity_added(120, allowed) == 0
+    assert g.activity_added(allowed, allowed) == 0
+    assert g.activity_added(680, allowed) == pytest.approx(435.83, abs=0.005)
+    assert g.activity_added(90, 0) == 90
+    assert g.activity_added(0, 0) == 0
+
+
+@pytest.mark.parametrize(
+    ("value", "unit", "kcal"),
+    [
+        (906, "kcal", 906),
+        (906, "calories", 906),
+        # E5.
+        (3790, "kJ", pytest.approx(905.8, abs=0.05)),
+        (4184, "kJ", pytest.approx(1000)),
+        # E6: the most a day can measure.
+        (41840, "kJ", pytest.approx(10000)),
+        (0, "kJ", 0),
+        (906, "cal", None),
+        (906, "Wh", None),
+        (906, "kWh", None),
+        (906, "W", None),
+        (906, "steps", None),
+        (906, "%", None),
+        (906, "KCAL", None),
+        (906, None, None),
+    ],
+)
+def test_to_kcal_reads_kcal_calories_and_kj(value: float, unit: str | None, kcal: object) -> None:
+    assert g.to_kcal(value, unit) == kcal

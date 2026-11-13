@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import uuid
 from collections.abc import Mapping
 from datetime import date, timedelta
@@ -17,7 +18,10 @@ from homeassistant.config_entries import (
     ConfigSubentryFlow,
     SubentryFlowResult,
 )
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import section
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     BooleanSelector,
     DateSelector,
@@ -35,11 +39,17 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+from homeassistant.util.unit_conversion import EnergyConverter
 from sqlalchemy import text
 from sqlalchemy.exc import ArgumentError, SQLAlchemyError
 
 from . import goals as g
 from .const import (
+    ACTIVE_CALORIES_DEFAULTS,
+    CONF_ACTIVE_CALORIES_CAP,
+    CONF_ACTIVE_CALORIES_ENABLED,
+    CONF_ACTIVE_CALORIES_ENTITY,
+    CONF_ACTIVE_CALORIES_SHARE,
     CONF_ACTIVITY,
     CONF_BIRTH_DATE,
     CONF_CALORIE_GOAL,
@@ -61,6 +71,7 @@ from .const import (
     ENGINE_POSTGRESQL,
     ENGINE_SQLITE,
     IMPORTED_MEAL,
+    MAX_ACTIVE_KCAL,
     MAX_CM,
     MAX_KG,
     MAX_LB,
@@ -119,6 +130,16 @@ MEASUREMENTS = {
 PACES_KG = ("lose_0_75", "lose_0_5", "lose_0_25", "maintain")
 PACES_LB = ("lose_1_5_lb", "lose_1_lb", "lose_0_5_lb", "maintain")
 
+# The person form's collapsible section, which holds these fields. The
+# sub-entry stores them flat, next to the rest.
+SECTION_ACTIVE_CALORIES = "active_calories"
+ACTIVE_CALORIES = (
+    CONF_ACTIVE_CALORIES_ENABLED,
+    CONF_ACTIVE_CALORIES_SHARE,
+    CONF_ACTIVE_CALORIES_CAP,
+    CONF_ACTIVE_CALORIES_ENTITY,
+)
+
 
 def _number(low: float, high: float, step: float, unit: str) -> NumberSelector:
     return NumberSelector(
@@ -134,10 +155,11 @@ def _choice(options: list[str], key: str) -> SelectSelector:
     )
 
 
-def person_schema(pounds: bool, pace: str | None = None) -> vol.Schema:
+def person_schema(pounds: bool, pace: str | None = None, collapsed: bool = True) -> vol.Schema:
     """The person form, in lb, feet and inches if `pounds`, else in kg and cm.
 
     It offers the unit system's paces, and `pace` as well if it is another's.
+    Its active calories section starts closed if `collapsed`.
     """
     if pounds:
         start, goal, offered = CONF_START_WEIGHT_LB, CONF_GOAL_WEIGHT_LB, PACES_LB
@@ -173,6 +195,22 @@ def person_schema(pounds: bool, pace: str | None = None) -> vol.Schema:
             vol.Required(CONF_PROTEIN_PCT): percent,
             vol.Required(CONF_CARBS_PCT): percent,
             vol.Required(CONF_FAT_PCT): percent,
+            # Optional, so that a form sent without it saves the defaults. No
+            # default: the frontend would fill the section with that, not with
+            # its fields' suggested values.
+            vol.Optional(SECTION_ACTIVE_CALORIES): section(
+                vol.Schema(
+                    {
+                        vol.Required(CONF_ACTIVE_CALORIES_ENABLED): BooleanSelector(),
+                        vol.Required(CONF_ACTIVE_CALORIES_SHARE): percent,
+                        vol.Required(CONF_ACTIVE_CALORIES_CAP): _number(100, 5000, 50, "kcal"),
+                        vol.Optional(CONF_ACTIVE_CALORIES_ENTITY): EntitySelector(
+                            EntitySelectorConfig(domain="sensor")
+                        ),
+                    }
+                ),
+                {"collapsed": collapsed},
+            ),
         }
     )
 
@@ -191,11 +229,17 @@ def _from_form(key: str, fields: tuple[float, ...], pounds: bool) -> float:
     return g.feet_inches_to_cm(*fields) if key == CONF_HEIGHT else g.lb_to_kg(fields[0])
 
 
+def _active_calories(values: Mapping[str, Any]) -> dict[str, Any]:
+    """The active calories settings in `values`, with the defaults for any missing."""
+    return {**ACTIVE_CALORIES_DEFAULTS, **{k: values[k] for k in ACTIVE_CALORIES if k in values}}
+
+
 def shown(data: Mapping[str, Any], pounds: bool) -> dict[str, Any]:
     """A person's stored details as the form shows them."""
-    out = {k: v for k, v in data.items() if k not in MEASUREMENTS}
+    out = {k: v for k, v in data.items() if k not in MEASUREMENTS and k not in ACTIVE_CALORIES}
     for key, fields in MEASUREMENTS.items():
         out |= zip(fields[pounds], _in_form(key, data[key], pounds), strict=True)
+    out[SECTION_ACTIVE_CALORIES] = _active_calories(data)
     return out
 
 
@@ -208,13 +252,16 @@ def stored(
     so saving a person again never moves it by a rounding.
     """
     form_keys = {f for fields in MEASUREMENTS.values() for f in fields[pounds]}
-    out = {k: v for k, v in values.items() if k not in form_keys}
+    out = {k: v for k, v in values.items() if k not in form_keys | {SECTION_ACTIVE_CALORIES}}
     for key, fields in MEASUREMENTS.items():
         typed = tuple(values[f] for f in fields[pounds])
         if before and typed == _in_form(key, before[key], pounds):
             out[key] = before[key]
         else:
             out[key] = _from_form(key, typed, pounds)
+    out |= _active_calories(values.get(SECTION_ACTIVE_CALORIES, {}))
+    for key in (CONF_ACTIVE_CALORIES_SHARE, CONF_ACTIVE_CALORIES_CAP):
+        out[key] = round(out[key])
     return out
 
 
@@ -243,6 +290,43 @@ def validate_person(values: dict[str, Any], other_names: set[str]) -> dict[str, 
     if values[CONF_PROTEIN_PCT] + values[CONF_CARBS_PCT] + values[CONF_FAT_PCT] != 100:
         errors["base"] = "macros_not_100"
     return errors
+
+
+def check_active_calories(
+    hass: HomeAssistant, values: Mapping[str, Any]
+) -> tuple[str, dict[str, str]] | None:
+    """Why the active calories sensor in `values`, as stored, can't be used.
+
+    Returns an error key and its placeholders, or None if it can be used. The
+    sensor's unit and device class are its state's, else the entity registry's.
+    """
+    entity_id = values.get(CONF_ACTIVE_CALORIES_ENTITY)
+    if entity_id is None:
+        return None
+    if not values[CONF_ACTIVE_CALORIES_ENABLED]:
+        return "active_calories_sensor_disabled", {}
+    if (state := hass.states.get(entity_id)) is None:
+        return "active_calories_missing", {}
+    entry = er.async_get(hass).async_get(entity_id)
+    unit = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) or (entry and entry.unit_of_measurement)
+    if not unit:
+        return "active_calories_no_unit", {}
+    if unit not in g.PER_KCAL:
+        device_class = state.attributes.get(ATTR_DEVICE_CLASS) or (
+            entry and (entry.device_class or entry.original_device_class)
+        )
+        if device_class == "energy" and unit in EnergyConverter.VALID_UNITS:
+            # Home Assistant can show it in kcal or kJ instead.
+            return "active_calories_unit_setting", {"unit": unit}
+        return "active_calories_unit", {"unit": unit}
+    try:
+        kcal = g.to_kcal(float(state.state), unit)
+    except ValueError:
+        return None
+    # float() reads "inf" and "nan" too: no more a reading than any other text.
+    if math.isfinite(kcal) and kcal > MAX_ACTIVE_KCAL:
+        return "active_calories_running_total", {"reading": str(round(kcal))}
+    return None
 
 
 def read_upload(hass: HomeAssistant, file_id: str) -> Diary:
@@ -345,17 +429,45 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         }
 
     def _form(
-        self, step_id: str, values: Mapping[str, Any], errors: dict[str, str]
+        self,
+        step_id: str,
+        values: Mapping[str, Any],
+        errors: dict[str, str],
+        placeholders: dict[str, str] | None = None,
     ) -> SubentryFlowResult:
         # The answer comes in this form's units, even if the unit system changes
         # while it is open.
         self._pounds = uses_pounds(self.hass)
-        schema = person_schema(self._pounds, values.get(CONF_PACE))
+        active_calories = _active_calories(values.get(SECTION_ACTIVE_CALORIES, {}))
+        schema = person_schema(
+            self._pounds,
+            values.get(CONF_PACE),
+            collapsed=not (
+                active_calories[CONF_ACTIVE_CALORIES_ENABLED] or SECTION_ACTIVE_CALORIES in errors
+            ),
+        )
         return self.async_show_form(
             step_id=step_id,
-            data_schema=self.add_suggested_values_to_schema(schema, values),
+            data_schema=self.add_suggested_values_to_schema(
+                schema, {**values, SECTION_ACTIVE_CALORIES: active_calories}
+            ),
             errors=errors,
+            description_placeholders=placeholders,
         )
+
+    def _errors(
+        self, values: dict[str, Any], exclude: str | None = None
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """Errors in a filled-in person form, from `values` as stored, and their placeholders.
+
+        The frontend shows no errors on the fields inside a section, only on
+        the section, so the sensor's errors are the section's.
+        """
+        errors = validate_person(values, self._names(exclude))
+        placeholders: dict[str, str] = {}
+        if problem := check_active_calories(self.hass, values):
+            errors[SECTION_ACTIVE_CALORIES], placeholders = problem
+        return errors, placeholders
 
     async def _key_for(self, name: str) -> str:
         """The key of someone removed earlier under this name, or a new one.
@@ -381,9 +493,9 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         if user_input is None:
             return self._form("user", {**DEFAULTS, CONF_START_DATE: today().isoformat()}, {})
         data = stored(user_input, self._pounds)
-        errors = validate_person(data, self._names())
+        errors, placeholders = self._errors(data)
         if errors:
-            return self._form("user", user_input, errors)
+            return self._form("user", user_input, errors, placeholders)
         name = data[CONF_NAME].strip()
         try:
             key = await self._key_for(name)
@@ -406,9 +518,9 @@ class PersonSubentryFlow(ConfigSubentryFlow):
         if user_input is None:
             return self._form("edit", shown(subentry.data, uses_pounds(self.hass)), {})
         data = stored(user_input, self._pounds, subentry.data)
-        errors = validate_person(data, self._names(exclude=subentry.subentry_id))
+        errors, placeholders = self._errors(data, exclude=subentry.subentry_id)
         if errors:
-            return self._form("edit", user_input, errors)
+            return self._form("edit", user_input, errors, placeholders)
         name = data[CONF_NAME].strip()
         # Optional fields left empty are absent, so build the data afresh.
         data = {**data, CONF_NAME: name, CONF_KEY: subentry.data[CONF_KEY]}

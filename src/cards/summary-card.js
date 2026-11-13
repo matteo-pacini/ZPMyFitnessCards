@@ -51,12 +51,21 @@ function summaryFoodHTML(day, locale, t) {
   const scale = Math.max(goals?.kcal ?? 0, sums.kcal) || 1;
   const stack = byMeal.map((kcal, i) => (kcal > 0 ? `<i class="meal${i}" style="width:${((kcal / scale) * 100).toFixed(2)}%"></i>` : "")).join("");
   const legend = MEALS.map((meal, i) => `<span><i class="meal${i}"></i>${esc(t[meal])} <span class="num">${number(byMeal[i], locale)}</span></span>`).join("");
+  let ofGoal = "";
+  if (goals) {
+    const food = number(sums.kcal, locale);
+    const total = number(goals.kcal, locale);
+    // The goal includes what activity added, which the line names on a day that has any.
+    ofGoal = day.activity
+      ? fill(t.of_goal_activity, { food, total, activity: number(day.activity.added, locale) })
+      : fill(t.of_goal, { food, goal: total });
+  }
   return `
     <div class="rings">
       <div class="big">${ringSVG(132, 12, goals ? sums.kcal / goals.kcal : 0, "kcal")}<div class="centre">${centre}</div></div>
       <div class="minis">${minis}</div>
     </div>
-    ${goals ? `<div class="sub num">${esc(fill(t.of_goal, { food: number(sums.kcal, locale), goal: number(goals.kcal, locale) }))}</div>` : ""}
+    ${ofGoal && `<div class="sub num">${esc(ofGoal)}</div>`}
     <div class="stack" role="img" aria-label="${esc(t.kcal)}">${stack}</div>
     <div class="legend">${legend}</div>`;
 }

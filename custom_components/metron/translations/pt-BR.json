@@ -47,6 +47,12 @@
       },
       "entry_type": "Pessoa",
       "error": {
+        "active_calories_missing": "Este sensor não existe no Home Assistant. Escolha outro ou limpe o campo.",
+        "active_calories_no_unit": "Este sensor não tem unidade, então não pode ser lido como kcal ou kJ. Escolha um em kcal ou kJ, dê uma unidade a ele com um sensor de template ou registre-o a partir de uma automação com a ação “Registrar calorias ativas”.",
+        "active_calories_running_total": "Este sensor marca {reading} kcal, mais do que a atividade de um dia: parece um total que nunca zera. Crie a partir dele um medidor de consumo (utility meter) com ciclo diário ou registre o total de cada dia a partir de uma automação com a ação “Registrar calorias ativas”. O README mostra as duas formas.",
+        "active_calories_sensor_disabled": "Um sensor só é lido enquanto as calorias ativas estiverem permitidas. Marque “Permitir calorias ativas” ou limpe o sensor.",
+        "active_calories_unit": "Este sensor informa {unit}, não kcal nem kJ. Converta-o com um sensor de template ou registre-o a partir de uma automação com a ação “Registrar calorias ativas”. O README mostra as duas formas.",
+        "active_calories_unit_setting": "Este sensor é exibido em {unit}. Mude a unidade dele para kcal ou kJ nas configurações dele e envie de novo.",
         "bad_line": "Não foi possível ler a linha {line} de {file}.",
         "bad_row": "Não foi possível ler a linha {row} de {day}.",
         "birth_date_future": "A data de nascimento precisa estar no passado.",
@@ -97,13 +103,32 @@
             "start_weight_lb": "Peso inicial"
           },
           "data_description": {
-            "calorie_goal": "Deixe vazio para usar a meta calculada a partir dos dados acima. Ela acompanha cada novo peso.",
+            "activity": "Quão ativo é um dia comum. Com as calorias ativas permitidas, a meta nunca fica abaixo da deste nível, e só a atividade acima dele é somada.",
+            "calorie_goal": "Deixe vazio para usar a meta calculada a partir dos dados acima. Ela acompanha cada novo peso. Com as calorias ativas permitidas, a atividade acima do nível de atividade é somada à meta, digitada ou calculada.",
             "carbs_pct": "Parte da meta de calorias vinda dos carboidratos.",
             "fat_pct": "Parte da meta de calorias vinda da gordura.",
             "name": "Aparece nos cards e nos nomes dos sensores. Precisa ser diferente do nome de qualquer outra pessoa.",
             "person_entity": "Opcional. Cards sem pessoa definida mostram a pessoa vinculada a quem está conectado.",
             "protein_pct": "Parte da meta de calorias vinda da proteína. Proteína, carboidratos e gordura precisam somar 100%.",
             "sex": "Usado com idade, altura e peso para estimar as calorias gastas por dia."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Máximo contado por dia",
+                "active_calories_enabled": "Permitir calorias ativas",
+                "active_calories_entity": "Sensor (opcional)",
+                "active_calories_share": "Parte contada"
+              },
+              "data_description": {
+                "active_calories_cap": "Um valor acima disso conta só até aqui, e o diário alimentar avisa. Só vale enquanto as calorias ativas estiverem permitidas.",
+                "active_calories_enabled": "Soma à meta de calorias a atividade que um relógio ou celular mede acima do nível de atividade. Parte contada, Máximo contado por dia e Sensor só valem enquanto isto estiver marcado.",
+                "active_calories_entity": "As calorias ativas de hoje em kcal ou kJ, a partir de 0 todo dia, como “Active calories” do Garmin Connect, e não “Calories”, que inclui as calorias gastas em repouso. Um valor em kJ é convertido para kcal. Deixe vazio para registrá-las a partir de uma automação com a ação “Registrar calorias ativas”.",
+                "active_calories_share": "Quanto do valor medido conta. Relógios costumam superestimar, então 75% é um começo cuidadoso. Só vale enquanto as calorias ativas estiverem permitidas."
+              },
+              "description": "Opcional. Aumenta a meta de calorias nos dias ativos, a partir de um sensor ou de uma automação.",
+              "name": "Calorias ativas"
+            }
           },
           "title": "Alterar pessoa"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "Peso inicial"
           },
           "data_description": {
-            "calorie_goal": "Deixe vazio para usar a meta calculada a partir dos dados acima. Ela acompanha cada novo peso.",
+            "activity": "Quão ativo é um dia comum. Com as calorias ativas permitidas, a meta nunca fica abaixo da deste nível, e só a atividade acima dele é somada.",
+            "calorie_goal": "Deixe vazio para usar a meta calculada a partir dos dados acima. Ela acompanha cada novo peso. Com as calorias ativas permitidas, a atividade acima do nível de atividade é somada à meta, digitada ou calculada.",
             "carbs_pct": "Parte da meta de calorias vinda dos carboidratos.",
             "fat_pct": "Parte da meta de calorias vinda da gordura.",
             "name": "Aparece nos cards e nos nomes dos sensores. Precisa ser diferente do nome de qualquer outra pessoa.",
             "person_entity": "Opcional. Cards sem pessoa definida mostram a pessoa vinculada a quem está conectado.",
             "protein_pct": "Parte da meta de calorias vinda da proteína. Proteína, carboidratos e gordura precisam somar 100%.",
             "sex": "Usado com idade, altura e peso para estimar as calorias gastas por dia."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Máximo contado por dia",
+                "active_calories_enabled": "Permitir calorias ativas",
+                "active_calories_entity": "Sensor (opcional)",
+                "active_calories_share": "Parte contada"
+              },
+              "data_description": {
+                "active_calories_cap": "Um valor acima disso conta só até aqui, e o diário alimentar avisa. Só vale enquanto as calorias ativas estiverem permitidas.",
+                "active_calories_enabled": "Soma à meta de calorias a atividade que um relógio ou celular mede acima do nível de atividade. Parte contada, Máximo contado por dia e Sensor só valem enquanto isto estiver marcado.",
+                "active_calories_entity": "As calorias ativas de hoje em kcal ou kJ, a partir de 0 todo dia, como “Active calories” do Garmin Connect, e não “Calories”, que inclui as calorias gastas em repouso. Um valor em kJ é convertido para kcal. Deixe vazio para registrá-las a partir de uma automação com a ação “Registrar calorias ativas”.",
+                "active_calories_share": "Quanto do valor medido conta. Relógios costumam superestimar, então 75% é um começo cuidadoso. Só vale enquanto as calorias ativas estiverem permitidas."
+              },
+              "description": "Opcional. Aumenta a meta de calorias nos dias ativos, a partir de um sensor ou de uma automação.",
+              "name": "Calorias ativas"
+            }
           },
           "title": "Adicionar pessoa"
         }
@@ -191,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Atividade"
+      },
       "breakfast_calories": {
         "name": "Calorias do café da manhã"
       },
@@ -254,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "As calorias ativas não estão permitidas para {person}. Marque “Permitir calorias ativas” nos dados de {person}, em Configurações, Dispositivos e serviços, Metron."
+    },
+    "active_calories_out_of_range": {
+      "message": "Informe calorias ativas entre 0 e 10.000 kcal."
+    },
     "ambiguous_food": {
       "message": "Há {count} alimentos salvos chamados {food}. Renomeie-os ou use um código de barras."
     },
@@ -262,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "O Metron ainda não consegue acessar o banco de dados, então o Home Assistant vai tentar de novo em breve. O banco de dados diz: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} é anterior à inclusão de {person} no Metron."
     },
     "future_day": {
       "message": "{day} está no futuro."
@@ -371,6 +427,24 @@
         }
       },
       "name": "Obter dia"
+    },
+    "log_active_calories": {
+      "description": "Define as calorias ativas de uma pessoa em um dia, substituindo qualquer valor que já esteja lá. “Parte contada” e “Máximo contado por dia” se aplicam, como para um sensor. A pessoa precisa ter “Permitir calorias ativas” marcado.",
+      "fields": {
+        "day": {
+          "description": "Hoje, se ficar em branco. Dias futuros não são permitidos, nem dias anteriores à inclusão da pessoa.",
+          "name": "Dia"
+        },
+        "device_id": {
+          "description": "A pessoa, como o dispositivo dela no Metron.",
+          "name": "Pessoa"
+        },
+        "kcal": {
+          "description": "As calorias ativas medidas no dia, de 0 a 10.000. Um valor menor que o anterior o substitui, como correção.",
+          "name": "kcal"
+        }
+      },
+      "name": "Registrar calorias ativas"
     },
     "log_food": {
       "description": "Registra um alimento no diário de uma pessoa: um alimento salvo, pelo nome ou código de barras, com os gramas, ou uma adição rápida de um nome e kcal.",

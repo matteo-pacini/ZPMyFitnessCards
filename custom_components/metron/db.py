@@ -1,4 +1,4 @@
-"""The database: foods, entries, weights and daily goals, in SQLite or Postgres.
+"""The database: foods, entries, weights, daily goals and activity, in SQLite or Postgres.
 
 Queries use SQLAlchemy Core, which Home Assistant already ships for its
 recorder, so the same code runs on both. Every method blocks, so Home
@@ -261,6 +261,37 @@ def _schema_v4() -> MetaData:
     return metadata
 
 
+def _schema_v5() -> MetaData:
+    """Version 4, with each person's active calories, one row a day.
+
+    `source` is the sensor's entity ID, or "action". `measured` is the day's
+    figure in kcal, and the rest is what it came to under the person's
+    settings that day, kept so that a past day explains its own goal.
+    `last_reading` is the sensor's last reading that counted for the day,
+    in kcal, or NULL if none did; it differs from `measured` once the
+    action set the figure.
+
+    Each goals row also gets `allowed`: the kcal of activity the person's
+    activity level allowed for when it was set, at that day's weight and
+    age, or NULL for goals set before this version.
+    """
+    metadata = _schema_v4()
+    metadata.tables["goals"].append_column(Column("allowed", Float))
+    Table(
+        "activity",
+        metadata,
+        Column("person", String(64), primary_key=True),
+        Column("day", String(10), primary_key=True),
+        Column("source", Text, nullable=False),
+        *[
+            Column(n, Float, nullable=False)
+            for n in ("measured", "counted", "added", "allowed", "share", "cap")
+        ],
+        Column("last_reading", Float),
+    )
+    return metadata
+
+
 def _migrate_to_v1(conn: Connection) -> None:
     _schema_v1().create_all(conn)
 
@@ -292,6 +323,15 @@ def _migrate_to_v4(conn: Connection) -> None:
         conn.execute(update(foods).where(foods.c.id == food_id).values(folded=name.casefold()))
 
 
+def _migrate_to_v5(conn: Connection) -> None:
+    schema = _schema_v5()
+    schema.tables["activity"].create(conn)
+    allowed = schema.tables["goals"].c.allowed
+    conn.execute(
+        DDL(f"ALTER TABLE goals ADD COLUMN {CreateColumn(allowed).compile(dialect=conn.dialect)}")
+    )
+
+
 # Each entry upgrades the schema by one version; schema_version holds the
 # version a database is at. Never edit a released entry, append a new one.
 MIGRATIONS: list[Callable[[Connection], None]] = [
@@ -299,13 +339,35 @@ MIGRATIONS: list[Callable[[Connection], None]] = [
     _migrate_to_v2,
     _migrate_to_v3,
     _migrate_to_v4,
+    _migrate_to_v5,
 ]
 
 # The tables the queries below use: those of the latest version.
-SCHEMA = _schema_v4()
-PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS, SAVED_MEALS, MEAL_ITEMS = (
+SCHEMA = _schema_v5()
+PEOPLE, FOODS, ENTRIES, WEIGHTS, GOALS, SAVED_MEALS, MEAL_ITEMS, ACTIVITY = (
     SCHEMA.tables[name]
-    for name in ("people", "foods", "entries", "weights", "goals", "meals", "meal_items")
+    for name in (
+        "people",
+        "foods",
+        "entries",
+        "weights",
+        "goals",
+        "meals",
+        "meal_items",
+        "activity",
+    )
+)
+
+# An activity row's columns besides its person and day.
+ACTIVITY_FIELDS = (
+    "source",
+    "measured",
+    "counted",
+    "added",
+    "allowed",
+    "share",
+    "cap",
+    "last_reading",
 )
 
 VERSION = Table("schema_version", MetaData(), Column("version", Integer, nullable=False))
@@ -605,12 +667,13 @@ class Database:
     def delete_person(self, person: str) -> None:
         """Delete everything stored for a person.
 
-        That is their entries, weights, goals and own saved meals, and the
-        foods they saved that no entry of anyone's and no meal uses any more.
-        The foods they saved that are still used stay, saved by nobody.
+        That is their entries, weights, goals, activity and own saved meals,
+        and the foods they saved that no entry of anyone's and no meal uses
+        any more. The foods they saved that are still used stay, saved by
+        nobody.
         """
         with self._db.begin() as conn:
-            for table in (ENTRIES, WEIGHTS, GOALS):
+            for table in (ENTRIES, WEIGHTS, GOALS, ACTIVITY):
                 conn.execute(delete(table).where(table.c.person == person))
             own = select(SAVED_MEALS.c.id).where(SAVED_MEALS.c.owner == person)
             conn.execute(delete(MEAL_ITEMS).where(MEAL_ITEMS.c.meal_id.in_(own)))
@@ -1044,7 +1107,7 @@ class Database:
     # Export
 
     def export(self, person: str) -> dict[str, Any]:
-        """A person's entries and weights, oldest first, every saved food, and meals.
+        """A person's entries, weights and activity, oldest first, every saved food, and meals.
 
         Foods are everyone's, so they are all there; the meals are everyone's
         and the person's own. `people` maps every key ever known to its name.
@@ -1059,9 +1122,13 @@ class Database:
             weights = conn.execute(
                 select(WEIGHTS).where(WEIGHTS.c.person == person).order_by(WEIGHTS.c.day)
             )
+            activity = conn.execute(
+                select(ACTIVITY).where(ACTIVITY.c.person == person).order_by(ACTIVITY.c.day)
+            )
             return {
                 "entries": [dict(r._mapping) for r in entries],
                 "weights": [dict(r._mapping) for r in weights],
+                "activity": [dict(r._mapping) for r in activity],
                 "foods": [_food(r) for r in conn.execute(select(FOODS).order_by(FOODS.c.id))],
                 "meals": _meals(conn, SAVED_MEALS.c.owner.in_([EVERYONE, person])),
                 "people": {row.key: row.name for row in conn.execute(select(PEOPLE))},
@@ -1069,15 +1136,47 @@ class Database:
 
     # Goals
 
-    def goal_on(self, person: str, day: str) -> Goals | None:
-        """The goals in force on `day`: the last ones set on or before it."""
+    def goal_in_force(self, person: str, day: str) -> tuple[str, Goals, float | None] | None:
+        """The goals in force on `day`, or None.
+
+        As (the day they were set, the goals, what the activity level
+        allowed for then, which is None for goals set before version 5).
+        """
         row = self._one(
-            select(GOALS.c.kcal, GOALS.c.protein, GOALS.c.carbs, GOALS.c.fat)
+            select(
+                GOALS.c.day,
+                GOALS.c.allowed,
+                GOALS.c.kcal,
+                GOALS.c.protein,
+                GOALS.c.carbs,
+                GOALS.c.fat,
+            )
             .where(GOALS.c.person == person, GOALS.c.day <= day)
             .order_by(GOALS.c.day.desc())
             .limit(1)
         )
-        return Goals(**row) if row else None
+        if row is None:
+            return None
+        day, allowed = row.pop("day"), row.pop("allowed")
+        return day, Goals(**row), allowed
+
+    def first_goal_day(self, person: str) -> str | None:
+        """The first day a person's goals were set, or None if they never were."""
+        with self._db.connect() as conn:
+            query = select(func.min(GOALS.c.day)).where(GOALS.c.person == person)
+            return conn.execute(query).scalar()
+
+    def activity_added(self, person: str, start: str, end: str) -> dict[str, float]:
+        """What activity added to a person's goal, by day, from `start` to `end`.
+
+        Only days with activity are there.
+        """
+        rows = self._all(
+            select(ACTIVITY.c.day, ACTIVITY.c.added).where(
+                ACTIVITY.c.person == person, ACTIVITY.c.day.between(start, end)
+            )
+        )
+        return {row["day"]: row["added"] for row in rows}
 
     def goal_changes(self, person: str, end: str) -> list[tuple[str, Goals]]:
         """Each day up to `end` on which a person's goals were set, oldest first."""
@@ -1088,16 +1187,66 @@ class Database:
         )
         return [(row.pop("day"), Goals(**row)) for row in rows]
 
-    def set_goal(self, person: str, day: str, goals: Goals) -> None:
-        """Set the goals from `day` on, until the next day that has its own."""
+    def _set_goal(
+        self, conn: Connection, person: str, day: str, goals: Goals, allowed: float | None
+    ) -> None:
         values = {
             "kcal": goals.kcal,
             "protein": goals.protein,
             "carbs": goals.carbs,
             "fat": goals.fat,
+            "allowed": allowed,
         }
         upsert = self._insert(GOALS).values(person=person, day=day, **values)
-        with self._db.begin() as conn:
-            conn.execute(
-                upsert.on_conflict_do_update(index_elements=["person", "day"], set_=values)
+        conn.execute(upsert.on_conflict_do_update(index_elements=["person", "day"], set_=values))
+
+    # Activity
+
+    def activity(self, person: str, day: str) -> dict[str, Any] | None:
+        """A person's activity on `day`, as ACTIVITY_FIELDS, or None."""
+        return self._one(
+            select(*(ACTIVITY.c[f] for f in ACTIVITY_FIELDS)).where(
+                ACTIVITY.c.person == person, ACTIVITY.c.day == day
             )
+        )
+
+    def set_day(
+        self,
+        person: str,
+        day: str,
+        activity: dict[str, Any] | None,
+        goals: Goals | None = None,
+        allowed: float | None = None,
+        pin: tuple[str, Goals, float | None] | None = None,
+    ) -> None:
+        """Set a person's activity on `day`, or delete it if None, and the day's goals if given.
+
+        All or nothing. `allowed` goes with `goals`: what the activity level
+        allowed for. `pin`, a later day with its goals and allowance, first
+        gives that day a goals row of its own with them, unless it has one,
+        so that `goals` stop before it.
+        """
+        with self._db.begin() as conn:
+            if pin is not None:
+                pin_day, kept, kept_allowed = pin
+                insert_new = self._insert(GOALS).values(
+                    person=person,
+                    day=pin_day,
+                    kcal=kept.kcal,
+                    protein=kept.protein,
+                    carbs=kept.carbs,
+                    fat=kept.fat,
+                    allowed=kept_allowed,
+                )
+                conn.execute(insert_new.on_conflict_do_nothing(index_elements=["person", "day"]))
+            if activity is None:
+                conn.execute(
+                    delete(ACTIVITY).where(ACTIVITY.c.person == person, ACTIVITY.c.day == day)
+                )
+            else:
+                upsert = self._insert(ACTIVITY).values(person=person, day=day, **activity)
+                conn.execute(
+                    upsert.on_conflict_do_update(index_elements=["person", "day"], set_=activity)
+                )
+            if goals is not None:
+                self._set_goal(conn, person, day, goals, allowed)

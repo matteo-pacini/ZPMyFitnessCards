@@ -19,7 +19,7 @@ let demo;
 test.before(() => {
   const ctx = vm.createContext({ Intl, setTimeout, clearTimeout, Response, console });
   vm.runInContext(fs.readFileSync(DEMO, "utf8"), ctx, { filename: DEMO });
-  demo = vm.runInContext("({ DemoStore, demoHass, demoFetch, DEMO_BARCODE, DEMO_PRODUCTS, CARD_TYPES })", ctx);
+  demo = vm.runInContext("({ DemoStore, demoHass, demoFetch, activityJSON, DEMO_BARCODE, DEMO_PRODUCTS, CARD_TYPES })", ctx);
 });
 
 // A hass on a fresh store, on TODAY.
@@ -79,11 +79,65 @@ test("a day has its entries, goals and weight, as metron/day gives them", async 
     "id", "person", "day", "meal", "food_id", "name", "grams", "kcal", "protein", "carbs", "fat", "fibre", "sugar", "saturated_fat", "salt", "created_at", "source",
   ]);
   assert.equal(day.entries[0].kcal, (389 * 60) / 100);
-  // goals.py's maths for her, at 68.9 kg and 30 years old; carbs is a tie Python rounds to even.
-  assert.deepEqual(day.goals, { kcal: 1634, protein: 81.7, carbs: 204.2, fat: 54.5 });
+  // goals.py's maths for her, at 68.9 kg and 30 years old: 1,634 kcal, and
+  // the 167 her watch added today.
+  assert.deepEqual(day.goals, { kcal: 1801, protein: 90, carbs: 225.1, fat: 60 });
   assert.equal(day.weight_kg, 68.9);
+  assert.equal(day.activity.status, "counting");
   const empty = await call(hass, { type: "metron/day", person: Debora, day: "2026-01-01" });
-  assert.deepEqual(empty, { day: "2026-01-01", entries: [], goals: null, weight_kg: null });
+  assert.deepEqual(empty, { day: "2026-01-01", entries: [], goals: null, weight_kg: null, activity: null });
+});
+
+// The C row "design/demo-hass.js serves activity": the diary's sum and line,
+// and the summary card's line, have every kind of day to show.
+test("Debora's watch adds to her goals, and metron/day says how", async () => {
+  const hass = newHass();
+  const { Matteo, Debora } = await people(hass);
+  const day = (person, d) => call(hass, { type: "metron/day", person, day: d });
+  // goals.py's maths at 68.9 kg and 30: a resting burn of 1,409.25 kcal, of which Moderate allows for 0.35.
+  const allowed = 1409.25 * (1.55 - 1.2);
+  const today = await day(Debora, TODAY);
+  assert.deepEqual(today.activity, {
+    source: "sensor.garmin_connect_active_calories", measured: 880, counted: 660, added: 660 - allowed, allowed, share: 75, cap: 1500, status: "counting",
+  });
+  // The day's goals hold the total: her goal without activity, plus what it added.
+  assert.equal(today.goals.kcal, Math.round(1409.25 * 1.55 - 550 + 660 - allowed));
+  // The diary names the sensor from Home Assistant's states.
+  const sensor = hass.states[today.activity.source];
+  assert.equal(sensor.attributes.friendly_name, "Garmin Connect Active calories");
+  assert.equal(sensor.attributes.unit_of_measurement, "kcal");
+  assert.equal(sensor.state, "880");
+
+  // Past days keep their activity, with no status.
+  const days = ["2026-11-10", "2026-11-09", "2026-11-08", "2026-11-07", "2026-11-06", "2026-11-05"];
+  const past = Object.fromEntries(await Promise.all(days.map(async (d) => [d, await day(Debora, d)])));
+  assert.deepEqual(days.map((d) => past[d].activity?.status), [null, null, null, null, null, undefined]);
+  assert.deepEqual([past["2026-11-10"].activity.measured, past["2026-11-10"].activity.counted], [1240, 930]);
+  // Within the activity level: nothing added.
+  assert.deepEqual([past["2026-11-09"].activity.counted, past["2026-11-09"].activity.added], [390, 0]);
+  // Over the daily limit.
+  assert.deepEqual([past["2026-11-08"].activity.measured, past["2026-11-08"].activity.counted], [2300, 1500]);
+  // Logged by an automation; 525 rounds to the even ten, as Python's round does.
+  assert.deepEqual([past["2026-11-07"].activity.source, past["2026-11-07"].activity.counted], ["action", 520]);
+  // A day before any activity.
+  assert.equal(past["2026-11-05"].activity, null);
+  // Activity raises its own day's goal and no other: the 10th and the 9th
+  // have the same weight, and differ by what activity added on the 10th.
+  assert.equal(past["2026-11-10"].goals.kcal - past["2026-11-09"].goals.kcal, Math.round(past["2026-11-10"].activity.added));
+  // Matteo hasn't allowed active calories.
+  assert.equal((await day(Matteo, TODAY)).activity, null);
+});
+
+test("today's activity status follows from its figures", () => {
+  const row = { source: "action", measured: 900, counted: 680, added: 186.76, allowed: 493.24, share: 75, cap: 1500 };
+  assert.deepEqual(plain(demo.activityJSON(row, true)), { ...row, status: "counting" });
+  assert.equal(demo.activityJSON({ ...row, measured: 380, counted: 280, added: 0 }, true).status, "level");
+  assert.equal(demo.activityJSON({ ...row, measured: 2950, counted: 1500 }, true).status, "capped");
+  // At exactly the cap, nothing is over it.
+  assert.equal(demo.activityJSON({ ...row, measured: 2000, counted: 1500 }, true).status, "counting");
+  // Over a cap no higher than the level's allowance, nothing is added: level comes before capped, as in the spec.
+  assert.equal(demo.activityJSON({ ...row, measured: 900, counted: 300, added: 0, cap: 300 }, true).status, "level");
+  assert.equal(demo.activityJSON(row, false).status, null);
 });
 
 test("days have totals by meal, goals and weight", async () => {
@@ -152,6 +206,9 @@ test("writes answer as the integration does, and tell subscribers first", async 
   const lighter = await call(hass, { type: "metron/day", person: Debora, day: TODAY });
   assert.equal(lighter.weight_kg, 67);
   assert.ok(lighter.goals.kcal < day.goals.kcal);
+  // A lighter body burns less at rest, so the activity level allows for less, and the same activity adds more.
+  assert.ok(lighter.activity.allowed < day.activity.allowed);
+  assert.ok(lighter.activity.added > day.activity.added);
 
   const copied = await call(hass, { type: "metron/meal/copy", person: Debora, from_day: "2026-11-10", from_meal: "dinner", to_day: TODAY, to_meal: "dinner" });
   assert.deepEqual(copied.map((e) => [e.name, e.day, e.meal]), [["Sample", TODAY, "dinner"]]);

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -22,10 +23,19 @@ class Today:
 
     day: date
     sums: dict[str, float]
+    # Including what activity added.
     goals: g.Goals
     weight_kg: float
     weighed_on: str | None
+    # Before any activity.
     burn: float
+    # As metron/day gives it: None unless the box is ticked.
+    activity: dict[str, Any] | None
+
+    @property
+    def added(self) -> float:
+        """The kcal activity added to today's goal."""
+        return self.activity["added"] if self.activity else 0.0
 
 
 class PersonCoordinator(DataUpdateCoordinator[Today]):
@@ -48,11 +58,15 @@ class PersonCoordinator(DataUpdateCoordinator[Today]):
             self.fitness.db.meal_totals, self.person.key, day.isoformat(), day.isoformat()
         )
         weight, weighed_on = await self.fitness.async_weight(self.person, day)
+        # Together, or the calorie goal sensor could take a reading's activity
+        # off a goal from before it.
+        goals, activity = await self.fitness.async_refresh_goals(self.person)
         return Today(
             day=day,
             sums=day_sums(meals.get(day.isoformat(), {})),
-            goals=await self.fitness.async_refresh_goals(self.person),
+            goals=goals,
             weight_kg=weight,
             weighed_on=weighed_on,
             burn=await self.fitness.async_burn(self.person, day),
+            activity=activity,
         )

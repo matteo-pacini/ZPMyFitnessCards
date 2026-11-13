@@ -1,10 +1,10 @@
-"""Actions for automations, scripts and Assist: log a weight, food or a saved meal, read a day.
+"""Actions for automations, scripts and Assist: log weight, food, meals or activity; read a day.
 
 Each names a person by the device the integration makes for them, which the
 device selector offers by name. Days are dates in Home Assistant's time zone,
 today when left out, never in the future. Weights are in lb if Home
 Assistant's unit system is US customary, else in kg, unless log_weight is
-given its unit.
+given its unit. Active calories are in kcal.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from . import goals as g
-from .const import DOMAIN, MAX_KG, MAX_LB, MEALS, MIN_KG, MIN_LB, NUTRIENTS
+from .const import DOMAIN, MAX_ACTIVE_KCAL, MAX_KG, MAX_LB, MEALS, MIN_KG, MIN_LB, NUTRIENTS
 from .data import FitnessData, Person, food_entry, loaded_data, today, uses_pounds
 from .db import MealChangedError
 from .schema import vol
@@ -36,6 +36,7 @@ SERVICE_LOG_WEIGHT = "log_weight"
 SERVICE_LOG_FOOD = "log_food"
 SERVICE_GET_DAY = "get_day"
 SERVICE_LOG_MEAL = "log_meal"
+SERVICE_LOG_ACTIVE_CALORIES = "log_active_calories"
 
 # What a quick add takes, as the diary's Quick add tab does.
 QUICK_NUTRIENTS = ("kcal", "protein", "carbs", "fat")
@@ -79,6 +80,8 @@ LOG_MEAL_SCHEMA = vol.Schema(
     {**PERSON_AND_DAY, vol.Required("saved_meal"): _TEXT, vol.Required("meal"): vol.In(MEALS)}
 )
 
+LOG_ACTIVE_CALORIES_SCHEMA = vol.Schema({**PERSON_AND_DAY, vol.Required("kcal"): vol.Coerce(float)})
+
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
@@ -91,6 +94,12 @@ def async_register(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_LOG_MEAL, partial(_log_meal, hass), schema=LOG_MEAL_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOG_ACTIVE_CALORIES,
+        partial(_log_active_calories, hass),
+        schema=LOG_ACTIVE_CALORIES_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
@@ -200,15 +209,38 @@ async def _log_meal(hass: HomeAssistant, call: ServiceCall) -> None:
         raise _error("unknown_meal", name=name, person=person.name) from err
 
 
+async def _log_active_calories(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Set a person's measured active calories for a day, replacing any figure there.
+
+    Only for a person with active calories allowed, and from the day the
+    person was added: the first day Metron worked out their goals, or today
+    if it hasn't yet. The diary shows no activity on a day without goals.
+    The rules for which of a sensor's readings count don't apply: the caller
+    says which day the figure is for.
+    """
+    data, person, day = _target(hass, call)
+    if not person.active_calories_enabled:
+        raise _error("active_calories_disabled", person=person.name)
+    added = await data.async_read(data.db.first_goal_day, person.key)
+    if day < (added or today().isoformat()):
+        raise _error("day_before_person", day=day, person=person.name)
+    kcal = call.data["kcal"]
+    # Not a range in the schema: its error would not be translated. NaN fails too.
+    if not 0 <= kcal <= MAX_ACTIVE_KCAL:
+        raise _error("active_calories_out_of_range")
+    await data.async_log_activity(person, day, kcal)
+
+
 async def _get_day(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
-    """A person's day: each meal's entries and totals, the day's totals, goals and weight.
+    """A person's day: each meal's entries and totals, the day's totals, goals, weight and activity.
 
     Nutrients are rounded to one decimal. In totals, a missing value counts as 0.
-    The weight is in kg, and also in the install's unit to one decimal.
+    The weight is in kg, and also in the install's unit to one decimal. Goals
+    include what activity added; `activity` is as metron/day gives it.
     """
     data, person, day = _target(hass, call)
     entries = await data.async_read(data.db.day_entries, person.key, day)
-    goals = await data.async_read(data.db.goal_on, person.key, day)
+    goals = await data.async_goal_on(person, day)
     weight = await data.async_read(data.db.weights, person.key, day, day)
     kg = weight[0]["kg"] if weight else None
     unit = _weight_unit(hass)
@@ -237,6 +269,7 @@ async def _get_day(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
         "weight_kg": kg,
         "weight": None if shown is None else round(shown, 1),
         "weight_unit": unit,
+        "activity": await data.async_activity(person, day),
     }
 
 

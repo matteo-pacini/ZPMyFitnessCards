@@ -30,6 +30,23 @@ CONF_CALORIE_GOAL = "calorie_goal"
 CONF_PROTEIN_PCT = "protein_pct"
 CONF_CARBS_PCT = "carbs_pct"
 CONF_FAT_PCT = "fat_pct"
+CONF_ACTIVE_CALORIES_ENABLED = "active_calories_enabled"
+CONF_ACTIVE_CALORIES_ENTITY = "active_calories_entity"
+CONF_ACTIVE_CALORIES_SHARE = "active_calories_share"
+CONF_ACTIVE_CALORIES_CAP = "active_calories_cap"
+
+# Active calories settings for a new person, and for a person saved before
+# these settings existed: off, 75% counted, at most 1,500 kcal counted a day,
+# and no sensor, which has no key.
+ACTIVE_CALORIES_DEFAULTS = {
+    CONF_ACTIVE_CALORIES_ENABLED: False,
+    CONF_ACTIVE_CALORIES_SHARE: 75,
+    CONF_ACTIVE_CALORIES_CAP: 1500,
+}
+
+# The most kcal of activity one day can measure. A sensor reading more is a
+# total that never resets.
+MAX_ACTIVE_KCAL = 10_000
 
 SEXES = ("female", "male")
 

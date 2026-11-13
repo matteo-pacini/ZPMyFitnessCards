@@ -161,12 +161,58 @@ def test_one_weight_a_day_the_last_wins(db: Database) -> None:
 
 def test_goals_hold_until_the_next_change(db: Database) -> None:
     first, second = Goals(1800, 90, 225, 60), Goals(1700, 85, 212.5, 56.7)
-    db.set_goal("p", "2026-11-01", first)
-    db.set_goal("p", "2026-11-05", second)
-    assert db.goal_on("p", "2026-10-31") is None
-    assert db.goal_on("p", "2026-11-04") == first
-    assert db.goal_on("p", "2026-11-09") == second
+    db.set_day("p", "2026-11-01", None, first, 244.2)
+    db.set_day("p", "2026-11-05", None, second)
+    assert db.goal_in_force("p", "2026-10-31") is None
+    assert db.goal_in_force("p", "2026-11-04") == ("2026-11-01", first, 244.2)
+    # Set with no allowance, as goals were before schema version 5.
+    assert db.goal_in_force("p", "2026-11-09") == ("2026-11-05", second, None)
     assert db.goal_changes("p", "2026-11-04") == [("2026-11-01", first)]
+
+
+# An activity row, as FitnessData works it out.
+ROW = {
+    "source": "action",
+    "measured": 906,
+    "counted": 680,
+    "added": 435.8,
+    "allowed": 244.2,
+    "share": 75,
+    "cap": 1500,
+    "last_reading": None,
+}
+
+
+def test_sets_a_day_s_activity_with_its_goals_all_at_once(db: Database) -> None:
+    before, after = Goals(1368, 68.4, 171, 45.6), Goals(1804, 90.2, 225.5, 60.1)
+    db.set_day("p", "2026-11-01", None, before, 244.2)
+    db.set_day("p", "2026-11-05", ROW, after, 244.2, pin=("2026-11-06", before, 244.2))
+    assert db.activity("p", "2026-11-05") == ROW
+    assert db.activity("q", "2026-11-05") is None
+    # The next day was pinned to the goals it showed, so the change stops there.
+    assert db.goal_changes("p", "2026-11-09") == [
+        ("2026-11-01", before),
+        ("2026-11-05", after),
+        ("2026-11-06", before),
+    ]
+    assert db.goal_in_force("p", "2026-11-06") == ("2026-11-06", before, 244.2)
+    assert db.activity_added("p", "2026-11-01", "2026-11-09") == {"2026-11-05": 435.8}
+    assert db.activity_added("p", "2026-11-06", "2026-11-09") == {}
+
+    # Again, with a day that already has goals of its own to pin: it keeps them.
+    lower = Goals(1504, 75.2, 188, 50.1)
+    pin = ("2026-11-06", lower, 0.0)
+    db.set_day("p", "2026-11-05", ROW | {"measured": 500}, lower, 244.2, pin=pin)
+    assert db.activity("p", "2026-11-05")["measured"] == 500
+    assert db.goal_changes("p", "2026-11-09")[1:] == [
+        ("2026-11-05", lower),
+        ("2026-11-06", before),
+    ]
+
+    # Without goals, only the activity; None deletes it.
+    db.set_day("p", "2026-11-05", None)
+    assert db.activity("p", "2026-11-05") is None
+    assert db.goal_in_force("p", "2026-11-05") == ("2026-11-05", lower, 244.2)
 
 
 def test_remembers_removed_people_by_name(db: Database) -> None:
@@ -201,11 +247,13 @@ def test_deletes_everything_for_one_person(db: Database) -> None:
     for who in ("p", "q"):
         db.add_entry(who, entry("2026-11-09"))
         db.set_weight(who, "2026-11-09", 70)
-        db.set_goal(who, "2026-11-09", Goals(1, 1, 1, 1))
+        db.set_day(who, "2026-11-09", ROW, Goals(1, 1, 1, 1))
     db.delete_person("p")
     assert db.day_entries("p", "2026-11-09") == []
     assert db.latest_weight("p", "2026-11-09") is None
-    assert db.goal_on("p", "2026-11-09") is None
+    assert db.goal_in_force("p", "2026-11-09") is None
+    assert db.activity("p", "2026-11-09") is None
+    assert db.activity("q", "2026-11-09") == ROW
     assert key_for_name(db.url, "P", exclude=[]) is None
     assert len(db.day_entries("q", "2026-11-09")) == 1
 
@@ -246,7 +294,7 @@ def test_upgrades_a_version_1_database_keeping_its_entries(database_url: str) ->
     engine.dispose()
     db = Database(database_url)
     db.open()
-    assert db.schema_version() == len(MIGRATIONS) == 4
+    assert db.schema_version() == len(MIGRATIONS) == 5
     [soup] = db.day_entries("p", "2026-11-09")
     assert (soup["name"], soup["source"]) == ("Soup", None)
     assert db.meals() == []
@@ -281,7 +329,14 @@ def test_exports_a_person_s_entries_and_weights_and_every_food(db: Database) -> 
     db.set_weight("p", "2026-11-09", 70.2)
     db.set_weight("p", "2026-11-01", 71)
     db.set_weight("q", "2026-11-01", 90)
+    db.set_day("p", "2026-11-09", ROW)
+    db.set_day("p", "2026-11-02", ROW | {"measured": 500})
+    db.set_day("q", "2026-11-03", ROW)
     data = db.export("p")
+    assert [(a["day"], a["measured"]) for a in data["activity"]] == [
+        ("2026-11-02", 500),
+        ("2026-11-09", 906),
+    ]
     assert [(e["day"], e["name"]) for e in data["entries"]] == [
         ("2026-11-08", "Food"),
         ("2026-11-09", "Late"),

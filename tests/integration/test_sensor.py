@@ -1,6 +1,6 @@
 """Each person's sensors."""
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -11,6 +11,9 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.metron.const import DOMAIN
+from custom_components.metron.coordinator import Today
+from custom_components.metron.goals import Goals
+from custom_components.metron.sensor import SENSORS
 
 
 def state(hass: HomeAssistant, entity_id: str) -> float:
@@ -188,3 +191,18 @@ async def test_weights_follow_a_change_of_unit_system(
         async_update_suggested_units(hass)
         await hass.async_block_till_done()
         assert weight() == shown
+
+
+def test_the_calorie_goal_takes_activity_away_rounded_half_up_as_the_diary_does() -> None:
+    goal = next(d for d in SENSORS if d.key == "calorie_goal")
+    today = Today(
+        day=date(2026, 11, 9),
+        sums={},
+        goals=Goals(kcal=1805, protein=0, carbs=0, fat=0),
+        weight_kg=70,
+        weighed_on=None,
+        burn=0,
+        activity={"added": 436.5},
+    )
+    # The diary's Math.round makes 436.5 437, where Python's round makes it 436.
+    assert goal.value(today, None) == 1805 - 437

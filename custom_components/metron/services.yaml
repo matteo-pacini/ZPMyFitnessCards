@@ -118,6 +118,27 @@ log_meal:
       selector:
         date:
 
+log_active_calories:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: metron
+    kcal:
+      required: true
+      example: 906
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: any
+          unit_of_measurement: kcal
+          mode: box
+    day:
+      selector:
+        date:
+
 get_day:
   fields:
     device_id:

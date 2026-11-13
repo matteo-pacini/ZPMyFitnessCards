@@ -47,6 +47,12 @@
       },
       "entry_type": "Person",
       "error": {
+        "active_calories_missing": "Diesen Sensor gibt es in Home Assistant nicht. Wähle einen anderen oder leere das Feld.",
+        "active_calories_no_unit": "Dieser Sensor hat keine Einheit und kann daher nicht als kcal oder kJ gelesen werden. Wähle einen in kcal oder kJ, gib ihm mit einem Template-Sensor eine Einheit, oder erfasse ihn per Automatisierung mit der Aktion „Aktive Kalorien eintragen“.",
+        "active_calories_running_total": "Dieser Sensor zeigt {reading} kcal, mehr als die Aktivität eines Tages: Er sieht nach einer Summe aus, die nie zurückgesetzt wird. Erstelle daraus einen Verbrauchszähler (Utility Meter) mit täglichem Zyklus, oder erfasse die Tagessumme per Automatisierung mit der Aktion „Aktive Kalorien eintragen“. Die README zeigt beides.",
+        "active_calories_sensor_disabled": "Ein Sensor wird nur gelesen, solange aktive Kalorien erlaubt sind. Kreuze „Aktive Kalorien erlauben“ an oder leere den Sensor.",
+        "active_calories_unit": "Dieser Sensor meldet {unit}, nicht kcal oder kJ. Rechne ihn mit einem Template-Sensor um, oder erfasse ihn per Automatisierung mit der Aktion „Aktive Kalorien eintragen“. Die README zeigt beides.",
+        "active_calories_unit_setting": "Dieser Sensor wird in {unit} angezeigt. Stelle seine Einheit in seinen Einstellungen auf kcal oder kJ um und sende das Formular erneut ab.",
         "bad_line": "Zeile {line} von {file} konnte nicht gelesen werden.",
         "bad_row": "Zeile {row} am {day} konnte nicht gelesen werden.",
         "birth_date_future": "Das Geburtsdatum muss in der Vergangenheit liegen.",
@@ -97,13 +103,32 @@
             "start_weight_lb": "Startgewicht"
           },
           "data_description": {
-            "calorie_goal": "Leer lassen, um das aus den Angaben oben berechnete Ziel zu verwenden. Es passt sich jedem neuen Gewicht an.",
+            "activity": "Wie aktiv ein gewöhnlicher Tag ist. Mit erlaubten aktiven Kalorien sinkt das Ziel nie unter das dieses Niveaus, und nur die Aktivität darüber hinaus kommt hinzu.",
+            "calorie_goal": "Leer lassen, um das aus den Angaben oben berechnete Ziel zu verwenden. Es passt sich jedem neuen Gewicht an. Mit erlaubten aktiven Kalorien kommt die Aktivität über das Aktivitätsniveau hinaus zum eingegebenen wie zum berechneten Ziel hinzu.",
             "carbs_pct": "Anteil des Kalorienziels aus Kohlenhydraten.",
             "fat_pct": "Anteil des Kalorienziels aus Fett.",
             "name": "Wird auf den Karten und in den Sensornamen angezeigt. Er muss sich von den Namen aller anderen Personen unterscheiden.",
             "person_entity": "Optional. Karten ohne festgelegte Person zeigen die Person, die mit dem angemeldeten Benutzer verknüpft ist.",
             "protein_pct": "Anteil des Kalorienziels aus Eiweiß. Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
             "sex": "Wird mit Alter, Größe und Gewicht verwendet, um den täglichen Kalorienverbrauch zu schätzen."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Tageslimit",
+                "active_calories_enabled": "Aktive Kalorien erlauben",
+                "active_calories_entity": "Sensor (optional)",
+                "active_calories_share": "Gezählter Anteil"
+              },
+              "data_description": {
+                "active_calories_cap": "Ein höherer Wert zählt nur bis zu dieser Grenze, und das Ernährungstagebuch weist darauf hin. Gilt nur, solange aktive Kalorien erlaubt sind.",
+                "active_calories_enabled": "Addiert zum Kalorienziel, was eine Uhr oder ein Handy an Aktivität über das Aktivitätsniveau hinaus misst. Gezählter Anteil, Tageslimit und Sensor gelten nur, solange dies angekreuzt ist.",
+                "active_calories_entity": "Die heutigen aktiven Kalorien in kcal oder kJ, jeden Tag ab 0, etwa „Active calories“ von Garmin Connect, nicht „Calories“, das auch die in Ruhe verbrannten Kalorien enthält. Ein Wert in kJ wird in kcal umgerechnet. Leer lassen, um sie stattdessen per Automatisierung mit der Aktion „Aktive Kalorien eintragen“ zu erfassen.",
+                "active_calories_share": "Wie viel vom gemessenen Wert zählt. Uhren schätzen meist zu hoch, daher sind 75 % ein vorsichtiger Anfang. Gilt nur, solange aktive Kalorien erlaubt sind."
+              },
+              "description": "Optional. Erhöht das Kalorienziel an aktiven Tagen, über einen Sensor oder eine Automatisierung.",
+              "name": "Aktive Kalorien"
+            }
           },
           "title": "Person ändern"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "Startgewicht"
           },
           "data_description": {
-            "calorie_goal": "Leer lassen, um das aus den Angaben oben berechnete Ziel zu verwenden. Es passt sich jedem neuen Gewicht an.",
+            "activity": "Wie aktiv ein gewöhnlicher Tag ist. Mit erlaubten aktiven Kalorien sinkt das Ziel nie unter das dieses Niveaus, und nur die Aktivität darüber hinaus kommt hinzu.",
+            "calorie_goal": "Leer lassen, um das aus den Angaben oben berechnete Ziel zu verwenden. Es passt sich jedem neuen Gewicht an. Mit erlaubten aktiven Kalorien kommt die Aktivität über das Aktivitätsniveau hinaus zum eingegebenen wie zum berechneten Ziel hinzu.",
             "carbs_pct": "Anteil des Kalorienziels aus Kohlenhydraten.",
             "fat_pct": "Anteil des Kalorienziels aus Fett.",
             "name": "Wird auf den Karten und in den Sensornamen angezeigt. Er muss sich von den Namen aller anderen Personen unterscheiden.",
             "person_entity": "Optional. Karten ohne festgelegte Person zeigen die Person, die mit dem angemeldeten Benutzer verknüpft ist.",
             "protein_pct": "Anteil des Kalorienziels aus Eiweiß. Eiweiß, Kohlenhydrate und Fett müssen zusammen 100 % ergeben.",
             "sex": "Wird mit Alter, Größe und Gewicht verwendet, um den täglichen Kalorienverbrauch zu schätzen."
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "Tageslimit",
+                "active_calories_enabled": "Aktive Kalorien erlauben",
+                "active_calories_entity": "Sensor (optional)",
+                "active_calories_share": "Gezählter Anteil"
+              },
+              "data_description": {
+                "active_calories_cap": "Ein höherer Wert zählt nur bis zu dieser Grenze, und das Ernährungstagebuch weist darauf hin. Gilt nur, solange aktive Kalorien erlaubt sind.",
+                "active_calories_enabled": "Addiert zum Kalorienziel, was eine Uhr oder ein Handy an Aktivität über das Aktivitätsniveau hinaus misst. Gezählter Anteil, Tageslimit und Sensor gelten nur, solange dies angekreuzt ist.",
+                "active_calories_entity": "Die heutigen aktiven Kalorien in kcal oder kJ, jeden Tag ab 0, etwa „Active calories“ von Garmin Connect, nicht „Calories“, das auch die in Ruhe verbrannten Kalorien enthält. Ein Wert in kJ wird in kcal umgerechnet. Leer lassen, um sie stattdessen per Automatisierung mit der Aktion „Aktive Kalorien eintragen“ zu erfassen.",
+                "active_calories_share": "Wie viel vom gemessenen Wert zählt. Uhren schätzen meist zu hoch, daher sind 75 % ein vorsichtiger Anfang. Gilt nur, solange aktive Kalorien erlaubt sind."
+              },
+              "description": "Optional. Erhöht das Kalorienziel an aktiven Tagen, über einen Sensor oder eine Automatisierung.",
+              "name": "Aktive Kalorien"
+            }
           },
           "title": "Person hinzufügen"
         }
@@ -191,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "Aktivität"
+      },
       "breakfast_calories": {
         "name": "Kalorien Frühstück"
       },
@@ -254,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "Aktive Kalorien sind für {person} nicht erlaubt. Kreuze in den Angaben von {person} unter Einstellungen, Geräte & Dienste, Metron „Aktive Kalorien erlauben“ an."
+    },
+    "active_calories_out_of_range": {
+      "message": "Gib aktive Kalorien von 0 bis 10.000 kcal an."
+    },
     "ambiguous_food": {
       "message": "{count} gespeicherte Lebensmittel heißen {food}. Benenne sie um oder nimm einen Barcode."
     },
@@ -262,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron kann seine Datenbank noch nicht erreichen, daher versucht Home Assistant es gleich erneut. Die Datenbank meldet: {error}"
+    },
+    "day_before_person": {
+      "message": "{day} liegt vor dem Tag, an dem {person} zu Metron hinzugefügt wurde."
     },
     "future_day": {
       "message": "{day} liegt in der Zukunft."
@@ -371,6 +427,24 @@
         }
       },
       "name": "Tag abrufen"
+    },
+    "log_active_calories": {
+      "description": "Setzt die aktiven Kalorien einer Person für einen Tag und ersetzt einen schon vorhandenen Wert. Gezählter Anteil und Tageslimit gelten wie bei einem Sensor. Bei der Person muss „Aktive Kalorien erlauben“ angekreuzt sein.",
+      "fields": {
+        "day": {
+          "description": "Heute, wenn leer gelassen. Künftige Tage sind nicht erlaubt, ebenso wenig Tage, bevor die Person hinzugefügt wurde.",
+          "name": "Tag"
+        },
+        "device_id": {
+          "description": "Die Person, als ihr Gerät in Metron.",
+          "name": "Person"
+        },
+        "kcal": {
+          "description": "Die gemessenen aktiven Kalorien des Tages, von 0 bis 10.000. Ein niedrigerer Wert als zuvor ersetzt ihn, als Korrektur.",
+          "name": "kcal"
+        }
+      },
+      "name": "Aktive Kalorien eintragen"
     },
     "log_food": {
       "description": "Trägt Essen ins Tagebuch einer Person ein: ein gespeichertes Lebensmittel, nach Name oder Barcode, mit seinen Gramm, oder schnell einen Namen und kcal.",

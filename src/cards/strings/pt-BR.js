@@ -78,4 +78,9 @@ STRINGS["pt-BR"] = {
   save_anyway: "Salvar mesmo assim",
   food_in_meals: "Também está em {meals}, e será removido de lá.",
   meals_emptied: "{meals} também será excluída, por não ter mais nada.",
+  activity_logged: "Calorias ativas registradas: {measured} kcal.",
+  activity_missing: "O Home Assistant não tem mais {sensor}. Escolha outro sensor para {person} em Configurações, Dispositivos e serviços, Metron.",
+  activity_missing_held: "O Home Assistant não tem mais {sensor}. Escolha outro sensor para {person} em Configurações, Dispositivos e serviços, Metron. Até lá, é usada a última leitura dele de hoje, {measured} kcal.",
+  activity_unavailable: "{sensor} não está disponível, então é usada a última leitura dele de hoje, {measured} kcal.",
+  activity_logged_waiting: "Ainda não há calorias ativas registradas hoje.",
 };

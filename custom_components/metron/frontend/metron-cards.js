@@ -69,6 +69,19 @@ STRINGS.en = {
   food: "Food",
   remaining: "Remaining",
   over: "Over",
+  activity: "Activity",
+  activity_measured: "{sensor} measured {measured} kcal.",
+  activity_logged: "Active calories logged: {measured} kcal.",
+  activity_unavailable: "{sensor} is unavailable, so this uses its last reading from today, {measured} kcal.",
+  activity_missing: "Home Assistant no longer has {sensor}. Choose another sensor for {person} in Settings, Devices & services, Metron.",
+  activity_missing_held: "Home Assistant no longer has {sensor}. Choose another sensor for {person} in Settings, Devices & services, Metron. Until then, this uses its last reading from today, {measured} kcal.",
+  activity_counts: "At {share}, that counts as {counted} kcal.",
+  activity_capped: "At {share}, that is over the daily limit, so {cap} kcal counts.",
+  activity_allowed: "The activity level already allows for {allowed} kcal of it.",
+  activity_level: "The activity level already allows for {allowed} kcal, so none of it is added.",
+  activity_all: "The activity level allows for none of it.",
+  activity_waiting: "{sensor} has no reading for today yet.",
+  activity_logged_waiting: "No active calories logged for today yet.",
   kcal: "kcal",
   protein: "Protein",
   carbs: "Carbs",
@@ -157,6 +170,7 @@ STRINGS.en = {
   kcal_left: "kcal left",
   kcal_over: "kcal over",
   of_goal: "{food} of {goal} kcal",
+  of_goal_activity: "{food} of {total} kcal, {activity} from activity",
   change_30d: "{change} in 30 days",
   look_up: "Look up barcode",
   scan: "Scan",
@@ -242,6 +256,19 @@ STRINGS.de = {
   food: "Essen",
   remaining: "Übrig",
   over: "Darüber",
+  activity: "Aktivität",
+  activity_measured: "{sensor} hat {measured} kcal gemessen.",
+  activity_logged: "Erfasste aktive Kalorien: {measured} kcal.",
+  activity_unavailable: "{sensor} ist nicht verfügbar. Verwendet wird der letzte Wert von heute: {measured} kcal.",
+  activity_missing: "Home Assistant hat {sensor} nicht mehr. Wähle unter Einstellungen, Geräte & Dienste, Metron einen anderen Sensor für {person}.",
+  activity_missing_held: "Home Assistant hat {sensor} nicht mehr. Wähle unter Einstellungen, Geräte & Dienste, Metron einen anderen Sensor für {person}. Bis dahin wird der letzte Wert von heute verwendet: {measured} kcal.",
+  activity_counts: "Davon zählen {share}: {counted} kcal.",
+  activity_capped: "{share} davon liegen über dem Tageslimit, daher zählen {cap} kcal.",
+  activity_allowed: "Das Aktivitätsniveau berücksichtigt davon bereits {allowed} kcal.",
+  activity_level: "Das Aktivitätsniveau berücksichtigt bereits {allowed} kcal, daher kommt nichts hinzu.",
+  activity_all: "Das Aktivitätsniveau berücksichtigt nichts davon.",
+  activity_waiting: "{sensor} hat für heute noch keinen Wert.",
+  activity_logged_waiting: "Für heute sind noch keine aktiven Kalorien erfasst.",
   kcal: "kcal",
   protein: "Eiweiß",
   carbs: "Kohlenhydrate",
@@ -330,6 +357,7 @@ STRINGS.de = {
   kcal_left: "kcal übrig",
   kcal_over: "kcal zu viel",
   of_goal: "{food} von {goal} kcal",
+  of_goal_activity: "{food} von {total} kcal, {activity} durch Aktivität",
   change_30d: "{change} in 30 Tagen",
   look_up: "Barcode nachschlagen",
   scan: "Scannen",
@@ -415,6 +443,19 @@ STRINGS.es = {
   food: "Comida",
   remaining: "Restante",
   over: "Exceso",
+  activity: "Actividad",
+  activity_measured: "{sensor} midió {measured} kcal.",
+  activity_logged: "Calorías activas registradas: {measured} kcal.",
+  activity_unavailable: "{sensor} no está disponible, así que se usa su última lectura de hoy, {measured} kcal.",
+  activity_missing: "Home Assistant ya no tiene {sensor}. Elige otro sensor para {person} en Ajustes, Dispositivos y servicios, Metron.",
+  activity_missing_held: "Home Assistant ya no tiene {sensor}. Elige otro sensor para {person} en Ajustes, Dispositivos y servicios, Metron. Mientras tanto, se usa su última lectura de hoy, {measured} kcal.",
+  activity_counts: "Al {share}, cuentan {counted} kcal.",
+  activity_capped: "Al {share}, se supera el límite diario, así que cuentan {cap} kcal.",
+  activity_allowed: "El nivel de actividad ya tiene en cuenta {allowed} kcal de ellas.",
+  activity_level: "El nivel de actividad ya tiene en cuenta {allowed} kcal, así que no se añade nada.",
+  activity_all: "El nivel de actividad no tiene en cuenta ninguna de ellas.",
+  activity_waiting: "{sensor} aún no tiene ninguna lectura de hoy.",
+  activity_logged_waiting: "Aún no hay calorías activas registradas hoy.",
   kcal: "kcal",
   protein: "Proteínas",
   carbs: "Carbohidratos",
@@ -503,6 +544,7 @@ STRINGS.es = {
   kcal_left: "kcal restantes",
   kcal_over: "kcal de más",
   of_goal: "{food} de {goal} kcal",
+  of_goal_activity: "{food} de {total} kcal, {activity} por actividad",
   change_30d: "{change} en 30 días",
   look_up: "Buscar código de barras",
   scan: "Escanear",
@@ -588,6 +630,19 @@ STRINGS.fr = {
   food: "Aliments",
   remaining: "Restant",
   over: "Dépassement",
+  activity: "Activité",
+  activity_measured: "{sensor} a mesuré {measured} kcal.",
+  activity_logged: "Calories actives enregistrées : {measured} kcal.",
+  activity_unavailable: "{sensor} n’est pas disponible, donc sa dernière mesure d’aujourd’hui est utilisée : {measured} kcal.",
+  activity_missing: "Home Assistant n’a plus {sensor}. Choisissez un autre capteur pour {person} dans Paramètres, Appareils et services, Metron.",
+  activity_missing_held: "Home Assistant n’a plus {sensor}. Choisissez un autre capteur pour {person} dans Paramètres, Appareils et services, Metron. D’ici là, sa dernière mesure d’aujourd’hui est utilisée : {measured} kcal.",
+  activity_counts: "À {share}, cela compte pour {counted} kcal.",
+  activity_capped: "À {share}, cela dépasse la limite quotidienne, donc {cap} kcal comptent.",
+  activity_allowed: "Le niveau d’activité en prévoit déjà {allowed} kcal.",
+  activity_level: "Le niveau d’activité prévoit déjà {allowed} kcal, donc rien n’est ajouté.",
+  activity_all: "Le niveau d’activité n’en prévoit aucune.",
+  activity_waiting: "{sensor} n’a pas encore de mesure pour aujourd’hui.",
+  activity_logged_waiting: "Aucune calorie active enregistrée pour aujourd’hui.",
   kcal: "kcal",
   protein: "Protéines",
   carbs: "Glucides",
@@ -676,6 +731,7 @@ STRINGS.fr = {
   kcal_left: "kcal restantes",
   kcal_over: "kcal en trop",
   of_goal: "{food} sur {goal} kcal",
+  of_goal_activity: "{food} sur {total} kcal, {activity} grâce à l’activité",
   change_30d: "{change} en 30 jours",
   look_up: "Chercher le code-barres",
   scan: "Scanner",
@@ -761,6 +817,19 @@ STRINGS.it = {
   food: "Cibo",
   remaining: "Rimanenti",
   over: "In eccesso",
+  activity: "Attività",
+  activity_measured: "{sensor} ha misurato {measured} kcal.",
+  activity_logged: "Calorie attive registrate: {measured} kcal.",
+  activity_unavailable: "{sensor} non è disponibile, quindi si usa la sua ultima lettura di oggi, {measured} kcal.",
+  activity_missing: "Home Assistant non ha più {sensor}. Scegli un altro sensore per {person} in Impostazioni, Dispositivi e servizi, Metron.",
+  activity_missing_held: "Home Assistant non ha più {sensor}. Scegli un altro sensore per {person} in Impostazioni, Dispositivi e servizi, Metron. Fino ad allora si usa la sua ultima lettura di oggi, {measured} kcal.",
+  activity_counts: "Al {share}, contano {counted} kcal.",
+  activity_capped: "Al {share}, si supera il limite giornaliero, quindi contano {cap} kcal.",
+  activity_allowed: "Il livello di attività ne prevede già {allowed} kcal.",
+  activity_level: "Il livello di attività prevede già {allowed} kcal, quindi non si aggiunge nulla.",
+  activity_all: "Il livello di attività non ne prevede nessuna.",
+  activity_waiting: "{sensor} non ha ancora una lettura per oggi.",
+  activity_logged_waiting: "Nessuna caloria attiva registrata per oggi.",
   kcal: "kcal",
   protein: "Proteine",
   carbs: "Carboidrati",
@@ -849,6 +918,7 @@ STRINGS.it = {
   kcal_left: "kcal rimaste",
   kcal_over: "kcal in eccesso",
   of_goal: "{food} di {goal} kcal",
+  of_goal_activity: "{food} di {total} kcal, {activity} dall'attività",
   change_30d: "{change} in 30 giorni",
   look_up: "Cerca codice a barre",
   scan: "Scansiona",
@@ -934,6 +1004,19 @@ STRINGS.nl = {
   food: "Voeding",
   remaining: "Over",
   over: "Te veel",
+  activity: "Activiteit",
+  activity_measured: "{sensor} heeft {measured} kcal gemeten.",
+  activity_logged: "Vastgelegde actieve calorieën: {measured} kcal.",
+  activity_unavailable: "{sensor} is niet beschikbaar, dus de laatste meting van vandaag wordt gebruikt: {measured} kcal.",
+  activity_missing: "Home Assistant heeft {sensor} niet meer. Kies een andere sensor voor {person} via Instellingen, Apparaten en diensten, Metron.",
+  activity_missing_held: "Home Assistant heeft {sensor} niet meer. Kies een andere sensor voor {person} via Instellingen, Apparaten en diensten, Metron. Tot dan wordt de laatste meting van vandaag gebruikt: {measured} kcal.",
+  activity_counts: "Bij {share} telt dat als {counted} kcal.",
+  activity_capped: "Bij {share} is dat meer dan de daglimiet, dus telt {cap} kcal.",
+  activity_allowed: "Daarvan zit {allowed} kcal al in het activiteitsniveau.",
+  activity_level: "Het activiteitsniveau omvat al {allowed} kcal, dus er komt niets bij.",
+  activity_all: "Het activiteitsniveau omvat daar niets van.",
+  activity_waiting: "{sensor} heeft nog geen meting voor vandaag.",
+  activity_logged_waiting: "Nog geen actieve calorieën vastgelegd voor vandaag.",
   kcal: "kcal",
   protein: "Eiwit",
   carbs: "Koolhydraten",
@@ -1022,6 +1105,7 @@ STRINGS.nl = {
   kcal_left: "kcal over",
   kcal_over: "kcal te veel",
   of_goal: "{food} van {goal} kcal",
+  of_goal_activity: "{food} van {total} kcal, {activity} door activiteit",
   change_30d: "{change} in 30 dagen",
   look_up: "Streepjescode opzoeken",
   scan: "Scannen",
@@ -1107,6 +1191,19 @@ STRINGS.pl = {
   food: "Jedzenie",
   remaining: "Pozostało",
   over: "Ponad",
+  activity: "Aktywność",
+  activity_measured: "Czujnik {sensor} zmierzył {measured} kcal.",
+  activity_logged: "Zapisane aktywne kalorie: {measured} kcal.",
+  activity_unavailable: "Czujnik {sensor} jest niedostępny, więc używany jest jego ostatni dzisiejszy odczyt: {measured} kcal.",
+  activity_missing: "Home Assistant nie ma już czujnika {sensor}. Wybierz inny czujnik dla osoby {person} w Ustawienia, Urządzenia oraz usługi, Metron.",
+  activity_missing_held: "Home Assistant nie ma już czujnika {sensor}. Wybierz inny czujnik dla osoby {person} w Ustawienia, Urządzenia oraz usługi, Metron. Do tego czasu używany jest jego ostatni dzisiejszy odczyt: {measured} kcal.",
+  activity_counts: "Przy {share} liczy się {counted} kcal.",
+  activity_capped: "Przy {share} to więcej niż dzienny limit, więc liczy się {cap} kcal.",
+  activity_allowed: "Poziom aktywności uwzględnia już {allowed} kcal z tego.",
+  activity_level: "Poziom aktywności uwzględnia już {allowed} kcal, więc nic nie dochodzi.",
+  activity_all: "Poziom aktywności nie uwzględnia z tego nic.",
+  activity_waiting: "Czujnik {sensor} nie ma jeszcze dzisiejszego odczytu.",
+  activity_logged_waiting: "Na dzisiaj nie zapisano jeszcze aktywnych kalorii.",
   kcal: "kcal",
   protein: "Białko",
   carbs: "Węglowodany",
@@ -1195,6 +1292,7 @@ STRINGS.pl = {
   kcal_left: "kcal zostało",
   kcal_over: "kcal ponad cel",
   of_goal: "{food} z {goal} kcal",
+  of_goal_activity: "{food} z {total} kcal, {activity} z aktywności",
   change_30d: "{change} w 30 dni",
   look_up: "Wyszukaj kod kreskowy",
   scan: "Skanuj",
@@ -1280,6 +1378,19 @@ STRINGS.pt = {
   food: "Alimentos",
   remaining: "Restante",
   over: "Excesso",
+  activity: "Atividade",
+  activity_measured: "{sensor} mediu {measured} kcal.",
+  activity_logged: "Calorias ativas registadas: {measured} kcal.",
+  activity_unavailable: "{sensor} não está disponível, por isso é usada a sua última leitura de hoje, {measured} kcal.",
+  activity_missing: "O Home Assistant já não tem {sensor}. Escolha outro sensor para {person} em Definições, Dispositivos e serviços, Metron.",
+  activity_missing_held: "O Home Assistant já não tem {sensor}. Escolha outro sensor para {person} em Definições, Dispositivos e serviços, Metron. Até lá, é usada a sua última leitura de hoje, {measured} kcal.",
+  activity_counts: "A {share}, isso conta como {counted} kcal.",
+  activity_capped: "A {share}, isso ultrapassa o limite diário, por isso contam {cap} kcal.",
+  activity_allowed: "O nível de atividade já prevê {allowed} kcal disso.",
+  activity_level: "O nível de atividade já prevê {allowed} kcal, por isso nada é acrescentado.",
+  activity_all: "O nível de atividade não prevê nada disso.",
+  activity_waiting: "{sensor} ainda não tem nenhuma leitura de hoje.",
+  activity_logged_waiting: "Ainda não há calorias ativas registadas hoje.",
   kcal: "kcal",
   protein: "Proteína",
   carbs: "Hidratos",
@@ -1368,6 +1479,7 @@ STRINGS.pt = {
   kcal_left: "kcal restantes",
   kcal_over: "kcal a mais",
   of_goal: "{food} de {goal} kcal",
+  of_goal_activity: "{food} de {total} kcal, {activity} da atividade",
   change_30d: "{change} em 30 dias",
   look_up: "Procurar código de barras",
   scan: "Digitalizar",
@@ -1521,6 +1633,11 @@ STRINGS["pt-BR"] = {
   save_anyway: "Salvar mesmo assim",
   food_in_meals: "Também está em {meals}, e será removido de lá.",
   meals_emptied: "{meals} também será excluída, por não ter mais nada.",
+  activity_logged: "Calorias ativas registradas: {measured} kcal.",
+  activity_missing: "O Home Assistant não tem mais {sensor}. Escolha outro sensor para {person} em Configurações, Dispositivos e serviços, Metron.",
+  activity_missing_held: "O Home Assistant não tem mais {sensor}. Escolha outro sensor para {person} em Configurações, Dispositivos e serviços, Metron. Até lá, é usada a última leitura dele de hoje, {measured} kcal.",
+  activity_unavailable: "{sensor} não está disponível, então é usada a última leitura dele de hoje, {measured} kcal.",
+  activity_logged_waiting: "Ainda não há calorias ativas registradas hoje.",
 };
 
 // src/cards/strings/sv.js
@@ -1536,6 +1653,19 @@ STRINGS.sv = {
   food: "Mat",
   remaining: "Kvar",
   over: "Över",
+  activity: "Aktivitet",
+  activity_measured: "{sensor} mätte {measured} kcal.",
+  activity_logged: "Loggade aktiva kalorier: {measured} kcal.",
+  activity_unavailable: "{sensor} är inte tillgänglig, så dess senaste värde från i dag används: {measured} kcal.",
+  activity_missing: "Home Assistant har inte längre {sensor}. Välj en annan sensor för {person} under Inställningar, Enheter och tjänster, Metron.",
+  activity_missing_held: "Home Assistant har inte längre {sensor}. Välj en annan sensor för {person} under Inställningar, Enheter och tjänster, Metron. Till dess används dess senaste värde från i dag: {measured} kcal.",
+  activity_counts: "Med {share} räknas det som {counted} kcal.",
+  activity_capped: "Med {share} är det över den dagliga gränsen, så {cap} kcal räknas.",
+  activity_allowed: "Aktivitetsnivån räknar redan med {allowed} kcal av det.",
+  activity_level: "Aktivitetsnivån räknar redan med {allowed} kcal, så inget läggs till.",
+  activity_all: "Aktivitetsnivån räknar inte med något av det.",
+  activity_waiting: "{sensor} har inget värde för i dag än.",
+  activity_logged_waiting: "Inga aktiva kalorier loggade för i dag än.",
   kcal: "kcal",
   protein: "Protein",
   carbs: "Kolhydrater",
@@ -1624,6 +1754,7 @@ STRINGS.sv = {
   kcal_left: "kcal kvar",
   kcal_over: "kcal för mycket",
   of_goal: "{food} av {goal} kcal",
+  of_goal_activity: "{food} av {total} kcal, {activity} från aktivitet",
   change_30d: "{change} på 30 dagar",
   look_up: "Slå upp streckkod",
   scan: "Skanna",
@@ -1709,6 +1840,19 @@ STRINGS["zh-Hans"] = {
   food: "已吃",
   remaining: "剩余",
   over: "超出",
+  activity: "活动",
+  activity_measured: "{sensor} 测得 {measured} 千卡。",
+  activity_logged: "已记录的活动卡路里：{measured} 千卡。",
+  activity_unavailable: "{sensor} 不可用，因此使用其今天的最后读数：{measured} 千卡。",
+  activity_missing: "Home Assistant 中已没有 {sensor}。请在“设置 > 设备与服务 > Metron”中为 {person} 选择其他传感器。",
+  activity_missing_held: "Home Assistant 中已没有 {sensor}。请在“设置 > 设备与服务 > Metron”中为 {person} 选择其他传感器。在此之前，使用其今天的最后读数：{measured} 千卡。",
+  activity_counts: "按 {share} 计，算作 {counted} 千卡。",
+  activity_capped: "按 {share} 计，超过了每日上限，因此算作 {cap} 千卡。",
+  activity_allowed: "活动水平已包含其中的 {allowed} 千卡。",
+  activity_level: "活动水平已包含 {allowed} 千卡，因此不额外增加。",
+  activity_all: "活动水平不包含其中任何部分。",
+  activity_waiting: "{sensor} 今天还没有读数。",
+  activity_logged_waiting: "今天还没有记录活动卡路里。",
   kcal: "千卡",
   protein: "蛋白质",
   carbs: "碳水化合物",
@@ -1797,6 +1941,7 @@ STRINGS["zh-Hans"] = {
   kcal_left: "千卡剩余",
   kcal_over: "千卡超出",
   of_goal: "{food}/{goal} 千卡",
+  of_goal_activity: "{food}/{total} 千卡，其中 {activity} 来自活动",
   change_30d: "30 天内 {change}",
   look_up: "查询条形码",
   scan: "扫描",
@@ -1903,6 +2048,9 @@ function shiftDay(day, days) {
 
 const number = (value, locale, digits = 0) =>
   new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value);
+
+// `value` per cent, as the language writes it: "75%" in English, "75 %" in German.
+const percent = (value, locale) => new Intl.NumberFormat(locale, { style: "percent" }).format(value / 100);
 
 function totals(entries) {
   const sums = Object.fromEntries(NUTRIENTS.map((n) => [n, 0]));
@@ -2839,10 +2987,18 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     .calendar input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
     .calendar input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; cursor: pointer; }
     .summary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; text-align: center; gap: 4px; }
+    .summary.withactivity { grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; container-type: inline-size; }
     .summary b { display: block; font-size: 1.3rem; font-weight: var(--ha-font-weight-medium, 500); }
+    /* A missing sensor is named by its entity ID, which has no spaces to break at. */
+    .activity { color: var(--secondary-text-color); font-size: var(--ha-font-size-s, 0.875rem); overflow-wrap: anywhere; }
     .summary small, .macro small { color: var(--secondary-text-color); font-size: var(--ha-font-size-xs, 0.75rem); }
     .body { display: flex; flex-direction: column; gap: 14px; }
     .summary .op { color: var(--secondary-text-color); font-size: 1.3rem; align-self: start; }
+    /* Four four-digit figures and three signs overflow a narrow card, as on a
+       phone, at full size: a size down they fit from a 300 px card up. */
+    @container (max-width: 320px) {
+      .summary.withactivity b, .summary.withactivity .op { font-size: 1.05rem; }
+    }
     .summary .left b { color: var(--success-color, var(--green-color)); }
     .summary .over b { color: var(--error-color); }
     .macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -2875,6 +3031,20 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   getCardSize() {
     return 8;
+  }
+
+  // Home Assistant passes a new hass with every change of state. Of the day
+  // drawn, only the activity line reads states, for the sensor's name, which
+  // may change, or arrive only after the day was drawn. Then only the line
+  // changes: redrawing the body on every hass would lose what has focus in it.
+  set hass(hass) {
+    super.hass = hass;
+    const activity = this._data?.activity;
+    const name = activity && sensorName(activity, hass.states);
+    if (name === this._sensorName) return;
+    this._sensorName = name;
+    const line = this._card.querySelector(".body .activity");
+    if (line) line.textContent = activityLine(activity, hass.states, this._person.name, this._locale, this._t);
   }
 
   connectedCallback() {
@@ -2941,7 +3111,10 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   _renderBody() {
     const body = this._card?.querySelector(".body");
-    if (body && this._data) body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale);
+    if (!body || !this._data) return;
+    const { activity } = this._data;
+    this._sensorName = activity && sensorName(activity, this._hass.states);
+    body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale, this._hass.states, this._person.name);
   }
 
   _renderPanel() {
@@ -3509,23 +3682,34 @@ function scaled(food, grams) {
 const optionList = (values, labels, selected) =>
   values.map((v) => `<option value="${esc(v)}"${v === selected ? " selected" : ""}>${esc(labels[v] ?? v)}</option>`).join("");
 
-// The summary and meals of one day, from metron/day.
-function diaryBodyHTML(data, t, locale) {
+// The summary and meals of one day, from metron/day. `states`, Home
+// Assistant's, names the sensor the day's activity came from, and `person`
+// is the name of whose day it is.
+function diaryBodyHTML(data, t, locale, states = {}, person = "") {
   const meals = MEALS.map((meal) => mealHTML(meal, data.entries.filter((e) => e.meal === meal), t, locale));
-  return diarySummaryHTML(totals(data.entries), data.goals, t, locale) + meals.join("");
+  const line = data.activity ? activityLine(data.activity, states, person, locale, t) : "";
+  return diarySummaryHTML(totals(data.entries), data.goals, t, locale, data.activity, line) + meals.join("");
 }
 
-// The day's totals `sums`, against its `goals` if it has any.
-function diarySummaryHTML(sums, goals, t, locale) {
+// The day's totals `sums`, against its `goals` if it has any. On a day with
+// `activity`, metron/day's, the goal splits into the goal without activity
+// and what activity added, and `line` goes under the sum.
+function diarySummaryHTML(sums, goals, t, locale, activity = null, line = "") {
   if (!goals) {
     return `<div class="summary num"><div></div><span></span><div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div></div>`;
   }
   const left = goals.kcal - sums.kcal;
-  return `<div class="summary num">
-        <div><b>${number(goals.kcal, locale)}</b><small>${esc(t.goal)}</small></div><span class="op">−</span>
+  // Rounded before the goal is split, so that the sum adds up as shown.
+  const added = activity && Math.round(activity.added);
+  const goal = activity
+    ? `<div><b>${number(goals.kcal - added, locale)}</b><small>${esc(t.goal)}</small></div><span class="op">+</span>
+        <div><b>${number(added, locale)}</b><small>${esc(t.activity)}</small></div>`
+    : `<div><b>${number(goals.kcal, locale)}</b><small>${esc(t.goal)}</small></div>`;
+  return `<div class="summary num${activity ? " withactivity" : ""}">
+        ${goal}<span class="op">−</span>
         <div><b>${number(sums.kcal, locale)}</b><small>${esc(t.food)}</small></div><span class="op">=</span>
         <div class="${left < 0 ? "over" : "left"}"><b>${number(Math.abs(left), locale)}</b><small>${esc(left < 0 ? t.over : t.remaining)}</small></div>
-      </div>
+      </div>${activity ? `<div class="activity">${esc(line)}</div>` : ""}
       <div class="macros num">${MACROS.map((m) => {
         const share = goals[m] > 0 ? sums[m] / goals[m] : 0;
         return `<div class="macro ${m}${share > 1 ? " over" : ""}"><small>${esc(t[m])}</small>
@@ -3533,6 +3717,36 @@ function diarySummaryHTML(sums, goals, t, locale) {
           <span>${number(sums[m], locale)} / ${number(goals[m], locale)} g</span></div>`;
       }).join("")}</div>`;
 }
+
+// What explains the Activity in the diary's sum, from metron/day's
+// `activity`: what was measured or logged, how much of it counts, and how
+// much of that the activity level already allows for. Today's status says
+// when there is nothing to count yet, or the sensor is unavailable or gone.
+// The sensor is named as sensorName says; `person` is the name of whose day
+// it is.
+function activityLine(activity, states, person, locale, t) {
+  const { source, status, measured, share, cap, counted, allowed, added } = activity;
+  const logged = source === "action";
+  const sensor = sensorName(activity, states);
+  if (status === "waiting") return logged ? t.activity_logged_waiting : fill(t.activity_waiting, { sensor });
+  if (status === "missing" && measured == null) return fill(t.activity_missing, { sensor, person });
+  const leads = { missing: t.activity_missing_held, unavailable: t.activity_unavailable };
+  const lead = logged ? t.activity_logged : (leads[status] ?? t.activity_measured);
+  // Past days have no status, so whether the cap applied comes from the figures.
+  const capped = (measured * share) / 100 > cap;
+  const sentences = [
+    fill(lead, { sensor, person, measured: number(measured, locale) }),
+    fill(capped ? t.activity_capped : t.activity_counts, { share: percent(share, locale), counted: number(counted, locale), cap: number(cap, locale) }),
+    allowed === 0 ? t.activity_all : fill(added > 0 ? t.activity_allowed : t.activity_level, { allowed: number(allowed, locale) }),
+  ];
+  // Chinese runs sentences together; the other languages space them.
+  return sentences.join(locale.split("-")[0].toLowerCase() === "zh" ? "" : " ");
+}
+
+// The name the activity line gives the sensor `activity` came from: its name
+// in `states`, Home Assistant's, else its entity ID, which is all a missing
+// sensor has left.
+const sensorName = (activity, states) => (activity.status !== "missing" && states[activity.source]?.attributes.friendly_name) || activity.source;
 
 // One meal's `entries`, with buttons to add to it, copy into it, and save
 // it as a meal when it has any.
@@ -4854,12 +5068,21 @@ function summaryFoodHTML(day, locale, t) {
   const scale = Math.max(goals?.kcal ?? 0, sums.kcal) || 1;
   const stack = byMeal.map((kcal, i) => (kcal > 0 ? `<i class="meal${i}" style="width:${((kcal / scale) * 100).toFixed(2)}%"></i>` : "")).join("");
   const legend = MEALS.map((meal, i) => `<span><i class="meal${i}"></i>${esc(t[meal])} <span class="num">${number(byMeal[i], locale)}</span></span>`).join("");
+  let ofGoal = "";
+  if (goals) {
+    const food = number(sums.kcal, locale);
+    const total = number(goals.kcal, locale);
+    // The goal includes what activity added, which the line names on a day that has any.
+    ofGoal = day.activity
+      ? fill(t.of_goal_activity, { food, total, activity: number(day.activity.added, locale) })
+      : fill(t.of_goal, { food, goal: total });
+  }
   return `
     <div class="rings">
       <div class="big">${ringSVG(132, 12, goals ? sums.kcal / goals.kcal : 0, "kcal")}<div class="centre">${centre}</div></div>
       <div class="minis">${minis}</div>
     </div>
-    ${goals ? `<div class="sub num">${esc(fill(t.of_goal, { food: number(sums.kcal, locale), goal: number(goals.kcal, locale) }))}</div>` : ""}
+    ${ofGoal && `<div class="sub num">${esc(ofGoal)}</div>`}
     <div class="stack" role="img" aria-label="${esc(t.kcal)}">${stack}</div>
     <div class="legend">${legend}</div>`;
 }

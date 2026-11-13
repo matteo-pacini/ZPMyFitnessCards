@@ -16,6 +16,7 @@ from custom_components.metron.db import (
     NewerSchemaError,
     _schema_v1,
     _schema_v2,
+    _schema_v4,
     make_engine,
     sqlite_url,
 )
@@ -128,6 +129,59 @@ def test_foods_saved_before_an_upgrade_are_found_in_any_case(database_url: str) 
     try:
         assert [f["name"] for f in db.search_foods("öl", 10)] == ["Ölsardinen"]
         assert [f["name"] for f in db.foods_named("ÖLSARDINEN")] == ["Ölsardinen"]
+    finally:
+        db.close()
+
+
+def test_upgrades_a_version_4_database_with_somewhere_to_keep_activity(
+    database_url: str,
+) -> None:
+    database_at(database_url, 4)
+    add_version_1_sample(database_url)
+    version_4_columns = {name: list(t.c.keys()) for name, t in _schema_v4().tables.items()}
+    before = contents(database_url, version_4_columns)
+    assert "activity" not in layout(database_url)
+
+    db = Database(database_url)
+    db.open()
+    try:
+        assert db.schema_version() == LATEST == 5
+        assert contents(database_url, version_4_columns) == before
+        # Goals set before stored no allowance.
+        assert "allowed" in layout(database_url)["goals"]
+        assert {row.allowed for row in contents(database_url, {"goals": ["allowed"]})["goals"]} == {
+            None
+        }
+        assert layout(database_url)["activity"] == sorted(
+            [
+                "person",
+                "day",
+                "source",
+                "measured",
+                "counted",
+                "added",
+                "allowed",
+                "share",
+                "cap",
+                "last_reading",
+            ]
+        )
+        assert db.activity("matteo", SAMPLE_DAY) is None
+        row = {
+            "source": "sensor.garmin_connect_active_calories",
+            "measured": 906,
+            "counted": 680,
+            "added": 435.8,
+            "allowed": 244.2,
+            "share": 75,
+            "cap": 1500,
+            "last_reading": 906,
+        }
+        db.set_day("matteo", SAMPLE_DAY, row)
+        assert db.activity("matteo", SAMPLE_DAY) == row
+        # Deleting a person deletes theirs.
+        db.delete_person("matteo")
+        assert db.activity("matteo", SAMPLE_DAY) is None
     finally:
         db.close()
 

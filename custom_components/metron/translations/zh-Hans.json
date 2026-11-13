@@ -47,6 +47,12 @@
       },
       "entry_type": "人员",
       "error": {
+        "active_calories_missing": "Home Assistant 中不存在此传感器。请选择其他传感器，或清空此字段。",
+        "active_calories_no_unit": "此传感器没有单位，因此无法按 kcal 或 kJ 读取。请选择以 kcal 或 kJ 为单位的传感器，用模板传感器为其添加单位，或在自动化中用“记录活动热量”动作记录。",
+        "active_calories_running_total": "此传感器读数为 {reading} kcal，超过一天的活动量：它看起来是一个从不重置的累计值。请用它创建一个每天重置的计量表（utility meter），或在自动化中用“记录活动热量”动作记录每天的总量。README 中介绍了这两种方法。",
+        "active_calories_sensor_disabled": "仅在允许活动热量时才会读取传感器。请勾选“允许活动热量”，或清空传感器。",
+        "active_calories_unit": "此传感器的单位是 {unit}，不是 kcal 或 kJ。请用模板传感器换算，或在自动化中用“记录活动热量”动作记录。README 中介绍了这两种方法。",
+        "active_calories_unit_setting": "此传感器以 {unit} 显示。请在其设置中将单位改为 kcal 或 kJ，然后重新提交。",
         "bad_line": "无法读取 {file} 的第 {line} 行。",
         "bad_row": "无法读取 {day} 的第 {row} 行。",
         "birth_date_future": "出生日期必须早于今天。",
@@ -97,13 +103,32 @@
             "start_weight_lb": "初始体重"
           },
           "data_description": {
-            "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。",
+            "activity": "普通一天的活跃程度。允许活动热量时，目标永远不会低于此水平的目标，只会加上超出此水平的活动。",
+            "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。允许活动热量时，超出活动水平的活动会加到目标上，无论目标是手动输入还是计算得出。",
             "carbs_pct": "热量目标中来自碳水化合物的比例。",
             "fat_pct": "热量目标中来自脂肪的比例。",
             "name": "显示在卡片和传感器名称中。不得与其他任何人的名称相同。",
             "person_entity": "可选。未设置人员的卡片会显示与当前登录用户关联的人员。",
             "protein_pct": "热量目标中来自蛋白质的比例。蛋白质、碳水化合物和脂肪合计必须为 100%。",
             "sex": "与年龄、身高和体重一起用于估算每日消耗的热量。"
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "每日最多计入",
+                "active_calories_enabled": "允许活动热量",
+                "active_calories_entity": "传感器（可选）",
+                "active_calories_share": "计入比例"
+              },
+              "data_description": {
+                "active_calories_cap": "高于此值的数值只按此值计入，饮食日记会注明。仅在允许活动热量时生效。",
+                "active_calories_enabled": "将手表或手机测得的、超出活动水平的活动加到热量目标中。仅在勾选此项时，计入比例、每日最多计入和传感器才会生效。",
+                "active_calories_entity": "今天的活动热量，单位为 kcal 或 kJ，每天从 0 开始，例如 Garmin Connect 的“Active calories”，而不是包含静息消耗热量的“Calories”。kJ 读数会换算为 kcal。留空则改为在自动化中用“记录活动热量”动作记录。",
+                "active_calories_share": "测得数值中计入的比例。手表往往会高估，因此从 75% 开始比较稳妥。仅在允许活动热量时生效。"
+              },
+              "description": "可选。在活跃的日子里，根据传感器或自动化提高热量目标。",
+              "name": "活动热量"
+            }
           },
           "title": "更改人员"
         },
@@ -176,13 +201,32 @@
             "start_weight_lb": "初始体重"
           },
           "data_description": {
-            "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。",
+            "activity": "普通一天的活跃程度。允许活动热量时，目标永远不会低于此水平的目标，只会加上超出此水平的活动。",
+            "calorie_goal": "留空则使用根据上述信息计算出的目标。目标会随每次新的体重记录调整。允许活动热量时，超出活动水平的活动会加到目标上，无论目标是手动输入还是计算得出。",
             "carbs_pct": "热量目标中来自碳水化合物的比例。",
             "fat_pct": "热量目标中来自脂肪的比例。",
             "name": "显示在卡片和传感器名称中。不得与其他任何人的名称相同。",
             "person_entity": "可选。未设置人员的卡片会显示与当前登录用户关联的人员。",
             "protein_pct": "热量目标中来自蛋白质的比例。蛋白质、碳水化合物和脂肪合计必须为 100%。",
             "sex": "与年龄、身高和体重一起用于估算每日消耗的热量。"
+          },
+          "sections": {
+            "active_calories": {
+              "data": {
+                "active_calories_cap": "每日最多计入",
+                "active_calories_enabled": "允许活动热量",
+                "active_calories_entity": "传感器（可选）",
+                "active_calories_share": "计入比例"
+              },
+              "data_description": {
+                "active_calories_cap": "高于此值的数值只按此值计入，饮食日记会注明。仅在允许活动热量时生效。",
+                "active_calories_enabled": "将手表或手机测得的、超出活动水平的活动加到热量目标中。仅在勾选此项时，计入比例、每日最多计入和传感器才会生效。",
+                "active_calories_entity": "今天的活动热量，单位为 kcal 或 kJ，每天从 0 开始，例如 Garmin Connect 的“Active calories”，而不是包含静息消耗热量的“Calories”。kJ 读数会换算为 kcal。留空则改为在自动化中用“记录活动热量”动作记录。",
+                "active_calories_share": "测得数值中计入的比例。手表往往会高估，因此从 75% 开始比较稳妥。仅在允许活动热量时生效。"
+              },
+              "description": "可选。在活跃的日子里，根据传感器或自动化提高热量目标。",
+              "name": "活动热量"
+            }
           },
           "title": "添加人员"
         }
@@ -191,6 +235,9 @@
   },
   "entity": {
     "sensor": {
+      "activity": {
+        "name": "活动"
+      },
       "breakfast_calories": {
         "name": "早餐热量"
       },
@@ -254,6 +301,12 @@
     }
   },
   "exceptions": {
+    "active_calories_disabled": {
+      "message": "{person} 未允许活动热量。请在“设置 > 设备与服务 > Metron”中，在 {person} 的详细信息里勾选“允许活动热量”。"
+    },
+    "active_calories_out_of_range": {
+      "message": "请输入 0 到 10,000 千卡之间的活动热量。"
+    },
     "ambiguous_food": {
       "message": "有 {count} 种已保存的食物名为 {food}。请重命名，或改用条形码。"
     },
@@ -262,6 +315,9 @@
     },
     "database_unavailable": {
       "message": "Metron 暂时无法连接其数据库，Home Assistant 稍后会重试。数据库返回：{error}"
+    },
+    "day_before_person": {
+      "message": "{day} 早于 {person} 被添加到 Metron 的日期。"
     },
     "future_day": {
       "message": "{day} 是未来的日期。"
@@ -371,6 +427,24 @@
         }
       },
       "name": "获取当天"
+    },
+    "log_active_calories": {
+      "description": "设置某人某一天的活动热量，替换已有的数值。与传感器一样，适用“计入比例”和“每日最多计入”。该人员必须已勾选“允许活动热量”。",
+      "fields": {
+        "day": {
+          "description": "留空则为今天。不允许未来的日期，也不允许添加该人员之前的日期。",
+          "name": "日期"
+        },
+        "device_id": {
+          "description": "该人员在 Metron 中对应的设备。",
+          "name": "人员"
+        },
+        "kcal": {
+          "description": "当天测得的活动热量，0 到 10,000。比之前更低的数值会替换它，作为更正。",
+          "name": "千卡"
+        }
+      },
+      "name": "记录活动热量"
     },
     "log_food": {
       "description": "在某人的饮食日记中记录食物：按名称或条形码选择已保存的食物并填写克数，或快速添加名称和千卡。",
