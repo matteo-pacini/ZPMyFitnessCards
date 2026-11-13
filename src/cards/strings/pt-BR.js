@@ -85,9 +85,8 @@ STRINGS["pt-BR"] = {
   activity_logged_waiting: "Ainda não há calorias ativas registradas hoje.",
   streak_nothing_today: "Ainda nada registrado hoje",
   streak_good: "na meta",
-  streak_over: "acima da meta",
   streak_unlogged: "nada registrado",
   streak_pending: "hoje, na meta até agora",
   streak_no_goal: "ainda sem meta",
-  streak_summary: "{person}, últimos {days} dias: na meta {count}, acima da meta {over}, nada registrado {unlogged}. Sequência atual {streak}, melhor {best}.",
+  streak_summary: "{person}, últimos {days} dias: na meta {count}, em excesso {over}, nada registrado {unlogged}. Sequência atual {streak}, melhor {best}.",
 };

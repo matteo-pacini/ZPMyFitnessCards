@@ -152,10 +152,12 @@ class StreakCard extends PersonCard {
 
   _render() {
     if (!this._card || this._renderNoPerson()) return;
-    // The person loaded but their days did not: the whole card is the body,
-    // so without this it would stay blank until the retry.
-    if (this._failure) {
-      this._card.innerHTML = `${this._titleHTML}<div class="error">${esc(fill(this._t.error_failed, { message: this._failure.message ?? "" }))}</div>`;
+    // The person loaded but their days have not, after a failure or while the
+    // integration reloads: the whole card is the body, so without this it
+    // would stay blank until the retry. Days already drawn stay.
+    if (!this._data) {
+      const failed = this._failure && fill(this._t.error_failed, { message: this._failure.message ?? "" });
+      this._card.innerHTML = `${this._titleHTML}<div class="${failed ? "error" : "muted"}">${esc(failed || this._t.loading)}</div>`;
       return;
     }
     this._renderBody();

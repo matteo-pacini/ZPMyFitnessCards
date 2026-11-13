@@ -247,13 +247,50 @@ test("a person found whose days fail to load shows the title and the error, then
     return { days: history("uggp", c._today) };
   });
   await c._start();
-  assert.ok(c._retry);
-  clearTimeout(c._retry);
+  const retry = c._retry;
+  clearTimeout(retry);
+  assert.ok(retry);
   assert.equal(c._card.innerHTML, '<div class="title">Streak</div><div class="error">Something went wrong: boom</div>');
   fail = false;
   await c._start();
   assert.equal(c._retry, null);
   assert.match(text(c._card.innerHTML), /^Streak Debora 400 kcal left today 2 day streak/);
+});
+
+test("a failed refresh keeps the calendar drawn, and tries again", async () => {
+  let fail = false;
+  const { c } = card({ person: "Debora", locale: "en" }, (m) => {
+    if (fail) return Promise.reject(new Error("boom"));
+    return m.type === "metron/people" ? PEOPLE : { days: history("uggp", c._today) };
+  });
+  await c._start();
+  const drawn = c._card.innerHTML;
+  fail = true;
+  // _refresh starts the reload without waiting for it, so wait for it here.
+  const start = c._start;
+  let reload;
+  c._start = function () {
+    reload = start.call(this);
+    return reload;
+  };
+  try {
+    await c._refresh();
+    await reload;
+    assert.ok(c._retry);
+    assert.equal(c._failure.message, "boom");
+    assert.equal(c._card.innerHTML, drawn);
+  } finally {
+    clearTimeout(c._retry);
+  }
+});
+
+test("while the integration reloads after the person loaded, the card says it is loading", async () => {
+  const { c } = card({ person: "Debora", locale: "en" }, (m) =>
+    m.type === "metron/people" ? PEOPLE : Promise.reject(Object.assign(new Error("Metron is not loaded"), { code: "not_loaded" })),
+  );
+  await c._start();
+  clearTimeout(c._retry);
+  assert.equal(c._card.innerHTML, '<div class="title">Streak</div><div class="muted">Loading…</div>');
 });
 
 test("the card's editor offers person, title and language, and it has a size", () => {
