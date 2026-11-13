@@ -51,7 +51,7 @@ body:
     attributes:
       label: Metron version
       description: Shown under its name on [its page in Settings > Devices & services](https://my.home-assistant.io/redirect/integration/?domain=metron).
-      placeholder: "0.5.1"
+      placeholder: "0.6.0"
     validations:
       required: true
   - type: input
