@@ -166,7 +166,7 @@ async def test_days_carry_goals_set_before_their_range(
     db = entry.runtime_data.data.db
     for day, kcal in (("2026-11-01", 1800), ("2026-11-05", 1700), ("2026-11-08", 1600)):
         goals = Goals(kcal=kcal, protein=100, carbs=200, fat=60)
-        await hass.async_add_executor_job(db.set_goal, "debora", day, goals)
+        await hass.async_add_executor_job(db.set_day, "debora", day, None, goals)
     await ok(ws, "weight/set", person="debora", day="2026-11-07", kg=69)
     days = (await ok(ws, "days", person="debora", start="2026-11-06", end="2026-11-08"))["days"]
     assert [d["goals"]["kcal"] for d in days] == [1700, 1700, 1600]

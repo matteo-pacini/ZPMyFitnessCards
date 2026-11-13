@@ -1143,11 +1143,6 @@ class Database:
         )
         return [(row.pop("day"), Goals(**row)) for row in rows]
 
-    def set_goal(self, person: str, day: str, goals: Goals) -> None:
-        """Set the goals from `day` on, until the next day that has its own."""
-        with self._db.begin() as conn:
-            self._set_goal(conn, person, day, goals)
-
     def _set_goal(self, conn: Connection, person: str, day: str, goals: Goals) -> None:
         values = {
             "kcal": goals.kcal,

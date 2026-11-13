@@ -161,8 +161,8 @@ def test_one_weight_a_day_the_last_wins(db: Database) -> None:
 
 def test_goals_hold_until_the_next_change(db: Database) -> None:
     first, second = Goals(1800, 90, 225, 60), Goals(1700, 85, 212.5, 56.7)
-    db.set_goal("p", "2026-11-01", first)
-    db.set_goal("p", "2026-11-05", second)
+    db.set_day("p", "2026-11-01", None, first)
+    db.set_day("p", "2026-11-05", None, second)
     assert db.goal_on("p", "2026-10-31") is None
     assert db.goal_on("p", "2026-11-04") == first
     assert db.goal_on("p", "2026-11-09") == second
@@ -183,7 +183,7 @@ ROW = {
 
 def test_sets_a_day_s_activity_with_its_goals_all_at_once(db: Database) -> None:
     before, after = Goals(1368, 68.4, 171, 45.6), Goals(1804, 90.2, 225.5, 60.1)
-    db.set_goal("p", "2026-11-01", before)
+    db.set_day("p", "2026-11-01", None, before)
     db.set_day("p", "2026-11-05", ROW, after, pin="2026-11-06")
     assert db.activity("p", "2026-11-05") == ROW
     assert db.activity("q", "2026-11-05") is None
@@ -242,8 +242,7 @@ def test_deletes_everything_for_one_person(db: Database) -> None:
     for who in ("p", "q"):
         db.add_entry(who, entry("2026-11-09"))
         db.set_weight(who, "2026-11-09", 70)
-        db.set_goal(who, "2026-11-09", Goals(1, 1, 1, 1))
-        db.set_day(who, "2026-11-09", ROW)
+        db.set_day(who, "2026-11-09", ROW, Goals(1, 1, 1, 1))
     db.delete_person("p")
     assert db.day_entries("p", "2026-11-09") == []
     assert db.latest_weight("p", "2026-11-09") is None
