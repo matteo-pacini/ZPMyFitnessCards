@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import pytest
 import yaml
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.util.unit_system import METRIC_SYSTEM, US_CUSTOMARY_SYSTEM, UnitSystem
@@ -613,6 +613,33 @@ async def test_only_a_new_reading_from_the_sensor_raises_the_action_s_figure(
     assert await held() == ("action", 500)
     await reading(hass, 910)
     assert await held() == (GARMIN, 910)
+
+
+async def test_readings_apply_in_order_whatever_order_they_reach_the_lock(
+    hass: HomeAssistant, entry_data: dict[str, Any], freezer: FrozenDateTimeFactory
+) -> None:
+    freezer.move_to("2026-11-09T10:00:00+00:00")
+    older = State(GARMIN, "500", {"unit_of_measurement": "kcal"})
+    freezer.move_to("2026-11-09T11:00:00+00:00")
+    await reading(hass, 600)
+    entry = mock_entry(anna(), data=entry_data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    data = entry.runtime_data.data
+    # The 500's task reaches the lock after the 600's, read as Metron set up.
+    await data.async_sensor_reading(data.people["anna"], older, None)
+
+    async def held() -> tuple[str, float]:
+        activity = (await anna_s_day(hass))["activity"]
+        return activity["source"], activity["measured"]
+
+    assert await held() == (GARMIN, 600)
+    await log_active(hass, 300)
+    # Read again as the entry reloads, the 600 is no new reading.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert await held() == ("action", 300)
 
 
 @pytest.mark.usefixtures("anna_entry")

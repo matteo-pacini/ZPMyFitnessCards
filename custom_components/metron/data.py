@@ -266,6 +266,8 @@ class FitnessData:
         self._write_lock = asyncio.Lock()
         # Whether a backup holds the lock.
         self._paused = False
+        # When each person's sensor last changed to a reading that counted.
+        self._counted_at: dict[str, datetime] = {}
 
     async def _read(self, func: Callable[..., Any], *args: Any) -> Any:
         return await self.hass.async_add_executor_job(func, *args)
@@ -383,33 +385,41 @@ class FitnessData:
         last reading or to that allowance alone is written but, as nothing
         shows it, not reported as a change.
         """
+        async with self._write_lock:
+            return await self._update_today_locked(person, change)
+
+    async def _update_today_locked(
+        self,
+        person: Person,
+        change: Callable[[dict[str, Any] | None], dict[str, Any] | None] | None,
+    ) -> tuple[g.Goals, dict[str, Any] | None, bool]:
+        """`_update_today`, for a caller that holds the write lock."""
         day = today()
         key, iso = person.key, day.isoformat()
-        async with self._write_lock:
-            row = await self._read(self.db.activity, key, iso)
-            kept = None
-            if (
-                row is not None
-                and person.active_calories_enabled
-                and row["source"] in (a.ACTION, person.active_calories_entity)
-            ):
-                kept = {field: row[field] for field in HELD}
-            if change is not None:
-                kept = change(kept)
-            allowed = await self._allowed(person, day)
-            new = None
-            if kept is not None:
-                share, cap = person.active_calories_share, person.active_calories_cap
-                new = _row(kept, allowed, share, cap)
-            added = new["added"] if new else 0
-            goals = self._goals(person, await self._base(person, day) + added)
-            found = await self._in_force(person, iso)
-            current = found and found.shown(iso)
-            set_again = goals != current or allowed != (found and found.allowed)
-            if new != row or set_again:
-                await self.hass.async_add_executor_job(
-                    self.db.set_day, key, iso, new, goals if set_again else None, allowed
-                )
+        row = await self._read(self.db.activity, key, iso)
+        kept = None
+        if (
+            row is not None
+            and person.active_calories_enabled
+            and row["source"] in (a.ACTION, person.active_calories_entity)
+        ):
+            kept = {field: row[field] for field in HELD}
+        if change is not None:
+            kept = change(kept)
+        allowed = await self._allowed(person, day)
+        new = None
+        if kept is not None:
+            share, cap = person.active_calories_share, person.active_calories_cap
+            new = _row(kept, allowed, share, cap)
+        added = new["added"] if new else 0
+        goals = self._goals(person, await self._base(person, day) + added)
+        found = await self._in_force(person, iso)
+        current = found and found.shown(iso)
+        set_again = goals != current or allowed != (found and found.allowed)
+        if new != row or set_again:
+            await self.hass.async_add_executor_job(
+                self.db.set_day, key, iso, new, goals if set_again else None, allowed
+            )
         return goals, new, goals != current or _unseen(new) != _unseen(row)
 
     async def async_refresh_goals(self, person: Person) -> tuple[g.Goals, dict[str, Any] | None]:
@@ -465,39 +475,47 @@ class FitnessData:
     ) -> None:
         """Count `state`, the person's sensor's, for today if it is a reading from today.
 
-        Today's measured only rises. Today's activity and goals are written
-        if they change, and announced if they or today's status changed
-        since `before`, the sensor's previous state.
+        Today's measured only rises. A reading older than one already
+        counted is left out, as each change is read in a task of its own and
+        they can reach the lock in any order. Today's activity and goals are
+        written if they change, and announced if they or today's status
+        changed since `before`, the sensor's previous state.
         """
         sensor = person.active_calories_entity
-        kcal = None if state is None else a.kcal_of(state)
-        if kcal is not None:
-            yesterday = (today() - timedelta(days=1)).isoformat()
-            last = await self._read(self.db.activity, person.key, yesterday)
-            seen = last and (
-                last["measured"] if last["last_reading"] is None else last["last_reading"]
-            )
-            if not a.counts_today(state, kcal, seen):
-                kcal = None
         changed = False
-        if kcal is not None:
-
-            def read(kept: dict[str, Any] | None) -> dict[str, Any]:
-                # A figure the action set gives way only to a reading the sensor
-                # hasn't given before, not to one read again at setup or midnight
-                # or as the sensor comes back.
-                if kept is not None and (
-                    kcal <= kept["measured"]
-                    or (kept["source"] == a.ACTION and kcal == kept["last_reading"])
+        # From the rules to the write, so that what yesterday held and which
+        # reading came last can't change halfway.
+        async with self._write_lock:
+            kcal = None if state is None else a.kcal_of(state)
+            if kcal is not None:
+                yesterday = (today() - timedelta(days=1)).isoformat()
+                last = await self._read(self.db.activity, person.key, yesterday)
+                seen = last and (
+                    last["measured"] if last["last_reading"] is None else last["last_reading"]
+                )
+                counted = self._counted_at.get(person.key)
+                if not a.counts_today(state, kcal, seen) or (
+                    counted is not None and state.last_changed < counted
                 ):
-                    return {**kept, "last_reading": kcal}
-                return {"source": sensor, "measured": kcal, "last_reading": kcal}
+                    kcal = None
+            if kcal is not None:
+                self._counted_at[person.key] = state.last_changed
 
-            _goals, _held, changed = await self._update_today(person, read)
-        day = today().isoformat()
-        if not changed:
-            held = await self._read(self.db.activity, person.key, day)
-            changed = a.status(sensor, before, held) != a.status(sensor, state, held)
+                def read(kept: dict[str, Any] | None) -> dict[str, Any]:
+                    # A figure the action set gives way only to a reading the
+                    # sensor hasn't given before, not to one read again at setup
+                    # or midnight or as the sensor comes back.
+                    if kept is not None and (
+                        kcal <= kept["measured"]
+                        or (kept["source"] == a.ACTION and kcal == kept["last_reading"])
+                    ):
+                        return {**kept, "last_reading": kcal}
+                    return {"source": sensor, "measured": kcal, "last_reading": kcal}
+
+                _goals, _held, changed = await self._update_today_locked(person, read)
+            if not changed:
+                held = await self._read(self.db.activity, person.key, today().isoformat())
+                changed = a.status(sensor, before, held) != a.status(sensor, state, held)
         if changed:
             self._changed(person.key)
 
