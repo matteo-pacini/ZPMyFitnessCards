@@ -275,6 +275,60 @@ test("the food diary card draws its day with Home Assistant's names for the sens
   assert.match(text(body.innerHTML), new RegExp(`^1,368 Goal \\+ 136 Activity − 850 Food = 654 Remaining Home Assistant no longer has ${GARMIN}\\. Choose another sensor for Anna`));
 });
 
+test("a new hass with the sensor under another name changes the line, and nothing else", () => {
+  const Card = ctx.customElements.defined["metron-food-diary-card"];
+  const card = new Card();
+  const body = { innerHTML: "" };
+  const line = { textContent: "" };
+  let drawn = true;
+  card._config = { locale: "en-GB" };
+  card._card = { querySelector: (selector) => ({ ".body": body, ".body .activity": drawn ? line : null })[selector] ?? null };
+  card._person = { id: "anna", name: "Anna" };
+  const hass = (states) => ({ states, config: { time_zone: "UTC" } });
+  const named = (name) => ({ ...STATES, [GARMIN]: { ...STATES[GARMIN], attributes: { ...STATES[GARMIN].attributes, friendly_name: name } } });
+  card._hass = hass(STATES);
+  card._fetchedOn = card._today;
+  card._data = annaDay(activity(906, 680, "counting"));
+  card._renderBody();
+  const day = body.innerHTML;
+
+  // The same name, in states that are new: nothing changes.
+  line.textContent = "as drawn";
+  card.hass = hass({ ...STATES });
+  assert.equal(line.textContent, "as drawn");
+  // Renamed: the line follows, and the body is not drawn again.
+  card.hass = hass(named("Anna's Forerunner"));
+  assert.equal(line.textContent, "Anna's Forerunner measured 906 kcal. At 75%, that counts as 680 kcal. The activity level already allows for 244 kcal of it.");
+  assert.equal(body.innerHTML, day);
+  line.textContent = "as renamed";
+  card.hass = hass(named("Anna's Forerunner"));
+  assert.equal(line.textContent, "as renamed");
+  // A sensor not in states yet is named by its entity ID, until its state arrives.
+  card.hass = hass({});
+  assert.match(line.textContent, new RegExp(`^${GARMIN} measured 906 kcal\\.`));
+  card.hass = hass(STATES);
+  assert.match(line.textContent, /^Garmin Connect Active calories measured 906 kcal\./);
+
+  // A missing sensor is named by its entity ID whatever states say.
+  card._data = annaDay(activity(500, 380, "missing"));
+  card._renderBody();
+  line.textContent = "missing";
+  card.hass = hass(named("Anna's Forerunner"));
+  assert.equal(line.textContent, "missing");
+  // A day without activity has no line to change.
+  card._data = annaDay(null);
+  card._renderBody();
+  line.textContent = "no line";
+  card.hass = hass(STATES);
+  assert.equal(line.textContent, "no line");
+  // Nor has a card whose day is gone, as when its person was removed.
+  card._data = annaDay(activity(906, 680, "counting"));
+  card._renderBody();
+  card._data = null;
+  drawn = false;
+  card.hass = hass(named("Anna's Forerunner"));
+});
+
 test("the summary card's line measures against the total, and names the activity (B4, H2)", () => {
   const t = fn.translate("en");
   const day = annaDay(activity(906, 680, "counting"));

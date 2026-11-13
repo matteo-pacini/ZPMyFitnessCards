@@ -59,6 +59,20 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
     return 8;
   }
 
+  // Home Assistant passes a new hass with every change of state. Of the day
+  // drawn, only the activity line reads states, for the sensor's name, which
+  // may change, or arrive only after the day was drawn. Then only the line
+  // changes: redrawing the body on every hass would lose what has focus in it.
+  set hass(hass) {
+    super.hass = hass;
+    const activity = this._data?.activity;
+    const name = activity && sensorName(activity, hass.states);
+    if (name === this._sensorName) return;
+    this._sensorName = name;
+    const line = this._card.querySelector(".body .activity");
+    if (line) line.textContent = activityLine(activity, hass.states, this._person.name, this._locale, this._t);
+  }
+
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener(OPEN_DAY, this._openDay);
@@ -123,7 +137,10 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
 
   _renderBody() {
     const body = this._card?.querySelector(".body");
-    if (body && this._data) body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale, this._hass.states, this._person.name);
+    if (!body || !this._data) return;
+    const { activity } = this._data;
+    this._sensorName = activity && sensorName(activity, this._hass.states);
+    body.innerHTML = diaryBodyHTML(this._data, this._t, this._locale, this._hass.states, this._person.name);
   }
 
   _renderPanel() {
@@ -731,12 +748,12 @@ function diarySummaryHTML(sums, goals, t, locale, activity = null, line = "") {
 // `activity`: what was measured or logged, how much of it counts, and how
 // much of that the activity level already allows for. Today's status says
 // when there is nothing to count yet, or the sensor is unavailable or gone.
-// The sensor is named by its name in `states`, Home Assistant's, else by its
-// entity ID; `person` is the name of whose day it is.
+// The sensor is named as sensorName says; `person` is the name of whose day
+// it is.
 function activityLine(activity, states, person, locale, t) {
   const { source, status, measured, share, cap, counted, allowed, added } = activity;
   const logged = source === "action";
-  const sensor = (status !== "missing" && states[source]?.attributes.friendly_name) || source;
+  const sensor = sensorName(activity, states);
   if (status === "waiting") return logged ? t.activity_logged_waiting : fill(t.activity_waiting, { sensor });
   if (status === "missing" && measured == null) return fill(t.activity_missing, { sensor, person });
   const leads = { missing: t.activity_missing_held, unavailable: t.activity_unavailable };
@@ -751,6 +768,11 @@ function activityLine(activity, states, person, locale, t) {
   // Chinese runs sentences together; the other languages space them.
   return sentences.join(locale.split("-")[0].toLowerCase() === "zh" ? "" : " ");
 }
+
+// The name the activity line gives the sensor `activity` came from: its name
+// in `states`, Home Assistant's, else its entity ID, which is all a missing
+// sensor has left.
+const sensorName = (activity, states) => (activity.status !== "missing" && states[activity.source]?.attributes.friendly_name) || activity.source;
 
 // One meal's `entries`, with buttons to add to it, copy into it, and save
 // it as a meal when it has any.

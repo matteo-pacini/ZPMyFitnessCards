@@ -92,14 +92,6 @@ def test_active_calories_units_in_the_person_form(home: Home, page: Page, unit: 
         home.api("DELETE", f"/api/states/{entity_id}")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "The diary names the sensor from the states it had when it last drew, and draws again "
-        "only when Metron's data changes (src/cards/person-card.js, ShowsPerson's set hass), "
-        "so a renamed sensor keeps its old name until its next reading"
-    ),
-)
 def test_the_line_follows_a_renamed_sensor(home: Home, page: Page) -> None:
     s = ac.Screen(home, page, "laptop", opener(home, page), flows.OpenFoodFacts())
     with s.cleanup:
