@@ -22,7 +22,7 @@ from homeassistant.loader import async_get_integration
 from sqlalchemy.exc import OperationalError
 
 from . import services, websocket
-from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
+from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SIGNAL_PEOPLE, SUBENTRY_PERSON
 from .coordinator import PersonCoordinator
 from .data import FitnessData, Person, database_url
 from .db import MIGRATIONS, Database, NewerSchemaError
@@ -160,6 +160,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     entry.async_on_unload(async_at_started(hass, started))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # The people themselves may be why this ran: one added, changed or
+    # removed, and no person's change says that someone is new, or gone. Sent
+    # by the loop, which Home Assistant reaches only once it has marked the
+    # entry loaded: a card that asks for the people at once is then answered.
+    hass.loop.call_soon(async_dispatcher_send, hass, SIGNAL_PEOPLE)
     return True
 
 

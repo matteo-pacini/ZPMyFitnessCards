@@ -393,9 +393,29 @@ test("a card whose config names a person loses them when they are renamed, and f
   await settled();
   assert.equal(text(c._card.innerHTML), "Streak No person named Debora. Add them in Settings, Devices & services, Metron.");
 
-  // With no one to show, any person's change has the card look again.
+  // With no one to show, a person's change is not the card's, but word that
+  // the people may have changed has it look again.
   people = PEOPLE;
-  c._changed({ person: "d" });
+  c._heard({ person: "d", days: [] });
+  await settled();
+  assert.match(text(c._card.innerHTML), /^Streak No person named Debora/);
+  c._heard({ person: null, days: [], people: true });
   await settled();
   assert.match(text(c._card.innerHTML), /^Streak Debora /);
+});
+
+test("word that the people may have changed has a card with a person fetch again, and find them gone", async () => {
+  let people = PEOPLE;
+  const { c, sent } = card({ person: "Debora", locale: "en" }, (m) => (m.type === "metron/people" ? people : { days: history("uggp", c._today) }));
+  await c._start();
+  const before = sent.length;
+  c._heard({ person: null, days: [], people: true });
+  await settled();
+  assert.deepEqual(sent.slice(before).map((m) => m.type).sort(), ["metron/days", "metron/people"]);
+  assert.match(text(c._card.innerHTML), /^Streak Debora /);
+
+  people = [];
+  c._heard({ person: null, days: [], people: true });
+  await settled();
+  assert.equal(text(c._card.innerHTML), "Streak No person named Debora. Add them in Settings, Devices & services, Metron.");
 });

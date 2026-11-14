@@ -57,12 +57,12 @@ const ShowsPerson = (Base) =>
       }
     }
 
-    // A change to the person `event` names: fetch again when they are the
-    // card's. A card with no one to show looks for its person again, since
-    // they may have just been added, or renamed to the name its config has.
-    _personChanged(event) {
-      if (!this._person) this._start();
-      else if (event.person === this._person.id) this._refresh();
+    // The card's person may have changed, or be gone, which `_refresh` finds
+    // out. A card with no one to show looks for its person again, since they
+    // may have just been added, or renamed to the name its config has.
+    _peopleChanged() {
+      if (this._person) this._refresh();
+      else this._start();
     }
 
     get _titleHTML() {
@@ -100,7 +100,7 @@ class PersonCard extends ShowsPerson(FitnessCard) {
   }
 
   _changed(event) {
-    if (event.person !== null) this._personChanged(event);
+    if (this._person && event.person === this._person.id) this._refresh();
   }
 
   _render() {
