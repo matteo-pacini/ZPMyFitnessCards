@@ -14,7 +14,8 @@ const rangeButtons = (ranges, selected, t) =>
 // person its config names, or the logged-in user's, and that person's data
 // from the card's `_fetch`, drawn with `_renderBody`. Its title is its
 // config's, else the string its static `titleKey` names. Once midnight
-// passes, it calls `_newDay`, which fetches again.
+// passes, it calls `_newDay`, which fetches again. Each fetch reads the
+// person again too, so the card follows a change to their details.
 const ShowsPerson = (Base) =>
   class extends Base {
     set hass(hass) {
@@ -38,11 +39,30 @@ const ShowsPerson = (Base) =>
     async _refresh() {
       this._fetchedOn = this._today;
       try {
-        this._data = await this._fetch();
-        this._renderBody();
+        const [people, data] = await Promise.all([this._call({ type: "metron/people" }), this._fetch()]);
+        const person = findPerson(people, this._config, this._hass);
+        // Someone else, or no one, as after a rename when the config names
+        // the person: `data` is not theirs, so load afresh.
+        if (person?.id !== this._person.id) return this._start();
+        const same = JSON.stringify(person) === JSON.stringify(this._person);
+        this._people = people;
+        this._person = person;
+        this._data = data;
+        // The whole card only when it must be: the diary draws its open panel
+        // again with it, which drops the focus and what is typed in the panel.
+        if (same) this._renderBody();
+        else this._render();
       } catch {
         this._start();
       }
+    }
+
+    // A change to the person `event` names: fetch again when they are the
+    // card's. A card with no one to show looks for its person again, since
+    // they may have just been added, or renamed to the name its config has.
+    _personChanged(event) {
+      if (!this._person) this._start();
+      else if (event.person === this._person.id) this._refresh();
     }
 
     get _titleHTML() {
@@ -80,7 +100,7 @@ class PersonCard extends ShowsPerson(FitnessCard) {
   }
 
   _changed(event) {
-    if (this._person && event.person === this._person.id) this._refresh();
+    if (event.person !== null) this._personChanged(event);
   }
 
   _render() {
