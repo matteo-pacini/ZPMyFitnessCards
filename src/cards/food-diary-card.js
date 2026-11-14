@@ -109,8 +109,8 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         this._panel.meals = undefined;
         this._search();
       }
-    } else if (this._person && event.person === this._person.id) {
-      this._refresh();
+    } else {
+      this._personChanged(event);
     }
   }
 

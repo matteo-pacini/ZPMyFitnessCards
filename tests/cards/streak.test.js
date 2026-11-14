@@ -341,3 +341,61 @@ test("the card's editor offers person, title and language, and it has a size", (
   assert.deepEqual(plain(Card.options), ["person", "title", "locale"]);
   assert.equal(new Card().getCardSize(), 6);
 });
+
+// A card with no person in its config, which shows the one linked to who is
+// logged in, so that a new name still finds them.
+function linkedCard(reply) {
+  const made = card({ locale: "en" }, reply);
+  made.c._hass.user = { id: "u" };
+  made.c._hass.states = { "person.debora": { entity_id: "person.debora", attributes: { user_id: "u" } } };
+  return made;
+}
+
+const settled = () => new Promise((r) => setImmediate(r));
+
+test("a change to the card's person reaches the open card, which draws only its body while they stay the same", async () => {
+  let people = PEOPLE;
+  const { c, sent } = linkedCard((m) => (m.type === "metron/people" ? people : { days: history("uggp", c._today) }));
+  await c._start();
+  assert.match(text(c._card.innerHTML), /^Streak Debora /);
+  let whole = 0;
+  const render = c._render;
+  c._render = function () {
+    whole += 1;
+    return render.call(this);
+  };
+
+  c._changed({ person: "d" });
+  await settled();
+  assert.deepEqual(sent.slice(2).map((m) => m.type).sort(), ["metron/days", "metron/people"]);
+  assert.equal(whole, 0);
+
+  people = [{ ...PEOPLE[0], name: "Deborah" }];
+  c._changed({ person: "d" });
+  await settled();
+  assert.equal(whole, 1);
+  assert.match(text(c._card.innerHTML), /^Streak Deborah /);
+
+  // Someone else's change is not this card's.
+  const before = sent.length;
+  c._changed({ person: "x" });
+  c._changed({ person: null });
+  await settled();
+  assert.equal(sent.length, before);
+});
+
+test("a card whose config names a person loses them when they are renamed, and finds them again", async () => {
+  let people = PEOPLE;
+  const { c } = card({ person: "Debora", locale: "en" }, (m) => (m.type === "metron/people" ? people : { days: history("uggp", c._today) }));
+  await c._start();
+  people = [{ ...PEOPLE[0], name: "Deborah" }];
+  c._changed({ person: "d" });
+  await settled();
+  assert.equal(text(c._card.innerHTML), "Streak No person named Debora. Add them in Settings, Devices & services, Metron.");
+
+  // With no one to show, any person's change has the card look again.
+  people = PEOPLE;
+  c._changed({ person: "d" });
+  await settled();
+  assert.match(text(c._card.innerHTML), /^Streak Debora /);
+});
