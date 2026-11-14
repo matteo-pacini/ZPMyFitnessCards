@@ -48,7 +48,8 @@ const ShowsPerson = (Base) =>
         this._people = people;
         this._person = person;
         this._data = data;
-        // The whole card only when it must be: that closes an open panel.
+        // The whole card only when it must be: the diary draws its open panel
+        // again with it, which drops the focus and what is typed in the panel.
         if (same) this._renderBody();
         else this._render();
       } catch {

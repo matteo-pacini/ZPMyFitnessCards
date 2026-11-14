@@ -1577,9 +1577,11 @@ def test_an_open_card_loses_and_finds_the_person_its_config_names(home: Home, pa
         # Renamed, the person is no longer the one the card's config names:
         # the open card says what it would say once the page is reloaded.
         change_details(home, "Rae e2e", name="Raya e2e")
-        expect(card).to_contain_text("No person named Rae e2e", timeout=TIMEOUT)
-
-        change_details(home, "Raya e2e", name="Rae e2e")
+        try:
+            expect(card).to_contain_text("No person named Rae e2e", timeout=TIMEOUT)
+        finally:
+            # Also when that fails: person_named removes them by this name.
+            change_details(home, "Raya e2e", name="Rae e2e")
         expect(card.locator(".person")).to_have_text("Rae e2e", timeout=TIMEOUT)
         expect(card.locator(".body")).to_contain_text("0 of", timeout=TIMEOUT)
 
