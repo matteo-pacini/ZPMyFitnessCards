@@ -52,7 +52,12 @@ class FitnessCard extends HTMLElement {
   }
 
   connectedCallback() {
-    if (this._hass && this._card && !this._unsubscribe) this._subscribe();
+    if (this._hass && this._card && !this._unsubscribe) {
+      this._subscribe();
+      // A card back on the page, as when its dashboard tab shows again, heard
+      // nothing while it was away: fetch what it shows again.
+      if (this._loaded && !this._retry) this._refresh();
+    }
     // A try at loading is due, which removing the card may have cancelled: try now.
     if (this._retry) this._start();
   }
@@ -93,6 +98,7 @@ class FitnessCard extends HTMLElement {
     this._retry = null;
     try {
       await this._load();
+      this._loaded = true;
       this._failure = null;
       if (!this._unsubscribe) this._subscribe();
     } catch (err) {
