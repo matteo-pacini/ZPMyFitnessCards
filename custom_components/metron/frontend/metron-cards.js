@@ -4964,12 +4964,14 @@ class WeightCard extends PersonCard {
     const shown = weights.filter((w) => w.day >= start);
     const band = bandOf(latest, person);
     const recent = weights.slice(-5).reverse();
-    // The log form is drawn once and then left alone: a redraw would empty a
-    // weight being typed, and take the box's focus and the phone's keyboard.
-    if (!body.querySelector(".log")) {
+    // The log form is drawn once for a language and a unit, then left alone:
+    // a redraw would empty a weight being typed, and take the box's focus and
+    // the phone's keyboard.
+    const drawnFor = `${locale} ${unit}`;
+    if (body.querySelector(".log")?.dataset.drawnFor !== drawnFor) {
       const [low, high] = weightRange(unit);
       body.innerHTML = `<div class="above"></div>
-        <div class="log">
+        <div class="log" data-drawn-for="${esc(drawnFor)}">
           <label>${esc(t.day)}<input type="date" data-field="day" data-action="log-day"></label>
           <label>${esc(t[unit])}<input type="number" data-field="weight" min="${low}" max="${high}" step="0.1" inputmode="decimal"></label>
           <button class="fill" data-action="log">${esc(t.log_weight)}</button>

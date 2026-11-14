@@ -496,6 +496,29 @@ def test_a_weight_being_typed_stays_through_changes_from_elsewhere(
         expect(card.locator('[data-field="day"]')).to_have_value(today())
 
 
+def test_the_weight_card_s_log_form_follows_a_new_language(home: Home, page: Page) -> None:
+    yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
+    select = (
+        "language => document.querySelector('home-assistant')"
+        ".dispatchEvent(new CustomEvent('hass-language-select', { detail: language }))"
+    )
+    with person_named(home, "Lina e2e"):
+        card = open_card(home, page, {"type": "custom:metron-weight-card", "person": "Lina e2e"})
+        log = card.locator('[data-action="log"]')
+        expect(log).to_have_text("Log weight", timeout=TIMEOUT)
+        try:
+            # A language chosen in the profile reaches the card with no reload,
+            # and the card draws in it on the next change to its person.
+            page.evaluate(select, "it")
+            lina = person_id(home, "Lina e2e")
+            home.ws({"type": "metron/weight/set", "person": lina, "day": yesterday, "kg": 69})
+            expect(card.locator(".recent .item")).to_have_count(1, timeout=TIMEOUT)
+            expect(card.locator(".recent .sub")).to_have_text("Ultime pesate")
+            expect(log).to_have_text("Registra il peso")
+        finally:
+            page.evaluate(select, "en")
+
+
 def test_a_weight_being_typed_stays_while_another_dashboard_tab_shows(
     home: Home, page: Page
 ) -> None:
