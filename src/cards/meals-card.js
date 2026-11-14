@@ -47,9 +47,13 @@ class MealsCard extends FoodCard {
   }
 
   async _refresh() {
+    const listed = Boolean(this._meals);
     try {
       await this._load();
-      this._renderList();
+      // The person the config names found at last, or gone: the card goes
+      // from its message to its list, or back, so all of it is drawn.
+      if (Boolean(this._meals) === listed) this._renderList();
+      else this._render();
     } catch {
       this._start();
     }

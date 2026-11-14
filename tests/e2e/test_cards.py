@@ -1601,9 +1601,18 @@ def test_the_saved_foods_card_follows_a_new_name_for_who_saved_a_food(
 ) -> None:
     with person_named(home, "Pia e2e"):
         save_food(home, "Renamed saver oats e2e", person=person_id(home, "Pia e2e"))
+        save_food(home, "Unrenamed decoy oats e2e")
         card = open_card(home, page, {"type": "custom:metron-foods-card"})
-        card.locator('[data-action="query"]').fill("Renamed saver")
         row = card.locator(".row", has_text="Renamed saver oats e2e")
+        decoy = card.locator(".row", has_text="Unrenamed decoy oats e2e")
+        # Each search answered before the next step, as one food leaving the
+        # list shows: a search still under way when the name changes would
+        # read the people again by itself.
+        card.locator('[data-action="query"]').fill("Unrenamed decoy")
+        expect(decoy).to_be_visible(timeout=TIMEOUT)
+        expect(row).to_have_count(0, timeout=TIMEOUT)
+        card.locator('[data-action="query"]').fill("Renamed saver")
+        expect(decoy).to_have_count(0, timeout=TIMEOUT)
         expect(row.locator(".pill")).to_have_text("Pia e2e", timeout=TIMEOUT)
 
         change_details(home, "Pia e2e", name="Pilar e2e")
@@ -1612,6 +1621,18 @@ def test_the_saved_foods_card_follows_a_new_name_for_who_saved_a_food(
         finally:
             # Also when that fails: person_named removes them by this name.
             change_details(home, "Pilar e2e", name="Pia e2e")
+
+
+def test_the_saved_meals_card_finds_and_loses_the_person_its_config_names(
+    home: Home, page: Page
+) -> None:
+    card = open_card(home, page, {"type": "custom:metron-meals-card", "person": "Mina e2e"})
+    expect(card).to_contain_text("No person named Mina e2e", timeout=TIMEOUT)
+
+    with person_named(home, "Mina e2e") as remove:
+        expect(card.locator('[data-action="new"]')).to_be_visible(timeout=TIMEOUT)
+        remove()
+        expect(card).to_contain_text("No person named Mina e2e", timeout=TIMEOUT)
 
 
 def test_a_card_finds_its_person_once_they_are_added(home: Home, page: Page) -> None:

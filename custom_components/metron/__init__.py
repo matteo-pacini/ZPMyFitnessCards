@@ -146,9 +146,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     # day shows, such as whether it has activity, without a write.
     for key in coordinators:
         async_dispatcher_send(hass, SIGNAL_CHANGED, key, set())
-    # The people themselves may be why: one added, changed or removed. No
-    # person's change says that someone is new, or gone.
-    async_dispatcher_send(hass, SIGNAL_PEOPLE)
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CHANGED, changed))
     entry.async_on_unload(async_track_time_change(hass, midnight, hour=0, minute=0, second=0))
 
@@ -163,6 +160,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     entry.async_on_unload(async_at_started(hass, started))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # The people themselves may be why this ran: one added, changed or
+    # removed, and no person's change says that someone is new, or gone. Sent
+    # by the loop, which Home Assistant reaches only once it has marked the
+    # entry loaded: a card that asks for the people at once is then answered.
+    hass.loop.call_soon(async_dispatcher_send, hass, SIGNAL_PEOPLE)
     return True
 
 
