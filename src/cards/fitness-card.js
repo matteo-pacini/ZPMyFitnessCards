@@ -102,9 +102,21 @@ class FitnessCard extends HTMLElement {
     this._render();
   }
 
+  // An event from the integration: the people may have changed, as after
+  // any change to one of them, or what `_changed` is told of did.
+  _heard(event) {
+    if (event.people) this._peopleChanged();
+    else this._changed(event);
+  }
+
+  // Every card's `_refresh` reads the people again.
+  _peopleChanged() {
+    this._refresh();
+  }
+
   _subscribe() {
     this._unsubscribe = this._hass.connection
-      .subscribeMessage((event) => this._changed(event), { type: "metron/subscribe" })
+      .subscribeMessage((event) => this._heard(event), { type: "metron/subscribe" })
       .catch(() => {
         this._unsubscribe = null;
       });

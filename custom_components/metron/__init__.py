@@ -22,7 +22,7 @@ from homeassistant.loader import async_get_integration
 from sqlalchemy.exc import OperationalError
 
 from . import services, websocket
-from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SUBENTRY_PERSON
+from .const import CARDS_URL, DOMAIN, SIGNAL_CHANGED, SIGNAL_PEOPLE, SUBENTRY_PERSON
 from .coordinator import PersonCoordinator
 from .data import FitnessData, Person, database_url
 from .db import MIGRATIONS, Database, NewerSchemaError
@@ -146,6 +146,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: FitnessConfigEntry) -> b
     # day shows, such as whether it has activity, without a write.
     for key in coordinators:
         async_dispatcher_send(hass, SIGNAL_CHANGED, key, set())
+    # The people themselves may be why: one added, changed or removed. No
+    # person's change says that someone is new, or gone.
+    async_dispatcher_send(hass, SIGNAL_PEOPLE)
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_CHANGED, changed))
     entry.async_on_unload(async_track_time_change(hass, midnight, hour=0, minute=0, second=0))
 

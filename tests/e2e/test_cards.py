@@ -1586,6 +1586,34 @@ def test_an_open_card_loses_and_finds_the_person_its_config_names(home: Home, pa
         expect(card.locator(".body")).to_contain_text("0 of", timeout=TIMEOUT)
 
 
+def test_an_open_card_says_when_its_person_is_removed(home: Home, page: Page) -> None:
+    with person_named(home, "Remy e2e") as remove:
+        card = open_card(home, page, {"type": "custom:metron-summary-card", "person": "Remy e2e"})
+        expect(card.locator(".person")).to_have_text("Remy e2e", timeout=TIMEOUT)
+
+        remove()
+
+        expect(card).to_contain_text("No person named Remy e2e", timeout=TIMEOUT)
+
+
+def test_the_saved_foods_card_follows_a_new_name_for_who_saved_a_food(
+    home: Home, page: Page
+) -> None:
+    with person_named(home, "Pia e2e"):
+        save_food(home, "Renamed saver oats e2e", person=person_id(home, "Pia e2e"))
+        card = open_card(home, page, {"type": "custom:metron-foods-card"})
+        card.locator('[data-action="query"]').fill("Renamed saver")
+        row = card.locator(".row", has_text="Renamed saver oats e2e")
+        expect(row.locator(".pill")).to_have_text("Pia e2e", timeout=TIMEOUT)
+
+        change_details(home, "Pia e2e", name="Pilar e2e")
+        try:
+            expect(row.locator(".pill")).to_have_text("Pilar e2e", timeout=TIMEOUT)
+        finally:
+            # Also when that fails: person_named removes them by this name.
+            change_details(home, "Pilar e2e", name="Pia e2e")
+
+
 def test_a_card_finds_its_person_once_they_are_added(home: Home, page: Page) -> None:
     card = open_card(home, page, {"type": "custom:metron-streak-card", "person": "Nia e2e"})
     expect(card).to_contain_text("No person named Nia e2e", timeout=TIMEOUT)

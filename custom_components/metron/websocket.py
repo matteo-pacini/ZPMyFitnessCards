@@ -28,6 +28,7 @@ from .const import (
     NUTRIENTS,
     REQUIRED_NUTRIENTS,
     SIGNAL_CHANGED,
+    SIGNAL_PEOPLE,
 )
 from .data import FitnessData, Person, food_entry, loaded_data, today
 from .db import EVERYONE, FoodGoneError, MealChangedError, MealExistsError
@@ -238,14 +239,29 @@ def ws_subscribe(
     `person` is None for changes to saved foods. `days` lists the days whose
     entries changed, empty for weights, goals, activity and foods. Each
     person gets one too whenever the integration sets up, as it does after
-    any change to a person.
+    any change to a person, followed by one event with `people` true and no
+    person: the people may have changed, one of them added, changed or removed.
     """
 
     @callback
     def changed(person: str | None, days: set[str]) -> None:
         connection.send_event(msg["id"], {"person": person, "days": sorted(days)})
 
-    connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, SIGNAL_CHANGED, changed)
+    @callback
+    def people() -> None:
+        connection.send_event(msg["id"], {"person": None, "days": [], "people": True})
+
+    stops = [
+        async_dispatcher_connect(hass, SIGNAL_CHANGED, changed),
+        async_dispatcher_connect(hass, SIGNAL_PEOPLE, people),
+    ]
+
+    @callback
+    def stop() -> None:
+        for each in stops:
+            each()
+
+    connection.subscriptions[msg["id"]] = stop
     connection.send_result(msg["id"])
 
 

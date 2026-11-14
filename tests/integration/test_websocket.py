@@ -247,6 +247,30 @@ async def test_subscribers_hear_about_changes(hass: HomeAssistant, ws) -> None:
     assert event["event"] == {"person": "debora", "days": ["2026-11-08"]}
 
 
+async def test_subscribers_hear_that_the_people_may_have_changed(
+    hass: HomeAssistant, entry: MockConfigEntry, ws
+) -> None:
+    client = ws.client
+    await client.send_json_auto_id({"type": "metron/subscribe"})
+    subscribed = await client.receive_json()
+    assert subscribed["success"]
+
+    # Setting up, as after any change to a person, tells of each person, then
+    # that the people themselves may have changed.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    events = [(await client.receive_json())["event"] for _ in range(3)]
+    assert sorted(e["person"] for e in events[:2]) == ["debora", "matteo"]
+    assert events[2] == {"person": None, "days": [], "people": True}
+
+    # Unsubscribed, neither kind comes: the next message is a command's reply.
+    await client.send_json_auto_id({"type": "unsubscribe_events", "subscription": subscribed["id"]})
+    assert (await client.receive_json())["success"]
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert (await ws("people"))["type"] == "result"
+
+
 async def test_every_write_tells_subscribers_what_changed(ws) -> None:
     client = ws.client
     await client.send_json_auto_id({"type": "metron/subscribe"})

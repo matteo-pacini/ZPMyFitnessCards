@@ -2721,9 +2721,21 @@ class FitnessCard extends HTMLElement {
     this._render();
   }
 
+  // An event from the integration: the people may have changed, as after
+  // any change to one of them, or what `_changed` is told of did.
+  _heard(event) {
+    if (event.people) this._peopleChanged();
+    else this._changed(event);
+  }
+
+  // Every card's `_refresh` reads the people again.
+  _peopleChanged() {
+    this._refresh();
+  }
+
   _subscribe() {
     this._unsubscribe = this._hass.connection
-      .subscribeMessage((event) => this._changed(event), { type: "metron/subscribe" })
+      .subscribeMessage((event) => this._heard(event), { type: "metron/subscribe" })
       .catch(() => {
         this._unsubscribe = null;
       });
@@ -3095,12 +3107,12 @@ const ShowsPerson = (Base) =>
       }
     }
 
-    // A change to the person `event` names: fetch again when they are the
-    // card's. A card with no one to show looks for its person again, since
-    // they may have just been added, or renamed to the name its config has.
-    _personChanged(event) {
-      if (!this._person) this._start();
-      else if (event.person === this._person.id) this._refresh();
+    // The card's person may have changed, or be gone, which `_refresh` finds
+    // out. A card with no one to show looks for its person again, since they
+    // may have just been added, or renamed to the name its config has.
+    _peopleChanged() {
+      if (this._person) this._refresh();
+      else this._start();
     }
 
     get _titleHTML() {
@@ -3138,7 +3150,7 @@ class PersonCard extends ShowsPerson(FitnessCard) {
   }
 
   _changed(event) {
-    if (event.person !== null) this._personChanged(event);
+    if (this._person && event.person === this._person.id) this._refresh();
   }
 
   _render() {
@@ -3261,8 +3273,8 @@ class FoodDiaryCard extends ShowsPerson(FoodCard) {
         this._panel.meals = undefined;
         this._search();
       }
-    } else {
-      this._personChanged(event);
+    } else if (this._person && event.person === this._person.id) {
+      this._refresh();
     }
   }
 
