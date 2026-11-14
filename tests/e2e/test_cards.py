@@ -592,6 +592,56 @@ def test_open_cards_move_to_the_new_day_at_midnight(home: Home, page: Page) -> N
         expect(summary.locator(".body")).to_contain_text("321 of", timeout=TIMEOUT)
 
 
+def test_a_card_on_another_tab_catches_up_when_its_tab_comes_back(home: Home, page: Page) -> None:
+    with person_named(home, "Tabitha e2e"):
+        home.dashboard([])
+        home.ws(
+            {
+                "type": "lovelace/config/save",
+                "url_path": home.DASHBOARD,
+                "config": {
+                    "views": [
+                        {
+                            "title": "Summary",
+                            "cards": [
+                                {"type": "custom:metron-summary-card", "person": "Tabitha e2e"}
+                            ],
+                        },
+                        {
+                            "title": "Diary",
+                            "cards": [
+                                {"type": "custom:metron-food-diary-card", "person": "Tabitha e2e"}
+                            ],
+                        },
+                    ]
+                },
+            }
+        )
+        page.goto(home.url + "/" + home.DASHBOARD + "/0")
+        summary = page.locator("metron-summary-card")
+        expect(summary.locator(".body")).to_contain_text("0 of", timeout=30_000)
+        # Home Assistant keeps a tab's cards while another tab shows: the card
+        # that comes back must be this one, not a new one that loads afresh.
+        summary.evaluate("card => { card.sameCard = true }")
+
+        page.get_by_role("tab", name="Diary").click()
+        card = page.locator("metron-food-diary-card")
+        expect(card.locator(".meal")).to_have_count(4, timeout=TIMEOUT)
+        meal(card, "dinner").locator('[data-action="add"]').click()
+        card.locator('[data-action="tab"][data-tab="quick"]').click()
+        card.locator('.panel [data-field="name"]').fill("Tab pizza e2e")
+        card.locator('.panel [data-field="kcal"]').fill("777")
+        card.locator('[data-action="quick-add"]').click()
+        expect(meal(card, "dinner").locator(".row", has_text="Tab pizza e2e")).to_be_visible(
+            timeout=TIMEOUT
+        )
+
+        page.get_by_role("tab", name="Summary").click()
+        expect(summary.locator(".title")).to_be_visible(timeout=TIMEOUT)
+        assert summary.evaluate("card => card.sameCard === true")
+        expect(summary.locator(".body")).to_contain_text("777 of", timeout=TIMEOUT)
+
+
 # The streak card
 
 
