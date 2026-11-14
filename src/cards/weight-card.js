@@ -63,6 +63,7 @@ class WeightCard extends PersonCard {
   static ranges = ["90", "365", "all"];
   static style = `${super.style}${CHART_STYLE}${BAND_STYLE}
     .body { display: flex; flex-direction: column; gap: 14px; }
+    .above, .below { display: contents; }
     .now { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
     .now b { font-size: 1.8rem; font-weight: var(--ha-font-weight-medium, 500); }
     .chip { border-radius: 12px; padding: 2px 10px; font-size: var(--ha-font-size-s, 0.875rem); color: var(--text-primary-color); }
@@ -105,18 +106,31 @@ class WeightCard extends PersonCard {
     const shown = weights.filter((w) => w.day >= start);
     const band = bandOf(latest, person);
     const recent = weights.slice(-5).reverse();
-    const [low, high] = weightRange(unit);
-    body.innerHTML = `
+    // The log form is drawn once for a language and a unit, then left alone:
+    // a redraw would empty a weight being typed, and take the box's focus and
+    // the phone's keyboard.
+    const drawnFor = `${locale} ${unit}`;
+    if (body.querySelector(".log")?.dataset.drawnFor !== drawnFor) {
+      const [low, high] = weightRange(unit);
+      body.innerHTML = `<div class="above"></div>
+        <div class="log" data-drawn-for="${esc(drawnFor)}">
+          <label>${esc(t.day)}<input type="date" data-field="day" data-action="log-day"></label>
+          <label>${esc(t[unit])}<input type="number" data-field="weight" min="${low}" max="${high}" step="0.1" inputmode="decimal"></label>
+          <button class="fill" data-action="log">${esc(t.log_weight)}</button>
+        </div>
+        <div class="below"></div>`;
+    }
+    const day = body.querySelector('[data-field="day"]');
+    day.max = today;
+    // Not while it is being typed in: a half-typed date reads as empty.
+    if (this.shadowRoot.activeElement !== day) day.value = this._logDay ?? today;
+    body.querySelector(".above").innerHTML = `
       <div class="now num"><b>${esc(weightText(latest, unit, locale, t))}</b>
         <span class="sub">${esc(fill(t.since_start, { change: changeText(change, unit, locale, t), date: shortDate(person.start_date, locale, true) }))}</span>
         <span class="chip ${band}">${esc(t[band])}</span></div>
       ${weightChartHTML(shown, person, start, today, locale, t, unit)}
-      ${weights.length ? "" : `<div class="muted">${esc(fill(t.no_weights, { weight: weightText(person.start_weight_kg, unit, locale, t) }))}</div>`}
-      <div class="log">
-        <label>${esc(t.day)}<input type="date" data-field="day" data-action="log-day" value="${this._logDay ?? today}" max="${today}"></label>
-        <label>${esc(t[unit])}<input type="number" data-field="weight" min="${low}" max="${high}" step="0.1" inputmode="decimal"></label>
-        <button class="fill" data-action="log">${esc(t.log_weight)}</button>
-      </div>
+      ${weights.length ? "" : `<div class="muted">${esc(fill(t.no_weights, { weight: weightText(person.start_weight_kg, unit, locale, t) }))}</div>`}`;
+    body.querySelector(".below").innerHTML = `
       ${this._error ? `<div class="error">${esc(this._error)}</div>` : ""}
       ${recent.length ? `<div class="recent"><div class="sub">${esc(t.recent_weights)}</div>${recent
         .map((w) => `<div class="item num"><span>${esc(shortDate(w.day, locale, true))}</span><span>${esc(weightText(w.kg, unit, locale, t))}</span>
@@ -148,7 +162,8 @@ class WeightCard extends PersonCard {
       const day = this._card.querySelector('[data-field="day"]').value || this._today;
       const unit = weightUnit(this._hass);
       const [low, high] = weightRange(unit);
-      const weight = numberValue(this._card.querySelector('[data-field="weight"]'));
+      const box = this._card.querySelector('[data-field="weight"]');
+      const weight = numberValue(box);
       if (weight == null || weight < low || weight > high) {
         const locale = this._locale;
         this._error = fill(this._t.error_weight, { min: number(low, locale, 1), max: number(high, locale, 1), unit: this._t[unit] });
@@ -159,6 +174,7 @@ class WeightCard extends PersonCard {
       this._logDay = null;
       try {
         await this._call({ type: "metron/weight/set", person: this._person.id, day, kg: toKg(weight, unit) });
+        box.value = "";
       } catch (err) {
         this._keepLogDay(day);
         this._showFailure(err);

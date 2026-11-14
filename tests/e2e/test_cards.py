@@ -11,7 +11,7 @@ import pytest
 from playwright.sync_api import Locator, Page, expect
 
 from .conftest import FakeSearch, Home
-from .flows import goals_since, person_named
+from .flows import goals_since, person_named, wait_for
 
 TIMEOUT = 15_000
 
@@ -445,6 +445,118 @@ def test_after_logging_a_past_day_the_weight_card_logs_today(home: Home, page: P
         expect(card.locator(".recent .item", has_text="71.2 kg")).to_have_count(1, timeout=TIMEOUT)
         weights = home.ws({"type": "metron/weights", "person": person_id(home, "Wendy e2e")})
         assert weights == [{"day": past, "kg": 71.4}, {"day": today(), "kg": 71.2}]
+
+
+@ON_A_PHONE_TOO
+def test_a_weight_being_typed_stays_through_changes_from_elsewhere(
+    home: Home, page: Page, on: str
+) -> None:
+    name = f"Wilma e2e {on}"
+    past = (date.fromisoformat(today()) - timedelta(days=3)).isoformat()
+    yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
+    with person_named(home, name):
+        wilma = person_id(home, name)
+        card = open_card(home, page, {"type": "custom:metron-weight-card", "person": name})
+        expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
+        card.locator('[data-field="day"]').fill(past)
+        box = card.locator('[data-field="weight"]')
+        box.click()
+        box.press_sequentially("68.")
+
+        # Another device logs yesterday's weight while this one is mid-typing.
+        home.ws({"type": "metron/weight/set", "person": wilma, "day": yesterday, "kg": 69})
+        expect(card.locator(".recent .item")).to_have_count(1, timeout=TIMEOUT)
+        expect(box).to_be_focused()
+        box.press_sequentially("4")
+        expect(box).to_have_value("68.4")
+
+        # So does food: the card draws again on any change to its person. The
+        # weight deleted after it shows that the food's change has arrived.
+        home.ws(
+            {
+                "type": "metron/entry/add",
+                "person": wilma,
+                "day": today(),
+                "meal": "lunch",
+                "name": "Typing soup e2e",
+                "kcal": 300,
+            }
+        )
+        home.ws({"type": "metron/weight/delete", "person": wilma, "day": yesterday})
+        expect(card.locator(".recent .item")).to_have_count(0, timeout=TIMEOUT)
+        expect(box).to_be_focused()
+        box.press_sequentially("5")
+        expect(box).to_have_value("68.45")
+        expect(card.locator('[data-field="day"]')).to_have_value(past)
+
+        # Logged, the form is ready for the next weigh-in: empty, and on today.
+        card.locator('[data-action="log"]').click()
+        expect(card.locator(".recent .item", has_text="68.5 kg")).to_have_count(1, timeout=TIMEOUT)
+        expect(box).to_have_value("")
+        expect(card.locator('[data-field="day"]')).to_have_value(today())
+
+
+def test_the_weight_card_s_log_form_follows_a_new_language(home: Home, page: Page) -> None:
+    yesterday = (date.fromisoformat(today()) - timedelta(days=1)).isoformat()
+    select = (
+        "language => document.querySelector('home-assistant')"
+        ".dispatchEvent(new CustomEvent('hass-language-select', { detail: language }))"
+    )
+    with person_named(home, "Lina e2e"):
+        card = open_card(home, page, {"type": "custom:metron-weight-card", "person": "Lina e2e"})
+        log = card.locator('[data-action="log"]')
+        expect(log).to_have_text("Log weight", timeout=TIMEOUT)
+        sensor = "sensor.lina_e2e_weight"
+        try:
+            # A language chosen in the profile reaches the card with no reload,
+            # and the card draws in it on the next change to its person.
+            page.evaluate(select, "it")
+            lina = person_id(home, "Lina e2e")
+            home.ws({"type": "metron/weight/set", "person": lina, "day": yesterday, "kg": 69})
+            expect(card.locator(".recent .item")).to_have_count(1, timeout=TIMEOUT)
+            expect(card.locator(".recent .sub")).to_have_text("Ultime pesate")
+            expect(log).to_have_text("Registra il peso")
+            # Lina's sensors have the weight before she is removed: removing
+            # her while they still read it logs an error.
+            wait_for(lambda: float(home.api("GET", f"/api/states/{sensor}")["state"]) == 69)
+        finally:
+            page.evaluate(select, "en")
+
+
+def test_a_weight_being_typed_stays_while_another_dashboard_tab_shows(
+    home: Home, page: Page
+) -> None:
+    with person_named(home, "Tilda e2e"):
+        home.dashboard([])
+        home.ws(
+            {
+                "type": "lovelace/config/save",
+                "url_path": home.DASHBOARD,
+                "config": {
+                    "views": [
+                        {
+                            "title": "Weight",
+                            "cards": [{"type": "custom:metron-weight-card", "person": "Tilda e2e"}],
+                        },
+                        {"title": "Other", "cards": [{"type": "markdown", "content": "Other"}]},
+                    ]
+                },
+            }
+        )
+        page.goto(home.url + "/" + home.DASHBOARD + "/0")
+        card = page.locator("metron-weight-card")
+        expect(card.locator(".chart")).to_be_visible(timeout=30_000)
+        box = card.locator('[data-field="weight"]')
+        box.fill("68.4")
+        # Home Assistant keeps a tab's cards while another tab shows.
+        card.evaluate("card => { card.sameCard = true }")
+
+        page.get_by_role("tab", name="Other").click()
+        expect(page.locator("hui-markdown-card")).to_be_visible(timeout=TIMEOUT)
+        page.get_by_role("tab", name="Weight").click()
+        expect(card.locator(".chart")).to_be_visible(timeout=TIMEOUT)
+        assert card.evaluate("card => card.sameCard === true")
+        expect(box).to_have_value("68.4")
 
 
 @ON_A_PHONE_TOO
